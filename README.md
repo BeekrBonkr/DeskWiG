@@ -1,6 +1,6 @@
-# ESP32 Desktop Widget
+# DeskWiG
 
-This project started as a Christmas gift for my dad. A small 3D-printed desktop display built around an ESP32-S3 and a 1.9" IPS screen. The firmware is a simple widget framework: each screen is a `Widget` class, and you pick which one is showing from a web page served by the device.
+DeskWiG (Desk Widget) started as a Christmas gift for my dad. A small 3D-printed desktop display built around an ESP32-S3 and a 1.9" IPS screen. The firmware is a simple widget framework: each screen is a `Widget` class, and you pick which one is showing from a web page served by the device.
 
 It currently ships with two widgets:
 
@@ -51,7 +51,7 @@ WiFi credentials and the API token are stored in the ESP32's NVS flash, not in t
 
 |          |                      |
 | -------- | -------------------- |
-| SSID     | `ESP32-Widget-Setup` |
+| SSID     | `DeskWiG-Setup`    |
 | Password | `configureme`        |
 | URL      | http://192.168.4.1   |
 
@@ -60,7 +60,7 @@ WiFi credentials and the API token are stored in the ESP32's NVS flash, not in t
 3. The page reports when the device has connected and shows its new address. The hotspot stays up for 20 seconds after connecting so you can read it, then turns off.
 4. The device screen shows the address and the API token for 30 seconds, then switches to the active widget.
 
-The device is reachable at `http://widget.local` (mDNS) or its IP. The name is changeable on the setup page.
+The device is reachable at `http://deskwig.local` (mDNS) or its IP. The name is changeable on the setup page.
 
 If the saved network can't be reached within 15 seconds the hotspot comes back, and the device keeps retrying the saved network once a minute so it recovers by itself after a router reboot. Requests made over the hotspot don't need the API token, since anyone standing next to the device with the hotspot password is already trusted for setup.
 
@@ -130,7 +130,7 @@ Everything except WiFi credentials and the token lives in `/config.json` on the 
 ```json
 {
   "version": 1,
-  "hostname": "widget",
+  "hostname": "deskwig",
   "pingIntervalMs": 10000,
   "activeWidget": 0,
   "clock": { "tzOffset": 0, "dstOffset": 0, "24h": true },

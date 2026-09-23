@@ -47,9 +47,9 @@ static const char SETUP_HTML[] = R"html(
 <p id="msg"></p>
 
 <h3>Device name</h3>
-<input id="host" placeholder="widget" autocapitalize="off" autocorrect="off" maxlength="32">
+<input id="host" placeholder="deskwig" autocapitalize="off" autocorrect="off" maxlength="32">
 <button id="saveHost">Save name</button>
-<p class="hint">Reachable at http://<span id="hostPreview">widget</span>.local once connected. Letters, digits and dashes only.</p>
+<p class="hint">Reachable at http://<span id="hostPreview">deskwig</span>.local once connected. Letters, digits and dashes only.</p>
 
 <h3>API token</h3>
 <input id="token" placeholder="Shown on the device screen after it connects" autocapitalize="off" autocorrect="off">
@@ -188,7 +188,7 @@ async function saveHost() {
   } catch (e) { msg(e.message); }
 }
 
-$('host').addEventListener('input', () => { $('hostPreview').textContent = $('host').value || 'widget'; });
+$('host').addEventListener('input', () => { $('hostPreview').textContent = $('host').value || 'deskwig'; });
 $('scan').onclick = scan;
 $('join').onclick = join;
 $('forget').onclick = forget;

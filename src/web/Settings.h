@@ -12,7 +12,7 @@ struct Settings {
   char apiToken[API_TOKEN_LEN + 1] = "";
 
   // ---- Stored in /config.json on LittleFS.
-  char hostname[HOSTNAME_MAX + 1] = "widget";
+  char hostname[HOSTNAME_MAX + 1] = "deskwig";
 
   uint32_t pingIntervalMs = 10000;
   uint8_t activeWidget = 0;

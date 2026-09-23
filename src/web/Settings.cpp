@@ -151,7 +151,7 @@ static bool loadConfigFile() {
     return false;
   }
 
-  if (!setHostname(doc["hostname"] | "widget")) strlcpy(settings.hostname, "widget", sizeof(settings.hostname));
+  if (!setHostname(doc["hostname"] | "deskwig")) strlcpy(settings.hostname, "deskwig", sizeof(settings.hostname));
 
   settings.pingIntervalMs = doc["pingIntervalMs"] | 10000u;
   if (settings.pingIntervalMs < MIN_PING_INTERVAL_MS) settings.pingIntervalMs = MIN_PING_INTERVAL_MS;

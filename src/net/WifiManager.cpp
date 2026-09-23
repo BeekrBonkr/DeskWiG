@@ -9,7 +9,7 @@
 WifiState wifiState = WifiState::CONNECTING;
 ApReason apReason = ApReason::NONE;
 
-static const char* AP_SSID = "ESP32-Widget-Setup";
+static const char* AP_SSID = "DeskWiG-Setup";
 static const char* AP_PASS = "configureme";
 
 static const uint32_t CONNECT_TIMEOUT_MS   = 15000;  // first connect after boot / join
