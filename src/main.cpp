@@ -11,7 +11,12 @@
 #include "web/Settings.h"
 #include "web/WebServer.h"
 #include "net/WifiManager.h"
-bool webStarted = false;
+
+// How long the connection-info screen (IP + API token) stays up after WiFi connects.
+constexpr uint32_t INFO_SCREEN_MS = 30000;
+
+static bool webStarted = false;
+static uint32_t infoScreenUntil = 0;
 
 // =====================
 // STATUS LED
@@ -81,6 +86,56 @@ void updateStatusLed() {
 }
 
 // =====================
+// SYSTEM SCREENS
+// =====================
+static void drawApModeScreen() {
+  ui.fillScreen(TFT_BLACK);
+  ui.setTextColor(TFT_WHITE, TFT_BLACK);
+  ui.setTextSize(1);
+  ui.setCursor(10, 30);
+  ui.println("Unable to connect to WiFi");
+  ui.println("");
+  ui.println("Connect to hotspot:");
+  ui.println("ESP32-StatusPanel");
+  ui.println("Password: configureme");
+  ui.println("");
+  ui.println("Open:");
+  ui.println("http://192.168.4.1");
+}
+
+static void drawInfoScreen() {
+  ui.fillScreen(TFT_BLACK);
+  ui.setTextColor(TFT_WHITE, TFT_BLACK);
+
+  ui.setTextSize(2);
+  ui.setCursor(6, 12);
+  ui.println("Connected");
+
+  ui.setTextSize(1);
+  ui.setCursor(6, 44);
+  ui.println(WiFi.SSID());
+  ui.println("");
+  ui.println("Open in a browser:");
+  ui.print("http://");
+  ui.print(WiFi.localIP());
+  ui.println("/widgets");
+  ui.println("");
+  ui.println("API token:");
+
+  // 32 hex chars won't fit on one 28-column line; split in two.
+  char half[17];
+  strlcpy(half, settings.apiToken, sizeof(half));
+  ui.println(half);
+  strlcpy(half, settings.apiToken + 16, sizeof(half));
+  ui.println(half);
+
+  ui.setTextColor(0x39E7, TFT_BLACK);
+  ui.setCursor(6, ui.height() - 14);
+  uint32_t remaining = (infoScreenUntil - millis()) / 1000;
+  ui.printf("Widgets start in %lus", (unsigned long)remaining);
+}
+
+// =====================
 // SETUP
 // =====================
 void setup() {
@@ -105,17 +160,12 @@ void setup() {
   loadSettings();
   wifiBegin();
 
-  // ✅ Register widgets FIRST
+  // Register widgets
   screens.add(&pingWidget);
   screens.add(&clockWidget);
 
   screens.setActive(settings.activeWidget);
   screens.begin();
-
-  // ✅ Start web server LAST
-  startWebServer();
-
-  Serial.println("[WEB] Server ready");
 }
 
 // =====================
@@ -124,40 +174,31 @@ void setup() {
 void loop() {
   wifiLoop();
 
-  if (!webStarted) {
-    if (wifiState == WifiState::CONNECTED || wifiState == WifiState::AP_MODE) {
-      Serial.println("[WEB] Attempting to start web server...");
-      startWebServer();
-      webStarted = true;
+  // Start the web server once we have any network at all
+  if (!webStarted && (wifiState == WifiState::CONNECTED || wifiState == WifiState::AP_MODE)) {
+    startWebServer();
+    webStarted = true;
 
-      Serial.print("[WEB] WiFi mode: ");
-      Serial.println((wifiState == WifiState::AP_MODE) ? "AP_MODE" : "STA_MODE");
-
+    if (wifiState == WifiState::CONNECTED) {
+      infoScreenUntil = millis() + INFO_SCREEN_MS;
       Serial.print("[WEB] STA IP: ");
       Serial.println(WiFi.localIP());
-
-      Serial.print("[WEB] AP  IP: ");
+    } else {
+      Serial.print("[WEB] AP IP: ");
       Serial.println(WiFi.softAPIP());
-
-      Serial.println("[WEB] Web server started");
     }
   }
 
   updateStatusLed();
 
-  // AP MODE SCREEN
   if (wifiState == WifiState::AP_MODE) {
-    ui.fillScreen(TFT_BLACK);
-    ui.setTextColor(TFT_WHITE, TFT_BLACK);
-    ui.setCursor(10, 30);
-    ui.println("Unable to connect to WiFi");
-    ui.println("");
-    ui.println("Connect to hotspot:");
-    ui.println("ESP32-StatusPanel");
-    ui.println("Password: configureme");
-    ui.println("");
-    ui.println("Open:");
-    ui.println("http://192.168.4.1");
+    drawApModeScreen();
+    ui.pushSprite(0, 0);
+    return;
+  }
+
+  if (wifiState == WifiState::CONNECTED && millis() < infoScreenUntil) {
+    drawInfoScreen();
     ui.pushSprite(0, 0);
     return;
   }
