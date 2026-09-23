@@ -17,7 +17,7 @@ Adding your own widget is a matter of implementing four methods (see [Writing a 
 | 1.9" 170×320 IPS LCD, ST7789V2, SPI                 | https://a.co/d/0bqQSNMt                                                          |
 | Printable enclosure (STL)                           | https://makerworld.com/en/models/2918927-esp-32-desktop-widget#profileId-3265758 |
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light.
+The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)).
 
 ### Wiring
 
@@ -32,7 +32,7 @@ The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light.
 | GND         | GND                                                 |
 | BL          | 3V3 (or a spare GPIO if you want backlight control) |
 
-Pins are set in the `LGFX_Display` class at the top of `src/main.cpp`.
+All pins are defined in `src/app/Board.h`.
 
 ## Building and flashing
 
@@ -47,33 +47,65 @@ Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32A
 
 ## First boot and WiFi setup
 
-WiFi credentials and the API token are stored in the ESP32's NVS flash, not in the source. On first boot there are none, so the device starts its own access point and shows the details on screen:
+WiFi credentials and the API token are stored in the ESP32's NVS flash, not in the source. On first boot there are none, so the device starts a setup hotspot and shows the details on screen:
 
-|          |                     |
-| -------- | ------------------- |
-| SSID     | `ESP32-StatusPanel` |
-| Password | `configureme`       |
-| URL      | http://192.168.4.1  |
+|          |                      |
+| -------- | -------------------- |
+| SSID     | `ESP32-Widget-Setup` |
+| Password | `configureme`        |
+| URL      | http://192.168.4.1   |
 
-The status LED blinks blue in AP mode and turns solid green once connected to your network. If the saved network can't be reached within 15 seconds the device falls back to AP mode.
+1. Join the hotspot from a phone or laptop. A setup page should open automatically (captive portal). If it doesn't, browse to the URL above.
+2. Tap **Scan for networks**, pick yours, enter the password, and tap **Join**.
+3. The page reports when the device has connected and shows its new address. The hotspot stays up for 20 seconds after connecting so you can read it, then turns off.
+4. The device screen shows the address and the API token for 30 seconds, then switches to the active widget.
 
-Once connected, the screen shows the device IP and the API token for 30 seconds before switching to the active widget. The token is generated on first boot and is required for any request that changes settings.
+The device is reachable at `http://widget.local` (mDNS) or its IP. The name is changeable on the setup page.
 
-> **Note:** The web UI currently exposes the widget selector but not a WiFi form. To store credentials, either add a `/wifi` route to `src/web/WebServer.cpp`, or temporarily set `settings.wifiSSID` / `settings.wifiPass` in `setup()` and call `saveCredentials()` once, then remove the lines and reflash. The AP password is a plain default in `src/net/WifiManager.cpp`; change it if you like.
+If the saved network can't be reached within 15 seconds the hotspot comes back, and the device keeps retrying the saved network once a minute so it recovers by itself after a router reboot. Requests made over the hotspot don't need the API token, since anyone standing next to the device with the hotspot password is already trusted for setup.
+
+### Status LED
+
+| LED               | Meaning                                  |
+| ----------------- | ---------------------------------------- |
+| Blue, blinking    | Setup hotspot active                     |
+| Amber, solid      | Connecting to WiFi                       |
+| Green, solid, dim | Connected, running normally              |
+| White, fast blink | Factory reset in progress                |
+| Off               | Disabled in config (`led.enabled=false`) |
+
+Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
+
+### Recovery jumper
+
+Bridge GPIO 4 to GND and press reset:
+
+- **Release within 8 seconds:** the device skips the saved network and starts the setup hotspot. Use this if you moved it to a new network or mistyped a password.
+- **Keep it bridged for 8 seconds:** the screen counts down, then the device erases all settings (LittleFS and NVS) and restarts into setup mode. A new API token is generated.
+
+A tactile switch or two exposed pads on the enclosure work equally well.
 
 ## Web interface
 
 Once on your network, the device serves:
 
-| Route | Auth | Purpose |
-|-------|------|---------|
-| `/` | no | Health check |
-| `/widgets` | no | Page with a button per widget to switch the active screen |
-| `GET /api/status` | no | Firmware version, uptime, heap, WiFi, active widget |
-| `GET /api/widgets` | no | JSON list of widgets and the active index |
-| `POST /api/widgets` (`index=N`) | yes | Switch the active widget; choice is persisted |
+| Route                           | Auth | Purpose                                                        |
+| ------------------------------- | ---- | -------------------------------------------------------------- |
+| `/setup`                        | no   | WiFi scan/join, device name, forget network                    |
+| `/widgets`                      | no   | Page with a button per widget to switch the active screen      |
+| `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget              |
+| `GET /api/wifi`                 | no   | Connection state, SSID, IP, hostname, hotspot state            |
+| `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
+| `POST /api/wifi/join`           | yes  | JSON `{"ssid","pass"}`. Saves and connects, hotspot stays up   |
+| `POST /api/wifi/forget`         | yes  | Clears credentials, returns to hotspot                         |
+| `GET /api/config`               | no   | Hostname, ping interval, clock, LED settings                   |
+| `PUT /api/config`               | yes  | JSON with any subset of the above; saved immediately           |
+| `GET /api/widgets`              | no   | JSON list of widgets and the active index                      |
+| `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
+| `POST /api/system/reboot`       | yes  | Restart                                                        |
+| `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
-Authenticated routes need an `Authorization: Bearer <token>` header. The widget selector page has a field for the token and remembers it in the browser.
+Authenticated routes need an `Authorization: Bearer <token>` header, except when the request comes in over the setup hotspot. Both pages have a field for the token and remember it in the browser.
 
 ```bash
 curl -X POST http://<device-ip>/api/widgets \
@@ -98,9 +130,11 @@ Everything except WiFi credentials and the token lives in `/config.json` on the 
 ```json
 {
   "version": 1,
+  "hostname": "widget",
   "pingIntervalMs": 10000,
   "activeWidget": 0,
   "clock": { "tzOffset": 0, "dstOffset": 0, "24h": true },
+  "led": { "enabled": true, "brightness": 5 },
   "targets": [
     { "name": "Cloudflare", "host": "1.1.1.1", "port": 443, "type": "service" },
     { "name": "Router", "host": "192.168.88.1", "port": 0, "type": "server" }
@@ -141,11 +175,11 @@ It will appear in the web selector automatically. The `ScreenManager` holds up t
 
 ```
 src/
-  main.cpp            display + LED init, boot sequence, main loop
-  app/                Widget interface and ScreenManager
+  main.cpp            display init, recovery jumper, boot sequence, main loop
+  app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
-  net/                WiFi manager (STA/AP fallback), TCP ping
-  web/                Settings (NVS + LittleFS JSON), async web server + API
+  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping
+  web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages
 platformio.ini        board, partition table, library deps
 ```
 

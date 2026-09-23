@@ -151,6 +151,8 @@ static bool loadConfigFile() {
     return false;
   }
 
+  if (!setHostname(doc["hostname"] | "widget")) strlcpy(settings.hostname, "widget", sizeof(settings.hostname));
+
   settings.pingIntervalMs = doc["pingIntervalMs"] | 10000u;
   if (settings.pingIntervalMs < MIN_PING_INTERVAL_MS) settings.pingIntervalMs = MIN_PING_INTERVAL_MS;
   settings.activeWidget = doc["activeWidget"] | 0;
@@ -159,6 +161,10 @@ static bool loadConfigFile() {
   settings.clockTzOffset  = clock["tzOffset"]  | 0;
   settings.clockDstOffset = clock["dstOffset"] | 0;
   settings.clock24h       = clock["24h"]       | true;
+
+  JsonVariantConst led = doc["led"];
+  settings.ledEnabled    = led["enabled"]    | true;
+  settings.ledBrightness = led["brightness"] | 5;
 
   settings.targetCount = 0;
   for (JsonVariantConst t : doc["targets"].as<JsonArrayConst>()) {
@@ -179,6 +185,7 @@ static bool loadConfigFile() {
 bool saveSettings() {
   JsonDocument doc;
   doc["version"]        = CONFIG_VERSION;
+  doc["hostname"]       = settings.hostname;
   doc["pingIntervalMs"] = settings.pingIntervalMs;
   doc["activeWidget"]   = settings.activeWidget;
 
@@ -186,6 +193,10 @@ bool saveSettings() {
   clock["tzOffset"]  = settings.clockTzOffset;
   clock["dstOffset"] = settings.clockDstOffset;
   clock["24h"]       = settings.clock24h;
+
+  JsonObject led = doc["led"].to<JsonObject>();
+  led["enabled"]    = settings.ledEnabled;
+  led["brightness"] = settings.ledBrightness;
 
   JsonArray targets = doc["targets"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.targetCount; i++) {
@@ -223,6 +234,43 @@ bool saveSettings() {
   }
 
   return true;
+}
+
+// =====================
+// HOSTNAME
+// =====================
+bool setHostname(const char* name) {
+  if (!name) return false;
+  size_t len = strlen(name);
+  if (len == 0 || len > HOSTNAME_MAX) return false;
+
+  char clean[HOSTNAME_MAX + 1];
+  for (size_t i = 0; i < len; i++) {
+    char c = name[i];
+    if (c >= 'A' && c <= 'Z') c = c - 'A' + 'a';
+    bool ok = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-';
+    if (!ok) return false;
+    clean[i] = c;
+  }
+  clean[len] = '\0';
+  if (clean[0] == '-' || clean[len - 1] == '-') return false;
+
+  strlcpy(settings.hostname, clean, sizeof(settings.hostname));
+  return true;
+}
+
+// =====================
+// FACTORY RESET
+// =====================
+void factoryReset() {
+  Serial.println("[CFG] Factory reset: erasing LittleFS and NVS");
+  LittleFS.end();
+  LittleFS.format();
+
+  Preferences prefs;
+  prefs.begin(NVS_NS, false);
+  prefs.clear();
+  prefs.end();
 }
 
 // =====================

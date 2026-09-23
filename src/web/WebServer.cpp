@@ -2,92 +2,26 @@
 
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
+#include <AsyncJson.h>
 #include <ArduinoJson.h>
 
 #include "../app/ScreenManager.h"
+#include "../app/StatusLed.h"
+#include "../net/WifiManager.h"
 #include "Settings.h"
+#include "Pages.h"
 
 extern ScreenManager screens;
 
 static AsyncWebServer server(80);
 
-static const char* FW_VERSION = "0.2.0";
+static const char* FW_VERSION = "0.3.0";
 
-// =====================
-// HTML: Widget Selector
-// =====================
-static const char WIDGETS_HTML[] = R"rawliteral(
-<!doctype html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Widget Selector</title>
-<style>
-  body { font-family: system-ui, sans-serif; background: #111; color: #eee; margin: 16px; }
-  button { display: block; width: 100%; margin: 8px 0; padding: 12px; font-size: 16px;
-           background: #222; color: #eee; border: 1px solid #444; border-radius: 6px; }
-  button.active { border-color: #0f0; }
-  input { width: 100%; padding: 10px; font-size: 14px; background: #222; color: #eee;
-          border: 1px solid #444; border-radius: 6px; box-sizing: border-box; }
-  label { font-size: 12px; color: #999; }
-  #msg { color: #f66; min-height: 1.2em; }
-</style>
-</head>
-<body>
-<h2>Widget Selector</h2>
-<label for="token">API token (shown on the device screen after boot)</label>
-<input id="token" placeholder="paste token">
-<p id="msg"></p>
-<div id="list"></div>
-
-<script>
-const tokenEl = document.getElementById('token');
-const msgEl = document.getElementById('msg');
-try { tokenEl.value = localStorage.getItem('apiToken') || ''; } catch (e) {}
-tokenEl.addEventListener('change', () => {
-  try { localStorage.setItem('apiToken', tokenEl.value.trim()); } catch (e) {}
-});
-
-async function load() {
-  msgEl.textContent = '';
-  try {
-    const r = await fetch('/api/widgets');
-    const j = await r.json();
-    const list = document.getElementById('list');
-    list.innerHTML = '';
-    j.widgets.forEach((w, i) => {
-      const b = document.createElement('button');
-      b.textContent = w + (i === j.active ? '  (active)' : '');
-      if (i === j.active) b.className = 'active';
-      b.onclick = () => activate(i);
-      list.appendChild(b);
-    });
-  } catch (e) {
-    msgEl.textContent = 'Failed to load widgets';
-  }
-}
-
-async function activate(i) {
-  const r = await fetch('/api/widgets', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Bearer ' + tokenEl.value.trim()
-    },
-    body: 'index=' + i
-  });
-  if (r.status === 401) {
-    msgEl.textContent = 'Unauthorized. Check the API token.';
-    return;
-  }
-  load();
-}
-
-load();
-</script>
-</body>
-</html>
-)rawliteral";
+// Deferred actions. Restarting from inside an async handler is unsafe,
+// so handlers set these and webLoop() acts on them.
+enum class PendingAction : uint8_t { NONE, REBOOT, FACTORY_RESET };
+static PendingAction pendingAction = PendingAction::NONE;
+static uint32_t pendingAt = 0;
 
 // =====================
 // HELPERS
@@ -104,9 +38,24 @@ static void sendError(AsyncWebServerRequest* req, int code, const char* message)
   sendJson(req, code, doc);
 }
 
-// Returns true if the request carries a valid bearer token.
-// On failure it has already sent a 401, so callers just return.
+static void sendOk(AsyncWebServerRequest* req) {
+  JsonDocument doc;
+  doc["ok"] = true;
+  sendJson(req, 200, doc);
+}
+
+// True when the request arrived over the setup hotspot. Anyone standing
+// next to the device with the hotspot password is trusted for setup.
+static bool viaHotspot(AsyncWebServerRequest* req) {
+  if (!wifiApActive() || !req->client()) return false;
+  return req->client()->localIP() == WiFi.softAPIP();
+}
+
+// Returns true if the request is authorised. On failure it has already
+// sent a 401, so callers just return.
 static bool requireAuth(AsyncWebServerRequest* req) {
+  if (viaHotspot(req)) return true;
+
   auto* h = req->getHeader("Authorization");
   if (h) {
     const String& v = h->value();
@@ -116,15 +65,252 @@ static bool requireAuth(AsyncWebServerRequest* req) {
   return false;
 }
 
-static void sendWidgetList(AsyncWebServerRequest* req) {
-  JsonDocument doc;
+static void fillWidgetList(JsonDocument& doc) {
   doc["active"] = screens.getActive();
   JsonArray list = doc["widgets"].to<JsonArray>();
   for (uint8_t i = 0; i < screens.getCount(); i++) {
     const char* name = screens.getName(i);
     list.add((name && *name) ? name : "Unknown");
   }
-  sendJson(req, 200, doc);
+}
+
+static void fillWifiStatus(JsonObject doc) {
+  doc["state"]    = wifiStateName();
+  doc["apReason"] = wifiApReasonName();
+  doc["apActive"] = wifiApActive();
+  doc["ssid"]     = settings.wifiSSID;
+  doc["hostname"] = settings.hostname;
+  doc["ip"]       = (wifiState == WifiState::CONNECTED) ? WiFi.localIP().toString() : String("");
+  doc["apIp"]     = wifiApActive() ? WiFi.softAPIP().toString() : String("");
+  doc["rssi"]     = (wifiState == WifiState::CONNECTED) ? WiFi.RSSI() : 0;
+}
+
+static void fillConfig(JsonDocument& doc) {
+  doc["hostname"]       = settings.hostname;
+  doc["pingIntervalMs"] = settings.pingIntervalMs;
+  doc["activeWidget"]   = settings.activeWidget;
+  JsonObject clock = doc["clock"].to<JsonObject>();
+  clock["tzOffset"]  = settings.clockTzOffset;
+  clock["dstOffset"] = settings.clockDstOffset;
+  clock["24h"]       = settings.clock24h;
+  JsonObject led = doc["led"].to<JsonObject>();
+  led["enabled"]    = settings.ledEnabled;
+  led["brightness"] = settings.ledBrightness;
+}
+
+static void schedule(PendingAction a, uint32_t delayMs) {
+  pendingAction = a;
+  pendingAt = millis() + delayMs;
+}
+
+// =====================
+// ROUTES
+// =====================
+static void registerPages() {
+  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest* req) {
+    AsyncWebServerResponse* r = req->beginResponse(200, "text/css", STYLE_CSS);
+    r->addHeader("Cache-Control", "max-age=3600");
+    req->send(r);
+  });
+
+  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest* req) {
+    req->send(200, "text/html", SETUP_HTML);
+  });
+
+  server.on("/widgets", HTTP_GET, [](AsyncWebServerRequest* req) {
+    req->send(200, "text/html", WIDGETS_HTML);
+  });
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest* req) {
+    req->redirect(viaHotspot(req) ? "/setup" : "/widgets");
+  });
+}
+
+static void registerStatus() {
+  server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    doc["firmware"]     = FW_VERSION;
+    doc["uptimeMs"]     = millis();
+    doc["freeHeap"]     = ESP.getFreeHeap();
+    doc["freePsram"]    = ESP.getFreePsram();
+    doc["activeWidget"] = screens.getActive();
+    doc["widgetCount"]  = screens.getCount();
+    fillWifiStatus(doc["wifi"].to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+}
+
+static void registerWidgets() {
+  server.on("/api/widgets", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillWidgetList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  server.on("/api/widgets", HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("index", true)) {
+      sendError(req, 400, "missing index");
+      return;
+    }
+    int idx = req->getParam("index", true)->value().toInt();
+    if (idx < 0 || idx >= screens.getCount()) {
+      sendError(req, 400, "index out of range");
+      return;
+    }
+    screens.setActive(idx);
+    settings.activeWidget = idx;
+    if (!saveSettings()) {
+      sendError(req, 500, "failed to save settings");
+      return;
+    }
+    JsonDocument doc;
+    fillWidgetList(doc);
+    sendJson(req, 200, doc);
+  });
+}
+
+static void registerWifi() {
+  server.on("/api/wifi", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillWifiStatus(doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
+  // Async scan: first call starts it, later calls return results when ready.
+  server.on("/api/wifi/scan", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    int16_t n = WiFi.scanComplete();
+
+    if (n == WIFI_SCAN_FAILED) {
+      WiFi.scanNetworks(true, false);
+      doc["status"] = "scanning";
+    } else if (n == WIFI_SCAN_RUNNING) {
+      doc["status"] = "scanning";
+    } else {
+      doc["status"] = "done";
+      JsonArray list = doc["networks"].to<JsonArray>();
+
+      // Sort by signal, drop duplicates and hidden networks.
+      int16_t order[64];
+      int16_t count = n > 64 ? 64 : n;
+      for (int16_t i = 0; i < count; i++) order[i] = i;
+      for (int16_t i = 1; i < count; i++) {
+        int16_t v = order[i];
+        int16_t j = i - 1;
+        while (j >= 0 && WiFi.RSSI(order[j]) < WiFi.RSSI(v)) { order[j + 1] = order[j]; j--; }
+        order[j + 1] = v;
+      }
+      for (int16_t k = 0; k < count; k++) {
+        int16_t i = order[k];
+        String ssid = WiFi.SSID(i);
+        if (ssid.isEmpty()) continue;
+        bool dup = false;
+        for (JsonObject e : list) {
+          if (ssid == (const char*)e["ssid"]) { dup = true; break; }
+        }
+        if (dup) continue;
+        JsonObject e = list.add<JsonObject>();
+        e["ssid"]   = ssid;
+        e["rssi"]   = WiFi.RSSI(i);
+        e["secure"] = WiFi.encryptionType(i) != WIFI_AUTH_OPEN;
+      }
+      WiFi.scanDelete();
+    }
+    sendJson(req, 200, doc);
+  });
+
+  auto* join = new AsyncCallbackJsonWebHandler("/api/wifi/join", [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    const char* ssid = json["ssid"] | "";
+    const char* pass = json["pass"] | "";
+    if (!*ssid || strlen(ssid) >= sizeof(settings.wifiSSID)) {
+      sendError(req, 400, "invalid ssid");
+      return;
+    }
+    if (strlen(pass) >= sizeof(settings.wifiPass)) {
+      sendError(req, 400, "password too long");
+      return;
+    }
+    wifiJoin(ssid, pass);
+    JsonDocument doc;
+    fillWifiStatus(doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+  join->setMethod(HTTP_POST);
+  server.addHandler(join);
+
+  server.on("/api/wifi/forget", HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    wifiForget();
+    sendOk(req);
+  });
+}
+
+static void registerConfig() {
+  server.on("/api/config", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillConfig(doc);
+    sendJson(req, 200, doc);
+  });
+
+  auto* put = new AsyncCallbackJsonWebHandler("/api/config", [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+
+    bool hostnameChanged = false;
+    if (!json["hostname"].isNull()) {
+      const char* h = json["hostname"];
+      if (strcmp(h, settings.hostname) != 0) {
+        if (!setHostname(h)) {
+          sendError(req, 400, "invalid hostname: use letters, digits and dashes");
+          return;
+        }
+        hostnameChanged = true;
+      }
+    }
+    if (!json["pingIntervalMs"].isNull()) {
+      uint32_t v = json["pingIntervalMs"];
+      settings.pingIntervalMs = v < 1000 ? 1000 : v;
+    }
+    JsonVariant clock = json["clock"];
+    if (!clock.isNull()) {
+      if (!clock["tzOffset"].isNull())  settings.clockTzOffset  = clock["tzOffset"];
+      if (!clock["dstOffset"].isNull()) settings.clockDstOffset = clock["dstOffset"];
+      if (!clock["24h"].isNull())       settings.clock24h       = clock["24h"];
+    }
+    JsonVariant led = json["led"];
+    if (!led.isNull()) {
+      if (!led["enabled"].isNull())    settings.ledEnabled    = led["enabled"];
+      if (!led["brightness"].isNull()) settings.ledBrightness = led["brightness"];
+      ledApplySettings();
+    }
+
+    if (!saveSettings()) {
+      sendError(req, 500, "failed to save settings");
+      return;
+    }
+    if (hostnameChanged) wifiApplyHostname();
+
+    JsonDocument doc;
+    fillConfig(doc);
+    sendJson(req, 200, doc);
+  });
+  put->setMethod(HTTP_PUT);
+  server.addHandler(put);
+}
+
+static void registerSystem() {
+  server.on("/api/system/reboot", HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    schedule(PendingAction::REBOOT, 500);
+    sendOk(req);
+  });
+
+  server.on("/api/system/reset", HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    schedule(PendingAction::FACTORY_RESET, 500);
+    sendOk(req);
+  });
 }
 
 // =====================
@@ -135,66 +321,42 @@ void startWebServer() {
   if (started) return;
   started = true;
 
-  Serial.println("[WEB] Registering routes");
+  registerPages();
+  registerStatus();
+  registerWidgets();
+  registerWifi();
+  registerConfig();
+  registerSystem();
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest* req) {
-    req->send(200, "text/plain", "ESP32 Desktop Widget OK");
-  });
-
-  server.on("/widgets", HTTP_GET, [](AsyncWebServerRequest* req) {
-    req->send(200, "text/html", WIDGETS_HTML);
-  });
-
-  // ---- Status (no auth; read-only) ----
-  server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest* req) {
-    JsonDocument doc;
-    doc["firmware"]     = FW_VERSION;
-    doc["uptimeMs"]     = millis();
-    doc["freeHeap"]     = ESP.getFreeHeap();
-    doc["freePsram"]    = ESP.getFreePsram();
-    doc["apMode"]       = (WiFi.getMode() & WIFI_AP) != 0;
-    doc["ssid"]         = WiFi.SSID();
-    doc["rssi"]         = WiFi.RSSI();
-    doc["ip"]           = WiFi.localIP().toString();
-    doc["activeWidget"] = screens.getActive();
-    doc["widgetCount"]  = screens.getCount();
-    sendJson(req, 200, doc);
-  });
-
-  // ---- Widgets ----
-  server.on("/api/widgets", HTTP_GET, [](AsyncWebServerRequest* req) {
-    sendWidgetList(req);
-  });
-
-  server.on("/api/widgets", HTTP_POST, [](AsyncWebServerRequest* req) {
-    if (!requireAuth(req)) return;
-
-    if (!req->hasParam("index", true)) {
-      sendError(req, 400, "missing index");
-      return;
-    }
-
-    int idx = req->getParam("index", true)->value().toInt();
-    if (idx < 0 || idx >= screens.getCount()) {
-      sendError(req, 400, "index out of range");
-      return;
-    }
-
-    Serial.printf("[WEB] Switching widget to index %d\n", idx);
-    screens.setActive(idx);
-    settings.activeWidget = idx;
-    if (!saveSettings()) {
-      sendError(req, 500, "failed to save settings");
-      return;
-    }
-
-    sendWidgetList(req);
-  });
-
+  // Captive portal: any unknown URL requested over the hotspot lands on /setup.
+  // Phones probe URLs like /generate_204 and /hotspot-detect.html; a redirect
+  // is what makes them pop the "sign in to network" sheet.
   server.onNotFound([](AsyncWebServerRequest* req) {
+    if (viaHotspot(req)) {
+      String url = "http://" + WiFi.softAPIP().toString() + "/setup";
+      req->redirect(url);
+      return;
+    }
     sendError(req, 404, "not found");
   });
 
   server.begin();
   Serial.println("[WEB] Server started");
+}
+
+void webLoop() {
+  if (pendingAction == PendingAction::NONE) return;
+  if ((int32_t)(millis() - pendingAt) < 0) return;
+
+  PendingAction a = pendingAction;
+  pendingAction = PendingAction::NONE;
+
+  if (a == PendingAction::FACTORY_RESET) {
+    ledSet(LedPattern::RESETTING);
+    ledLoop();
+    factoryReset();
+  }
+  Serial.println("[SYS] Restarting");
+  delay(100);
+  ESP.restart();
 }
