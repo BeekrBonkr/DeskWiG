@@ -110,6 +110,7 @@ Once on your network, the device serves:
 | `POST /api/layouts/preview`     | yes  | Show a layout on the device for 60 s without saving it         |
 | `DELETE /api/layouts/preview`   | yes  | End the preview early                                          |
 | `GET /api/layouts/data`         | no   | Every template key with its current value                      |
+| `GET /api/layouts/templates`    | no   | Built-in templates with their layout JSON                      |
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
@@ -154,7 +155,9 @@ Writes go to a temp file and are renamed into place, so a power cut mid-save can
 
 ## JSON layout widgets
 
-A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 8 layouts can be stored.
+A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
+
+Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack and Signal Meter. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 
 ```json
 {
@@ -178,14 +181,16 @@ The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel bui
 | `rect` | `x y w h color fill`                     | `fill` defaults to `false` (outline)                         |
 | `bar`  | `x y w h color value`                    | Horizontal progress bar; `value` is 0–100 after expansion    |
 
-`color` is a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals.
+`color` is a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
 
 `text` and `value` are templates. Any `{key}` is replaced with a live value; unknown keys render as `--`.
 
 | Key                                            | Value                                                       |
 | ---------------------------------------------- | ----------------------------------------------------------- |
 | `time`, `time.sec`, `time.ampm`                | `09:41`, `09:41:07`, `AM` (empty in 24-hour mode)           |
+| `time.hour`, `time.min`                        | `09`, `41`, for stacked clocks                              |
 | `date`, `date.day`, `date.md`, `date.dow`      | `2026-09-26`, `Sat`, `Sep 26`, `Saturday`                   |
+| `date.year`                                    | `2026`                                                      |
 | `wifi.ssid`, `wifi.ip`, `wifi.rssi`            | Network name, IP address, signal in dBm                     |
 | `wifi.pct`, `wifi.bars`, `wifi.color`          | Signal as 0–100, `\|\|\|.`, and `ok`/`warn`/`bad`/`dim`     |
 | `hostname`, `uptime`, `heap`                   | Device name, `3d 4h`, free heap in KB                       |
@@ -230,7 +235,7 @@ MyWidget myWidget;
 screens.add(&myWidget);
 ```
 
-It will appear in the web selector automatically. The `ScreenManager` holds up to 12 widgets (native plus layouts). Rendering is double-buffered through a full-screen `LGFX_Sprite`, so widgets just draw and don't need to worry about flicker.
+It will appear in the web selector automatically. The `ScreenManager` holds up to 16 widgets (native plus layouts). Rendering is double-buffered through a full-screen `LGFX_Sprite`, so widgets just draw and don't need to worry about flicker.
 
 ## Project layout
 
@@ -239,7 +244,7 @@ src/
   main.cpp            display init, recovery jumper, boot sequence, main loop
   app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
-  layout/             JSON layout widgets: parser/renderer, template keys, file store + preview
+  layout/             JSON layout widgets: parser/renderer, template keys, file store + preview, built-in templates
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps

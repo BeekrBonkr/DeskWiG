@@ -4,7 +4,7 @@
 
 class ScreenManager {
 public:
-  static constexpr uint8_t MAX_WIDGETS = 12;
+  static constexpr uint8_t MAX_WIDGETS = 16;
 
   void add(Widget* w);
   // Removes a widget. The active index is clamped so something is always showing.

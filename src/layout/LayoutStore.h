@@ -7,10 +7,11 @@
 // Owns the JSON layout widgets stored at /widgets/<id>.json on LittleFS,
 // registers them with the ScreenManager, and drives the editor preview.
 
-constexpr uint8_t MAX_LAYOUTS = 8;
+constexpr uint8_t MAX_LAYOUTS = 12;
 constexpr uint32_t LAYOUT_PREVIEW_MS = 60000;
 
-// Loads every /widgets/*.json and adds the valid ones to the screen manager.
+// Writes the preloaded templates to /widgets on first boot, then loads
+// every /widgets/*.json and adds the valid ones to the screen manager.
 void layoutsBegin(ScreenManager& sm);
 
 // Expires the editor preview. Call from the main loop.

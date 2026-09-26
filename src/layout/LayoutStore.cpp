@@ -1,9 +1,11 @@
 #include "LayoutStore.h"
 
 #include <LittleFS.h>
+#include "LayoutTemplates.h"
 #include "../web/Settings.h"
 
 static const char* LAYOUT_DIR = "/widgets";
+static const char* SEED_MARKER = "/widgets/.seeded";
 
 static ScreenManager* screens = nullptr;
 static LayoutWidget slots[MAX_LAYOUTS];
@@ -75,10 +77,33 @@ static bool parseFile(const String& path, JsonDocument& doc, char* err, size_t e
 // =====================
 // BOOT
 // =====================
+// Copies the preload templates into /widgets once. Existing files are
+// never overwritten, so a user's edits to a preloaded widget survive
+// upgrades; deleting one is also permanent because of the marker file.
+static void seedTemplates() {
+  if (LittleFS.exists(SEED_MARKER)) return;
+
+  for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) {
+    const LayoutTemplate& t = LAYOUT_TEMPLATES[i];
+    if (!t.preload) continue;
+    String path = layoutPath(t.id);
+    if (LittleFS.exists(path)) continue;
+    File f = LittleFS.open(path, "w");
+    if (!f) continue;
+    f.print(t.json);
+    f.close();
+    Serial.printf("[LAYOUT] Preloaded %s\n", t.id);
+  }
+
+  File m = LittleFS.open(SEED_MARKER, "w");
+  if (m) { m.print("1"); m.close(); }
+}
+
 void layoutsBegin(ScreenManager& sm) {
   screens = &sm;
 
   if (!LittleFS.exists(LAYOUT_DIR)) LittleFS.mkdir(LAYOUT_DIR);
+  seedTemplates();
 
   File dir = LittleFS.open(LAYOUT_DIR);
   if (!dir || !dir.isDirectory()) {
@@ -95,7 +120,7 @@ void layoutsBegin(ScreenManager& sm) {
     f.close();
     int slash = path.lastIndexOf('/');
     String base = path.substring(slash + 1);
-    if (!base.endsWith(".json")) continue;
+    if (base.startsWith(".") || !base.endsWith(".json")) continue;
     String id = base.substring(0, base.length() - 5);
     if (!layoutValidId(id.c_str())) {
       Serial.printf("[LAYOUT] Skipping %s: bad id\n", path.c_str());

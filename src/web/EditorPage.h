@@ -107,68 +107,27 @@ async function api(path, method, body) {
 }
 
 // ---------- templates ----------
-const TEMPLATES = [
-  { name: 'Blank', json: { name: 'My Widget', elements: [
+// Fetched from the device; this one is only the fallback for a new widget.
+let TEMPLATES = [
+  { id: 'blank', name: 'Blank', json: { name: 'My Widget', elements: [
     { type: 'text', x: 85, y: 150, size: 2, align: 'center', color: 'text', text: 'Hello' }
-  ] } },
-  { name: 'Big Clock', json: { name: 'Big Clock', elements: [
-    { type: 'text', x: 85, y: 96, size: 4, align: 'center', color: 'text', text: '{time}' },
-    { type: 'text', x: 85, y: 134, size: 2, align: 'center', color: 'dim', text: '{time.ampm}' },
-    { type: 'text', x: 85, y: 176, size: 2, align: 'center', color: 'text', text: '{date.day} {date.md}' },
-    { type: 'line', x: 6, y: 296, x2: 164, y2: 296, color: 'dim' },
-    { type: 'text', x: 6, y: 304, size: 1, color: 'dim', text: '{wifi.ssid}' },
-    { type: 'text', x: 164, y: 304, size: 1, align: 'right', color: '{wifi.color}', text: '{wifi.bars}' }
-  ] } },
-  { name: 'Ping Board', json: { name: 'Ping Board', elements: [
-    { type: 'text', x: 6, y: 12, size: 1, color: 'text', text: '{wifi.ssid}' },
-    { type: 'text', x: 164, y: 12, size: 1, align: 'right', color: '{wifi.color}', text: '{wifi.bars}' },
-    { type: 'line', x: 6, y: 26, x2: 164, y2: 26, color: 'dim' },
-    { type: 'text', x: 6, y: 36, size: 1, color: 'dim', text: 'TARGETS (ms)' },
-    { type: 'text', x: 6, y: 59, size: 1, color: 'text', text: '{ping.0.name}' },
-    { type: 'text', x: 164, y: 54, size: 2, align: 'right', color: '{ping.0.color}', text: '{ping.0.ms}' },
-    { type: 'text', x: 6, y: 89, size: 1, color: 'text', text: '{ping.1.name}' },
-    { type: 'text', x: 164, y: 84, size: 2, align: 'right', color: '{ping.1.color}', text: '{ping.1.ms}' },
-    { type: 'text', x: 6, y: 119, size: 1, color: 'text', text: '{ping.2.name}' },
-    { type: 'text', x: 164, y: 114, size: 2, align: 'right', color: '{ping.2.color}', text: '{ping.2.ms}' },
-    { type: 'line', x: 6, y: 148, x2: 164, y2: 148, color: 'dim' },
-    { type: 'text', x: 6, y: 158, size: 1, color: 'dim', text: 'HISTORY' },
-    { type: 'text', x: 6, y: 172, size: 1, color: '{ping.0.color}', text: '{ping.0.bars} {ping.0.name}' },
-    { type: 'text', x: 6, y: 186, size: 1, color: '{ping.1.color}', text: '{ping.1.bars} {ping.1.name}' },
-    { type: 'text', x: 6, y: 200, size: 1, color: '{ping.2.color}', text: '{ping.2.bars} {ping.2.name}' },
-    { type: 'line', x: 6, y: 296, x2: 164, y2: 296, color: 'dim' },
-    { type: 'text', x: 6, y: 304, size: 1, color: 'dim', text: 'IP {wifi.ip}' },
-    { type: 'text', x: 164, y: 304, size: 1, align: 'right', color: 'dim', text: '{time}' }
-  ] } },
-  { name: 'Latency Hero', json: { name: 'Latency', elements: [
-    { type: 'text', x: 85, y: 40, size: 2, align: 'center', color: 'dim', text: '{ping.0.name}' },
-    { type: 'text', x: 85, y: 80, size: 4, align: 'center', color: '{ping.0.color}', text: '{ping.0.ms}' },
-    { type: 'text', x: 85, y: 116, size: 1, align: 'center', color: 'dim', text: 'milliseconds {ping.0.trend}' },
-    { type: 'text', x: 85, y: 140, size: 2, align: 'center', color: '{ping.0.color}', text: '{ping.0.bars}' },
-    { type: 'line', x: 6, y: 176, x2: 164, y2: 176, color: 'dim' },
-    { type: 'text', x: 6, y: 190, size: 1, color: 'dim', text: 'WIFI {wifi.rssi} dBm' },
-    { type: 'bar', x: 6, y: 204, w: 158, h: 8, color: '{wifi.color}', value: '{wifi.pct}' },
-    { type: 'text', x: 6, y: 304, size: 1, color: 'dim', text: 'up {uptime}' },
-    { type: 'text', x: 164, y: 304, size: 1, align: 'right', color: 'dim', text: '{time}' }
-  ] } },
-  { name: 'Network', json: { name: 'Network', elements: [
-    { type: 'text', x: 6, y: 12, size: 1, color: 'dim', text: 'HOSTNAME' },
-    { type: 'text', x: 6, y: 24, size: 2, color: 'text', text: '{hostname}' },
-    { type: 'text', x: 6, y: 56, size: 1, color: 'dim', text: 'IP ADDRESS' },
-    { type: 'text', x: 2, y: 68, size: 2, color: 'text', text: '{wifi.ip}' },
-    { type: 'text', x: 6, y: 100, size: 1, color: 'dim', text: 'NETWORK' },
-    { type: 'text', x: 6, y: 112, size: 2, color: 'text', text: '{wifi.ssid}' },
-    { type: 'text', x: 6, y: 144, size: 1, color: 'dim', text: 'SIGNAL {wifi.rssi} dBm' },
-    { type: 'bar', x: 6, y: 158, w: 158, h: 10, color: '{wifi.color}', value: '{wifi.pct}' },
-    { type: 'line', x: 6, y: 190, x2: 164, y2: 190, color: 'dim' },
-    { type: 'text', x: 6, y: 200, size: 1, color: 'dim', text: 'UPTIME' },
-    { type: 'text', x: 164, y: 200, size: 1, align: 'right', color: 'text', text: '{uptime}' },
-    { type: 'text', x: 6, y: 214, size: 1, color: 'dim', text: 'FREE HEAP' },
-    { type: 'text', x: 164, y: 214, size: 1, align: 'right', color: 'text', text: '{heap}' },
-    { type: 'text', x: 6, y: 228, size: 1, color: 'dim', text: 'TIME' },
-    { type: 'text', x: 164, y: 228, size: 1, align: 'right', color: 'text', text: '{time.sec}' },
-    { type: 'text', x: 85, y: 304, size: 1, align: 'center', color: 'dim', text: '{date}' }
   ] } }
 ];
+
+async function loadTemplates() {
+  try {
+    const r = await fetch('/api/layouts/templates');
+    const list = await r.json();
+    if (Array.isArray(list) && list.length) TEMPLATES = list.map(t => ({ id: t.id, name: t.name, preload: t.preload, json: t.layout }));
+  } catch (e) {}
+  const sel = $('tpl');
+  sel.innerHTML = '<option value="">Insert template&hellip;</option>';
+  TEMPLATES.forEach((t, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = t.name + (t.preload ? ' (preloaded)' : '');
+    sel.appendChild(o);
+  });
+}
 
 // ---------- renderer ----------
 // 5x7 GLCD font, printable ASCII 32..126, 5 column bytes per glyph, bit 0 = top row.
@@ -197,10 +156,11 @@ const expand = t => String(t ?? '').replace(/\{([^}]+)\}/g, (m, k) => lookup(k))
 
 function color(spec) {
   let n = String(spec ?? 'text');
-  if (n.includes('{')) n = expand(n);
+  const templated = n.includes('{');
+  if (templated) n = expand(n);
   if (COLORS[n]) return COLORS[n];
   if (/^#[0-9a-f]{6}$/i.test(n)) return n;
-  return COLORS.text;
+  return templated ? COLORS.dim : COLORS.text;   // unresolved template renders dim, like the device
 }
 
 function drawText(s, x, y, size, align, col) {
@@ -432,7 +392,7 @@ $('which').addEventListener('change', () => open($('which').value));
 
 $('tpl').addEventListener('change', () => {
   const t = TEMPLATES[$('tpl').value];
-  if (t) { setSource(t.json); if (!current && !$('id').value) $('id').value = slug(t.json.name); }
+  if (t) { setSource(t.json); if (!current && !$('id').value) $('id').value = t.id || slug(t.json.name); }
   $('tpl').value = '';
   if ($('live').checked) pushPreview();
 });
@@ -451,13 +411,8 @@ $('save').onclick = save;
 $('del').onclick = del;
 window.addEventListener('beforeunload', () => { if ($('live').checked) navigator.sendBeacon && stopPreview(); });
 
-TEMPLATES.forEach((t, i) => {
-  const o = document.createElement('option');
-  o.value = i; o.textContent = t.name;
-  $('tpl').appendChild(o);
-});
-
 (async () => {
+  await loadTemplates();
   await pollData();
   setInterval(pollData, 2000);
   try { await loadList(); } catch (e) { msg('Failed to load widget list: ' + e.message); }

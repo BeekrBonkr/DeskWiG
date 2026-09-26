@@ -51,6 +51,18 @@ static bool resolveTime(const char* field, char* out, size_t n) {
     snprintf(out, n, "%02d:%02d:%02d", h, t.tm_min, t.tm_sec);
     return true;
   }
+  if (!strcmp(field, "hour")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    int h = t.tm_hour;
+    if (!settings.clock24h) { h %= 12; if (h == 0) h = 12; }
+    snprintf(out, n, "%02d", h);
+    return true;
+  }
+  if (!strcmp(field, "min")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_min);
+    return true;
+  }
   if (!strcmp(field, "ampm")) {
     if (!ok || settings.clock24h) { out[0] = '\0'; return true; }
     strlcpy(out, t.tm_hour >= 12 ? "PM" : "AM", n);
@@ -74,6 +86,11 @@ static bool resolveDate(const char* field, char* out, size_t n) {
   }
   if (!strcmp(field, "dow")) {
     strlcpy(out, ok ? DAY_LONG[t.tm_wday] : "---", n);
+    return true;
+  }
+  if (!strcmp(field, "year")) {
+    if (!ok) { strlcpy(out, "----", n); return true; }
+    snprintf(out, n, "%04d", t.tm_year + 1900);
     return true;
   }
   if (!strcmp(field, "md")) {
@@ -257,7 +274,7 @@ void layoutExpand(const char* tpl, char* out, size_t outLen) {
 
 void layoutFillData(JsonObject obj) {
   static const char* STATIC_KEYS[] = {
-    "time", "time.sec", "time.ampm", "date", "date.day", "date.md", "date.dow",
+    "time", "time.sec", "time.hour", "time.min", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year",
     "wifi.ssid", "wifi.ip", "wifi.rssi", "wifi.pct", "wifi.bars", "wifi.color",
     "hostname", "uptime", "heap", "ping.count"
   };

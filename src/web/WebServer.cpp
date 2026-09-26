@@ -9,6 +9,7 @@
 #include "../app/ScreenManager.h"
 #include "../layout/LayoutStore.h"
 #include "../layout/LayoutData.h"
+#include "../layout/LayoutTemplates.h"
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
 #include "Settings.h"
@@ -270,6 +271,31 @@ static void registerLayouts() {
     if (!requireAuth(req)) return;
     layoutPreviewStop();
     sendOk(req);
+  });
+
+  // Built-in templates for the editor's picker. Assembled by hand so the
+  // stored JSON text is passed through without re-serialising it.
+  server.on("/api/layouts/templates", HTTP_GET, [](AsyncWebServerRequest* req) {
+    String out;
+    out.reserve(12288);
+    out += "[";
+    for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) {
+      const LayoutTemplate& t = LAYOUT_TEMPLATES[i];
+      if (i) out += ",";
+      out += "{\"id\":\"";
+      out += t.id;
+      out += "\",\"name\":\"";
+      out += t.name;
+      out += "\",\"preload\":";
+      out += t.preload ? "true" : "false";
+      out += ",\"layout\":";
+      out += t.json;
+      out += "}";
+    }
+    out += "]";
+    AsyncWebServerResponse* r = req->beginResponse(200, "application/json", out);
+    r->addHeader("Cache-Control", "max-age=3600");
+    req->send(r);
   });
 
   // Every template key with its current value, for the editor's preview.

@@ -134,8 +134,11 @@ uint16_t LayoutWidget::resolveColor(const char* spec, uint16_t fallback) {
   char buf[24];
   const char* name = spec;
   if (strchr(spec, '{')) {
+    // A template that resolves to no known role (missing target, no data)
+    // renders dim, matching how missing text values look.
     layoutExpand(spec, buf, sizeof(buf));
     name = buf;
+    fallback = COLOR_DIM;
   }
   uint16_t c;
   return roleColor(name, c) ? c : fallback;
