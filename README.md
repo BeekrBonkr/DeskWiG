@@ -7,7 +7,7 @@ It currently ships with two widgets:
 - **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers*.
 - **Clock** – NTP-synced clock with 12/24-hour display.
 
-Adding your own widget is a matter of implementing four methods (see [Writing a widget](#writing-a-widget)).
+You can also build your own screens without a toolchain: [JSON layout widgets](#json-layout-widgets) are written in the browser, previewed live, and stored on the device. Native widgets in C++ are still a matter of implementing four methods (see [Writing a widget](#writing-a-widget)).
 
 ## Hardware
 
@@ -93,6 +93,7 @@ Once on your network, the device serves:
 | ------------------------------- | ---- | -------------------------------------------------------------- |
 | `/setup`                        | no   | WiFi scan/join, device name, forget network                    |
 | `/widgets`                      | no   | Page with a button per widget to switch the active screen      |
+| `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
 | `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget              |
 | `GET /api/wifi`                 | no   | Connection state, SSID, IP, hostname, hotspot state            |
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
@@ -102,10 +103,17 @@ Once on your network, the device serves:
 | `PUT /api/config`               | yes  | JSON with any subset of the above; saved immediately           |
 | `GET /api/widgets`              | no   | JSON list of widgets and the active index                      |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
+| `GET /api/layouts`              | no   | List of layout widgets (`id`, `name`, `index`) and free slots  |
+| `GET /api/layouts?id=<id>`      | no   | The stored layout JSON                                         |
+| `PUT /api/layouts?id=<id>`      | yes  | Create or replace a layout; validated, saved, applied at once  |
+| `DELETE /api/layouts?id=<id>`   | yes  | Remove a layout widget                                         |
+| `POST /api/layouts/preview`     | yes  | Show a layout on the device for 60 s without saving it         |
+| `DELETE /api/layouts/preview`   | yes  | End the preview early                                          |
+| `GET /api/layouts/data`         | no   | Every template key with its current value                      |
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
-Authenticated routes need an `Authorization: Bearer <token>` header, except when the request comes in over the setup hotspot. Both pages have a field for the token and remember it in the browser.
+Authenticated routes need an `Authorization: Bearer <token>` header, except when the request comes in over the setup hotspot. Every page has a field for the token and remembers it in the browser.
 
 ```bash
 curl -X POST http://<device-ip>/api/widgets \
@@ -144,6 +152,59 @@ Everything except WiFi credentials and the token lives in `/config.json` on the 
 
 Writes go to a temp file and are renamed into place, so a power cut mid-save can't corrupt the config. Devices upgraded from the older firmware migrate their NVS settings into this file automatically on first boot.
 
+## JSON layout widgets
+
+A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 8 layouts can be stored.
+
+```json
+{
+  "name": "Big Clock",
+  "elements": [
+    {"type":"text","x":85,"y":96,"size":4,"align":"center","color":"text","text":"{time}"},
+    {"type":"text","x":85,"y":176,"size":2,"align":"center","color":"text","text":"{date.day} {date.md}"},
+    {"type":"line","x":6,"y":296,"x2":164,"y2":296,"color":"dim"},
+    {"type":"text","x":6,"y":304,"size":1,"color":"dim","text":"{wifi.ssid}"},
+    {"type":"text","x":164,"y":304,"size":1,"align":"right","color":"{wifi.color}","text":"{wifi.bars}"}
+  ]
+}
+```
+
+The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 32 elements per layout.
+
+| Type   | Fields                                   | Notes                                                        |
+| ------ | ---------------------------------------- | ------------------------------------------------------------ |
+| `text` | `x y size align color text`              | `align` is `left` (default), `center` or `right`, relative to `x` |
+| `line` | `x y x2 y2 color`                        |                                                              |
+| `rect` | `x y w h color fill`                     | `fill` defaults to `false` (outline)                         |
+| `bar`  | `x y w h color value`                    | Horizontal progress bar; `value` is 0–100 after expansion    |
+
+`color` is a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals.
+
+`text` and `value` are templates. Any `{key}` is replaced with a live value; unknown keys render as `--`.
+
+| Key                                            | Value                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------- |
+| `time`, `time.sec`, `time.ampm`                | `09:41`, `09:41:07`, `AM` (empty in 24-hour mode)           |
+| `date`, `date.day`, `date.md`, `date.dow`      | `2026-09-26`, `Sat`, `Sep 26`, `Saturday`                   |
+| `wifi.ssid`, `wifi.ip`, `wifi.rssi`            | Network name, IP address, signal in dBm                     |
+| `wifi.pct`, `wifi.bars`, `wifi.color`          | Signal as 0–100, `\|\|\|.`, and `ok`/`warn`/`bad`/`dim`     |
+| `hostname`, `uptime`, `heap`                   | Device name, `3d 4h`, free heap in KB                       |
+| `ping.count`                                   | Number of configured targets                                |
+| `ping.N.name`, `ping.N.host`                   | Target N (0-based) as configured                            |
+| `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; colour role            |
+| `ping.N.bars`, `ping.N.trend`                  | Last 8 results as `\|\|.\|\|\|\|\|`; `^`, `v` or `>`            |
+
+`N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen.
+
+The editor page lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
+
+```bash
+curl -X PUT "http://<device-ip>/api/layouts?id=clock" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  --data @clock.json
+```
+
 ## Writing a widget
 
 Subclass `Widget` (`src/app/Widget.h`):
@@ -169,7 +230,7 @@ MyWidget myWidget;
 screens.add(&myWidget);
 ```
 
-It will appear in the web selector automatically. The `ScreenManager` holds up to 8 widgets. Rendering is double-buffered through a full-screen `LGFX_Sprite`, so widgets just draw and don't need to worry about flicker.
+It will appear in the web selector automatically. The `ScreenManager` holds up to 12 widgets (native plus layouts). Rendering is double-buffered through a full-screen `LGFX_Sprite`, so widgets just draw and don't need to worry about flicker.
 
 ## Project layout
 
@@ -178,8 +239,9 @@ src/
   main.cpp            display init, recovery jumper, boot sequence, main loop
   app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
+  layout/             JSON layout widgets: parser/renderer, template keys, file store + preview
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping
-  web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages
+  web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps
 ```
 

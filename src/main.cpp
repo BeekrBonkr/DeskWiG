@@ -9,6 +9,7 @@
 
 #include "widgets/PingWidget.h"
 #include "widgets/ClockWidget.h"
+#include "layout/LayoutStore.h"
 
 #include "web/Settings.h"
 #include "web/WebServer.h"
@@ -118,6 +119,7 @@ void setup() {
 
   screens.add(&pingWidget);
   screens.add(&clockWidget);
+  layoutsBegin(screens);            // JSON widgets from /widgets/*.json
   screens.setActive(settings.activeWidget);
   screens.begin();
 
@@ -156,6 +158,7 @@ void loop() {
     drawConnectingScreen(ui, settings.wifiSSID);
   } else {
     // Normal operation. Widgets keep rendering through brief reconnects.
+    layoutsLoop(now);
     screens.update(now);
     screens.render(ui);
   }

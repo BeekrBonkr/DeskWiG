@@ -4,18 +4,22 @@
 #include <ESPAsyncWebServer.h>
 #include <AsyncJson.h>
 #include <ArduinoJson.h>
+#include <LittleFS.h>
 
 #include "../app/ScreenManager.h"
+#include "../layout/LayoutStore.h"
+#include "../layout/LayoutData.h"
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
 #include "Settings.h"
 #include "Pages.h"
+#include "EditorPage.h"
 
 extern ScreenManager screens;
 
 static AsyncWebServer server(80);
 
-static const char* FW_VERSION = "0.3.0";
+static const char* FW_VERSION = "0.4.0";
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
@@ -121,6 +125,10 @@ static void registerPages() {
     req->send(200, "text/html", WIDGETS_HTML);
   });
 
+  server.on("/editor", HTTP_GET, [](AsyncWebServerRequest* req) {
+    req->send(200, "text/html", EDITOR_HTML);
+  });
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* req) {
     req->redirect(viaHotspot(req) ? "/setup" : "/widgets");
   });
@@ -166,6 +174,108 @@ static void registerWidgets() {
     }
     JsonDocument doc;
     fillWidgetList(doc);
+    sendJson(req, 200, doc);
+  });
+}
+
+static void fillLayoutList(JsonDocument& doc) {
+  JsonArray list = doc["layouts"].to<JsonArray>();
+  for (uint8_t i = 0; i < layoutCount(); i++) {
+    LayoutWidget* w = layoutAt(i);
+    JsonObject o = list.add<JsonObject>();
+    o["id"]    = w->id();
+    o["name"]  = w->name();
+    o["index"] = screens.indexOf(w);
+  }
+  doc["free"]    = layoutFreeSlots();
+  doc["max"]     = MAX_LAYOUTS;
+  doc["preview"] = layoutPreviewActive();
+}
+
+static void registerLayouts() {
+  // GET /api/layouts           -> list
+  // GET /api/layouts?id=<id>   -> the stored JSON file
+  server.on("/api/layouts", HTTP_GET, [](AsyncWebServerRequest* req) {
+    if (req->hasParam("id")) {
+      String id = req->getParam("id")->value();
+      if (!layoutValidId(id.c_str()) || !layoutFind(id.c_str())) {
+        sendError(req, 404, "no such widget");
+        return;
+      }
+      req->send(LittleFS, layoutPath(id.c_str()), "application/json");
+      return;
+    }
+    JsonDocument doc;
+    fillLayoutList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  auto* put = new AsyncCallbackJsonWebHandler("/api/layouts", [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("id")) {
+      sendError(req, 400, "missing id");
+      return;
+    }
+    String id = req->getParam("id")->value();
+    char err[96];
+    if (!layoutSave(id.c_str(), json.as<JsonVariantConst>(), err, sizeof(err))) {
+      sendError(req, 400, err);
+      return;
+    }
+    JsonDocument doc;
+    fillLayoutList(doc);
+    doc["saved"] = id;
+    sendJson(req, 200, doc);
+  });
+  put->setMethod(HTTP_PUT);
+  put->setMaxContentLength(16384);
+  server.addHandler(put);
+
+  server.on("/api/layouts", HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("id")) {
+      sendError(req, 400, "missing id");
+      return;
+    }
+    String id = req->getParam("id")->value();
+    char err[96];
+    if (!layoutDelete(id.c_str(), err, sizeof(err))) {
+      sendError(req, 404, err);
+      return;
+    }
+    JsonDocument doc;
+    fillLayoutList(doc);
+    doc["active"] = screens.getActive();
+    sendJson(req, 200, doc);
+  });
+
+  // Show a layout on the device without saving it.
+  auto* preview = new AsyncCallbackJsonWebHandler("/api/layouts/preview", [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    char err[96];
+    if (!layoutPreview(json.as<JsonVariantConst>(), err, sizeof(err))) {
+      sendError(req, 400, err);
+      return;
+    }
+    JsonDocument doc;
+    doc["ok"] = true;
+    doc["expiresMs"] = LAYOUT_PREVIEW_MS;
+    sendJson(req, 200, doc);
+  });
+  preview->setMethod(HTTP_POST);
+  preview->setMaxContentLength(16384);
+  server.addHandler(preview);
+
+  server.on("/api/layouts/preview", HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    layoutPreviewStop();
+    sendOk(req);
+  });
+
+  // Every template key with its current value, for the editor's preview.
+  server.on("/api/layouts/data", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    layoutFillData(doc.to<JsonObject>());
     sendJson(req, 200, doc);
   });
 }
@@ -324,6 +434,7 @@ void startWebServer() {
   registerPages();
   registerStatus();
   registerWidgets();
+  registerLayouts();
   registerWifi();
   registerConfig();
   registerSystem();

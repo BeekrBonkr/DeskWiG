@@ -33,7 +33,7 @@ static const char SETUP_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a></nav>
 <h2>Device Setup</h2>
 <div class="card" id="status">Loading&hellip;</div>
 
@@ -209,7 +209,7 @@ static const char WIDGETS_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a></nav>
 <h2>Widget Selector</h2>
 <div id="list"></div>
 <p id="msg"></p>

@@ -12,8 +12,6 @@ public:
   const char* name() const override { return "Ping"; }
 
 private:
-  void process(PingTarget& t, uint32_t now);
-
   void drawRow(lgfx::LGFX_Sprite& ui, int y, PingTarget& t);
   void drawSparkline(lgfx::LGFX_Sprite& ui, int x, int y, const PingTarget& t);
   void drawWifiStrength(lgfx::LGFX_Sprite& ui, int y);

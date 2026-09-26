@@ -9,9 +9,6 @@
 // CONFIG
 // =====================
 constexpr uint32_t SPINNER_FRAME_MS   = 120;
-constexpr uint8_t  MAX_FAILS          = 3;
-constexpr uint32_t SUPPRESS_MS        = 60000;
-constexpr uint16_t FALLBACK_PORT      = 22;
 
 // =====================
 // UI CONSTANTS
@@ -56,13 +53,7 @@ void PingWidget::update(uint32_t now) {
     spinnerIndex = (spinnerIndex + 1) & 3;
   }
 
-  static uint32_t lastPing = 0;
-  if (now - lastPing < settings.pingIntervalMs) return;
-  lastPing = now;
-
-  for (uint8_t i = 0; i < settings.targetCount; i++) {
-    process(settings.targets[i], now);
-  }
+  pingLoop(now);
 }
 
 void PingWidget::render(lgfx::LGFX_Sprite& ui) {
@@ -114,32 +105,6 @@ void PingWidget::render(lgfx::LGFX_Sprite& ui) {
 }
 
 // =====================
-// CORE LOGIC
-// =====================
-void PingWidget::process(PingTarget& t, uint32_t now) {
-  if (t.host[0] == '\0') return;
-  if (now < t.suppressUntil) return;
-
-  uint16_t port = (t.port == 0) ? FALLBACK_PORT : t.port;
-  int result = tcpPing(t.host, port, 2000);
-
-  t.history[t.historyPos] = (result >= 0);
-  t.historyPos = (t.historyPos + 1) % 8;
-
-  if (result >= 0) {
-    t.lastLatency = t.latency;
-    t.latency = result;
-    t.failCount = 0;
-    t.suppressUntil = 0;
-  } else {
-    t.latency = -1;
-    if (++t.failCount >= MAX_FAILS) {
-      t.suppressUntil = now + SUPPRESS_MS;
-    }
-  }
-}
-
-// =====================
 // UI HELPERS
 // =====================
 uint16_t PingWidget::latencyColor(int ms) {
@@ -172,7 +137,7 @@ void PingWidget::drawRow(lgfx::LGFX_Sprite& ui, int y, PingTarget& t) {
 
   drawSparkline(ui, sparkX, y, t);
 
-  bool blink = (t.latency < 0 && t.failCount >= MAX_FAILS);
+  bool blink = (t.latency < 0 && t.failCount >= PING_MAX_FAILS);
   bool blinkOn = ((millis() / 500) % 2) == 0;
 
   ui.setTextColor((blink && blinkOn) ? COLOR_RED : COLOR_TEXT, COLOR_BG);
@@ -182,7 +147,7 @@ void PingWidget::drawRow(lgfx::LGFX_Sprite& ui, int y, PingTarget& t) {
   ui.setCursor(valueX, y);
 
   if (t.latency < 0) {
-    if (t.failCount < MAX_FAILS) {
+    if (t.failCount < PING_MAX_FAILS) {
       ui.printf("  %c   ", spinnerChars[spinnerIndex]);
     } else {
       ui.setTextColor(COLOR_RED, COLOR_BG);
