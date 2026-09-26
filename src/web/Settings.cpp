@@ -17,9 +17,22 @@ static const uint32_t MIN_PING_INTERVAL_MS = 1000;
 // DEFAULTS
 // =====================
 void resetClockDefaults() {
-  settings.clockTzOffset = 0;
-  settings.clockDstOffset = 0;
+  strlcpy(settings.clockTz, "UTC0", sizeof(settings.clockTz));
   settings.clock24h = true;
+  settings.ntpSource = NtpSource::POOL;
+  strlcpy(settings.ntpServer, "pool.ntp.org", sizeof(settings.ntpServer));
+}
+
+// Older configs stored a fixed offset in seconds. Turn it into a POSIX
+// string with no daylight saving rule: -14400 -> "UTC4" (POSIX offsets
+// are positive west of Greenwich).
+static void tzFromOffset(int32_t offsetSec, char* out, size_t n) {
+  if (offsetSec == 0) { strlcpy(out, "UTC0", n); return; }
+  int32_t posix = -offsetSec;
+  int32_t abs = posix < 0 ? -posix : posix;
+  int32_t h = abs / 3600, m = (abs % 3600) / 60;
+  if (m) snprintf(out, n, "UTC%s%d:%02d", posix < 0 ? "-" : "", (int)h, (int)m);
+  else   snprintf(out, n, "UTC%s%d", posix < 0 ? "-" : "", (int)h);
 }
 
 static void setTarget(uint8_t i, const char* name, const char* host, uint16_t port, TargetType type) {
@@ -101,8 +114,7 @@ static bool migrateLegacyNvs() {
   if (hasLegacy) {
     settings.pingIntervalMs = prefs.getUInt("pingMs", 10000);
     settings.activeWidget   = prefs.getUChar("widget", 0);
-    settings.clockTzOffset  = prefs.getInt("tz", 0);
-    settings.clockDstOffset = prefs.getInt("dst", 0);
+    tzFromOffset(prefs.getInt("tz", 0) + prefs.getInt("dst", 0), settings.clockTz, sizeof(settings.clockTz));
     settings.clock24h       = prefs.getBool("24h", true);
 
     uint8_t count = prefs.getUChar("tcount", 0);
@@ -158,9 +170,16 @@ static bool loadConfigFile() {
   settings.activeWidget = doc["activeWidget"] | 0;
 
   JsonVariantConst clock = doc["clock"];
-  settings.clockTzOffset  = clock["tzOffset"]  | 0;
-  settings.clockDstOffset = clock["dstOffset"] | 0;
-  settings.clock24h       = clock["24h"]       | true;
+  resetClockDefaults();
+  if (!clock["tz"].isNull()) {
+    setClockTz(clock["tz"] | "UTC0");
+  } else if (!clock["tzOffset"].isNull()) {
+    // Config written by firmware < 0.5.0
+    tzFromOffset((clock["tzOffset"] | 0) + (clock["dstOffset"] | 0), settings.clockTz, sizeof(settings.clockTz));
+  }
+  settings.clock24h  = clock["24h"] | true;
+  settings.ntpSource = ntpSourceFromName(clock["ntpSource"] | "pool");
+  setNtpServer(clock["ntpServer"] | "pool.ntp.org");
 
   JsonVariantConst led = doc["led"];
   settings.ledEnabled    = led["enabled"]    | true;
@@ -190,9 +209,10 @@ bool saveSettings() {
   doc["activeWidget"]   = settings.activeWidget;
 
   JsonObject clock = doc["clock"].to<JsonObject>();
-  clock["tzOffset"]  = settings.clockTzOffset;
-  clock["dstOffset"] = settings.clockDstOffset;
+  clock["tz"]        = settings.clockTz;
   clock["24h"]       = settings.clock24h;
+  clock["ntpSource"] = ntpSourceName(settings.ntpSource);
+  clock["ntpServer"] = settings.ntpServer;
 
   JsonObject led = doc["led"].to<JsonObject>();
   led["enabled"]    = settings.ledEnabled;
@@ -256,6 +276,36 @@ bool setHostname(const char* name) {
   if (clean[0] == '-' || clean[len - 1] == '-') return false;
 
   strlcpy(settings.hostname, clean, sizeof(settings.hostname));
+  return true;
+}
+
+// =====================
+// CLOCK
+// =====================
+bool setClockTz(const char* tz) {
+  if (!tz) return false;
+  size_t len = strlen(tz);
+  if (len == 0 || len > TZ_MAX) return false;
+  for (size_t i = 0; i < len; i++) {
+    char c = tz[i];
+    bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') ||
+              c == ',' || c == '.' || c == '/' || c == ':' || c == '+' || c == '-' || c == '<' || c == '>';
+    if (!ok) return false;
+  }
+  strlcpy(settings.clockTz, tz, sizeof(settings.clockTz));
+  return true;
+}
+
+bool setNtpServer(const char* host) {
+  if (!host) return false;
+  size_t len = strlen(host);
+  if (len == 0 || len > NTP_HOST_MAX) return false;
+  for (size_t i = 0; i < len; i++) {
+    char c = host[i];
+    bool ok = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '-';
+    if (!ok) return false;
+  }
+  strlcpy(settings.ntpServer, host, sizeof(settings.ntpServer));
   return true;
 }
 

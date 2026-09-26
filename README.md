@@ -5,7 +5,7 @@ DeskWiG (Desk Widget) started as a Christmas gift for my dad. A small 3D-printed
 It currently ships with two widgets:
 
 - **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers*.
-- **Clock** – NTP-synced clock with 12/24-hour display.
+- **Clock** – NTP-synced clock with 12/24-hour display. Time can come from the internet, from your router, or from any NTP server you name; timezones use POSIX TZ strings so daylight saving is automatic.
 
 You can also build your own screens without a toolchain: [JSON layout widgets](#json-layout-widgets) are written in the browser, previewed live, and stored on the device. Native widgets in C++ are still a matter of implementing four methods (see [Writing a widget](#writing-a-widget)).
 
@@ -91,10 +91,10 @@ Once on your network, the device serves:
 
 | Route                           | Auth | Purpose                                                        |
 | ------------------------------- | ---- | -------------------------------------------------------------- |
-| `/setup`                        | no   | WiFi scan/join, device name, forget network                    |
+| `/setup`                        | no   | WiFi scan/join, device name, clock and timezone settings       |
 | `/widgets`                      | no   | Page with a button per widget to switch the active screen      |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
-| `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget              |
+| `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget, clock sync  |
 | `GET /api/wifi`                 | no   | Connection state, SSID, IP, hostname, hotspot state            |
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
 | `POST /api/wifi/join`           | yes  | JSON `{"ssid","pass"}`. Saves and connects, hotspot stays up   |
@@ -142,7 +142,7 @@ Everything except WiFi credentials and the token lives in `/config.json` on the 
   "hostname": "deskwig",
   "pingIntervalMs": 10000,
   "activeWidget": 0,
-  "clock": { "tzOffset": 0, "dstOffset": 0, "24h": true },
+  "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
   "targets": [
     { "name": "Cloudflare", "host": "1.1.1.1", "port": 443, "type": "service" },
@@ -152,6 +152,37 @@ Everything except WiFi credentials and the token lives in `/config.json` on the 
 ```
 
 Writes go to a temp file and are renamed into place, so a power cut mid-save can't corrupt the config. Devices upgraded from the older firmware migrate their NVS settings into this file automatically on first boot.
+
+## Clock and timezone
+
+NTP always delivers UTC. The device turns that into local time with a POSIX TZ string stored as `clock.tz`, which also encodes the daylight-saving rule, so the clock stays right all year. The setup page has a dropdown of common zones and a custom field; a few examples:
+
+| Zone           | TZ string                    |
+| -------------- | ---------------------------- |
+| UTC            | `UTC0`                       |
+| US Eastern     | `EST5EDT,M3.2.0,M11.1.0`     |
+| US Pacific     | `PST8PDT,M3.2.0,M11.1.0`     |
+| UK             | `GMT0BST,M3.5.0/1,M10.5.0`   |
+| Central Europe | `CET-1CEST,M3.5.0,M10.5.0/3` |
+| India          | `IST-5:30`                   |
+| Japan          | `JST-9`                      |
+
+Where the time comes from is `clock.ntpSource`:
+
+| Value    | Server used                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| `pool`   | `pool.ntp.org` (default)                                                                        |
+| `router` | The WiFi gateway address. Most routers answer NTP, and it keeps the clock working with no internet |
+| `custom` | `clock.ntpServer`, a hostname or IP                                                             |
+
+Changes apply immediately, no reboot needed, and the setup page shows the device's current local time and which server it is using. `GET /api/status` reports the same under `time`. Configs from firmware 0.4 and earlier that used `tzOffset` are converted to a fixed-offset TZ string on first boot.
+
+```bash
+curl -X PUT http://<device-ip>/api/config \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"clock":{"tz":"EST5EDT,M3.2.0,M11.1.0","ntpSource":"router"}}'
+```
 
 ## JSON layout widgets
 
@@ -245,7 +276,7 @@ src/
   app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, file store + preview, built-in templates
-  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping
+  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps
 ```

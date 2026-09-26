@@ -12,6 +12,7 @@
 #include "../layout/LayoutTemplates.h"
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
+#include "../net/TimeService.h"
 #include "Settings.h"
 #include "Pages.h"
 #include "EditorPage.h"
@@ -20,7 +21,7 @@ extern ScreenManager screens;
 
 static AsyncWebServer server(80);
 
-static const char* FW_VERSION = "0.4.0";
+static const char* FW_VERSION = "0.5.0";
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
@@ -95,12 +96,29 @@ static void fillConfig(JsonDocument& doc) {
   doc["pingIntervalMs"] = settings.pingIntervalMs;
   doc["activeWidget"]   = settings.activeWidget;
   JsonObject clock = doc["clock"].to<JsonObject>();
-  clock["tzOffset"]  = settings.clockTzOffset;
-  clock["dstOffset"] = settings.clockDstOffset;
+  clock["tz"]        = settings.clockTz;
   clock["24h"]       = settings.clock24h;
+  clock["ntpSource"] = ntpSourceName(settings.ntpSource);
+  clock["ntpServer"] = settings.ntpServer;
   JsonObject led = doc["led"].to<JsonObject>();
   led["enabled"]    = settings.ledEnabled;
   led["brightness"] = settings.ledBrightness;
+}
+
+static void fillTimeStatus(JsonObject doc) {
+  doc["synced"] = timeSynced();
+  doc["server"] = timeServerInUse();
+  doc["source"] = ntpSourceName(settings.ntpSource);
+  doc["tz"]     = settings.clockTz;
+  doc["gateway"] = (wifiState == WifiState::CONNECTED) ? WiFi.gatewayIP().toString() : String("");
+  char buf[32] = "";
+  if (timeSynced()) {
+    time_t t = time(nullptr);
+    tm lt;
+    localtime_r(&t, &lt);
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &lt);
+  }
+  doc["local"] = buf;
 }
 
 static void schedule(PendingAction a, uint32_t delayMs) {
@@ -145,6 +163,7 @@ static void registerStatus() {
     doc["activeWidget"] = screens.getActive();
     doc["widgetCount"]  = screens.getCount();
     fillWifiStatus(doc["wifi"].to<JsonObject>());
+    fillTimeStatus(doc["time"].to<JsonObject>());
     sendJson(req, 200, doc);
   });
 }
@@ -409,10 +428,27 @@ static void registerConfig() {
       settings.pingIntervalMs = v < 1000 ? 1000 : v;
     }
     JsonVariant clock = json["clock"];
+    bool clockChanged = false;
     if (!clock.isNull()) {
-      if (!clock["tzOffset"].isNull())  settings.clockTzOffset  = clock["tzOffset"];
-      if (!clock["dstOffset"].isNull()) settings.clockDstOffset = clock["dstOffset"];
-      if (!clock["24h"].isNull())       settings.clock24h       = clock["24h"];
+      if (!clock["tz"].isNull()) {
+        if (!setClockTz(clock["tz"])) {
+          sendError(req, 400, "invalid tz: use a POSIX TZ string like EST5EDT,M3.2.0,M11.1.0");
+          return;
+        }
+        clockChanged = true;
+      }
+      if (!clock["ntpSource"].isNull()) {
+        settings.ntpSource = ntpSourceFromName(clock["ntpSource"]);
+        clockChanged = true;
+      }
+      if (!clock["ntpServer"].isNull()) {
+        if (!setNtpServer(clock["ntpServer"])) {
+          sendError(req, 400, "invalid ntpServer: use a hostname or IP address");
+          return;
+        }
+        clockChanged = true;
+      }
+      if (!clock["24h"].isNull()) settings.clock24h = clock["24h"];
     }
     JsonVariant led = json["led"];
     if (!led.isNull()) {
@@ -426,6 +462,7 @@ static void registerConfig() {
       return;
     }
     if (hostnameChanged) wifiApplyHostname();
+    if (clockChanged) timeApply();
 
     JsonDocument doc;
     fillConfig(doc);

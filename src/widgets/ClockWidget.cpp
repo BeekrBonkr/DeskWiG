@@ -5,29 +5,9 @@
 #include <LovyanGFX.hpp>
 
 #include "../web/Settings.h"
-
-static const char* NTP_SERVER = "pool.ntp.org";
-
-void ClockWidget::begin() {
-  syncTime();
-}
-
-void ClockWidget::syncTime() {
-  configTime(
-    settings.clockTzOffset,
-    0,
-    NTP_SERVER
-  );
-
-  time(&lastSync);
-}
+#include "../net/TimeService.h"
 
 void ClockWidget::update(uint32_t now) {
-  // Resync every 6 hours
-  if (millis() - (lastSync * 1000UL) > 6UL * 60UL * 60UL * 1000UL) {
-    syncTime();
-  }
-
   time_t nowTime;
   time(&nowTime);
   localtime_r(&nowTime, &timeinfo);
@@ -61,8 +41,9 @@ void ClockWidget::render(lgfx::LGFX_Sprite& ui) {
   ui.drawString(buf, ui.width() / 2, ui.height() / 2);
 
   ui.setTextSize(1);
+  ui.setTextColor(timeSynced() ? TFT_WHITE : 0x39E7, TFT_BLACK);
   ui.drawString(
-    "pool.ntp.org",
+    timeSynced() ? timeServerInUse() : "waiting for NTP",
     ui.width() / 2,
     ui.height() - 12
   );

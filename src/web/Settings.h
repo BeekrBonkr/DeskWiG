@@ -1,9 +1,12 @@
 #pragma once
 #include <Arduino.h>
 #include "../net/PingTarget.h"
+#include "../net/TimeService.h"
 
 constexpr uint8_t API_TOKEN_LEN = 32;
 constexpr uint8_t HOSTNAME_MAX  = 32;
+constexpr uint8_t TZ_MAX        = 63;
+constexpr uint8_t NTP_HOST_MAX  = 63;
 
 struct Settings {
   // ---- Stored in NVS. Survives a filesystem wipe so the device stays reachable.
@@ -17,9 +20,11 @@ struct Settings {
   uint32_t pingIntervalMs = 10000;
   uint8_t activeWidget = 0;
 
-  int32_t clockTzOffset = 0;
-  int32_t clockDstOffset = 0;
+  // POSIX TZ string, e.g. "EST5EDT,M3.2.0,M11.1.0". "UTC0" = no offset.
+  char clockTz[TZ_MAX + 1] = "UTC0";
   bool clock24h = true;
+  NtpSource ntpSource = NtpSource::POOL;
+  char ntpServer[NTP_HOST_MAX + 1] = "pool.ntp.org";
 
   bool ledEnabled = true;
   uint8_t ledBrightness = 5;
@@ -49,3 +54,10 @@ void factoryReset();
 
 void loadDefaultTargets();
 void resetClockDefaults();
+
+// Validates and stores a POSIX TZ string. Returns false if it is empty,
+// too long, or contains characters a TZ string never uses.
+bool setClockTz(const char* tz);
+
+// Validates and stores the custom NTP host (hostname or IP).
+bool setNtpServer(const char* host);
