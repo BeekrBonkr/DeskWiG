@@ -43,6 +43,16 @@ pio run -t upload
 pio device monitor
 ```
 
+Once the device is on your network you can update it without a cable: build with `pio run`, then upload `.pio/build/esp32-s3-devkitc-1/firmware.bin` under **Firmware** on `http://deskwig.local/setup`, or from a shell:
+
+```bash
+curl -X POST http://deskwig.local/api/system/update \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@.pio/build/esp32-s3-devkitc-1/firmware.bin"
+```
+
+The image goes into the spare OTA app slot and the device reboots into it; settings, layouts, fonts and images are kept.
+
 Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32Async/AsyncTCP, ArduinoJson) are pulled in automatically from `platformio.ini`. The partition table (`default_16MB.csv`) gives two OTA app slots and a 3.4 MB LittleFS partition.
 
 ## First boot and WiFi setup
@@ -123,6 +133,7 @@ Once on your network, the device serves:
 | `DELETE /api/layouts/preview`   | yes  | End the preview early                                          |
 | `GET /api/layouts/data`         | no   | Every template key with its current value                      |
 | `GET /api/layouts/templates`    | no   | Built-in templates with their layout JSON                      |
+| `POST /api/system/update`       | yes  | Multipart upload of `firmware.bin` (field `file`); writes the spare OTA slot and reboots |
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
