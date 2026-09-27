@@ -132,6 +132,8 @@ Once on your network, the device serves:
 | `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
 | `DELETE /api/sources?id=<id>`   | yes  | Remove a data source                                           |
 | `POST /api/sources/test?id=<id>`| yes  | Fetch it now; poll `GET /api/sources` for the result           |
+| `POST /api/sources/discover`    | yes  | JSON `{"url","header":{"name","value"}}`. Fetch once and list every JSON path; poll the GET |
+| `GET /api/sources/discover`     | yes  | State of the last discovery and its paths with sample values   |
 | `GET /api/widgets`              | no   | JSON list of widgets and the active index                      |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
 | `GET /api/layouts`              | no   | List of layout widgets (`id`, `name`, `index`) and free slots  |
@@ -227,7 +229,7 @@ curl -X PUT http://<device-ip>/api/config \
 
 ## Data sources
 
-A data source is a URL the device polls and picks values out of. Each value becomes a layout key, so a screen can show the temperature outside, a stock price, a Home Assistant sensor, or the number of open issues on a repo. Add them under **Data sources** on `http://deskwig.local/setup`, or push one with the API:
+A data source is a URL the device polls and picks values out of. Each value becomes a layout key, so a screen can show the temperature outside, a stock price, a Home Assistant sensor, or the number of open issues on a repo. Add them under **Data sources** on `http://deskwig.local/setup`: enter the URL, press **Discover keys** and the device fetches it and lists every value it finds, so a tap adds the field with its path filled in. Or push one with the API:
 
 ```bash
 curl -X PUT "http://<device-ip>/api/sources?id=weather" \
