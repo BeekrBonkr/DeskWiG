@@ -6,6 +6,7 @@
 #include "app/ScreenManager.h"
 #include "app/StatusLed.h"
 #include "app/SystemScreens.h"
+#include "app/Encoder.h"
 
 #include "widgets/PingWidget.h"
 #include "widgets/ClockWidget.h"
@@ -24,6 +25,15 @@
 constexpr uint32_t INFO_SCREEN_MS = 30000;
 
 static uint32_t infoScreenUntil = 0;
+
+// Rotary encoder: a brief name banner after a turn, and the widget choice
+// saved a moment after the knob stops so a fast spin is one flash write.
+constexpr uint32_t TOAST_MS = 1500;
+constexpr uint32_t SAVE_DELAY_MS = 2000;
+constexpr uint32_t INFO_BY_BUTTON_MS = 15000;
+static uint32_t toastUntil = 0;
+static uint32_t saveAt = 0;
+static bool savePending = false;
 
 // =====================
 // DISPLAY
@@ -101,6 +111,59 @@ static bool checkRecoveryJumper() {
 }
 
 // =====================
+// ROTARY ENCODER
+// =====================
+static void switchWidget(int8_t steps, uint32_t now) {
+  uint8_t n = screens.getCount();
+  if (!n) return;
+  int idx = ((int)screens.getActive() + steps) % (int)n;
+  if (idx < 0) idx += n;
+  layoutPreviewStop();                    // the knob wins over an editor preview
+  infoScreenUntil = now;                  // and over the info screen
+  screens.setActive(idx);
+  settings.activeWidget = idx;
+  strlcpy(settings.activeWidgetName, screens.getName(idx), sizeof(settings.activeWidgetName));
+  saveAt = now + SAVE_DELAY_MS;
+  savePending = true;
+  toastUntil = now + TOAST_MS;
+}
+
+// Name banner over the bottom of the widget after a turn.
+static void drawToast() {
+  const int h = 40, y = ui.height() - h - 8;
+  ui.fillRoundRect(8, y, ui.width() - 16, h, 8, 0x2104);
+  ui.drawRoundRect(8, y, ui.width() - 16, h, 8, 0x4208);
+  char idx[12];
+  snprintf(idx, sizeof(idx), "%u / %u", screens.getActive() + 1, screens.getCount());
+  ui.setTextDatum(top_right);
+  ui.setTextSize(1);
+  ui.setTextColor(0x8410, 0x2104);
+  ui.drawString(idx, ui.width() - 14, y + 5);
+  char name[13];
+  strlcpy(name, screens.getName(screens.getActive()), sizeof(name));   // 12 chars fit at size 2
+  ui.setTextDatum(bottom_left);
+  ui.setTextSize(2);
+  ui.setTextColor(TFT_WHITE, 0x2104);
+  ui.drawString(name, 16, y + h - 5);
+  ui.setTextDatum(top_left);
+  ui.setTextSize(1);
+}
+
+static void encoderStep(uint32_t now) {
+  EncoderEvent ev = encoderLoop(now);
+  if (ev.steps) switchWidget(ev.steps, now);
+  if (ev.button == EncoderButton::CLICK) {
+    // Toggle the connection-info screen (address and API key).
+    bool showing = (int32_t)(infoScreenUntil - now) > 0;
+    infoScreenUntil = showing ? now : now + INFO_BY_BUTTON_MS;
+  }
+  if (savePending && (int32_t)(now - saveAt) >= 0) {
+    savePending = false;
+    saveSettings();
+  }
+}
+
+// =====================
 // SETUP
 // =====================
 // The composed screen, for the screenshot endpoint.
@@ -118,6 +181,7 @@ void setup() {
   ui.createSprite(tft.width(), tft.height());
 
   ledBegin();
+  encoderBegin();
 
   bool forceAp = checkRecoveryJumper();
 
@@ -156,6 +220,7 @@ void loop() {
   wifiLoop();
   timeLoop();
   webLoop();
+  encoderStep(now);
 
   // Show the info screen each time we (re)connect.
   static WifiState lastState = WifiState::AP_MODE;
@@ -191,6 +256,7 @@ void loop() {
     layoutsLoop(now);
     screens.update(now);
     screens.render(ui);
+    if ((int32_t)(toastUntil - now) > 0) drawToast();
   }
 
   ui.pushSprite(0, 0);
