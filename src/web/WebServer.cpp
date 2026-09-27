@@ -935,6 +935,124 @@ static void registerImages() {
   });
 }
 
+// =====================
+// SCREENSHOT
+// =====================
+lgfx::LGFX_Sprite* uiSprite();
+
+// The screen as a 24-bit BMP, built into a PSRAM buffer on request.
+static uint8_t* shotBuf = nullptr;
+static size_t shotLen = 0;
+
+static bool buildScreenshot() {
+  lgfx::LGFX_Sprite* ui = uiSprite();
+  if (!ui) return false;
+  const int w = ui->width(), h = ui->height();
+  const size_t rowBytes = ((size_t)w * 3 + 3) & ~3;
+  const size_t total = 54 + rowBytes * h;
+  if (!shotBuf) shotBuf = (uint8_t*)heap_caps_malloc(total, MALLOC_CAP_SPIRAM);
+  if (!shotBuf) return false;
+  memset(shotBuf, 0, 54);
+  uint8_t* b = shotBuf;
+  b[0] = 'B'; b[1] = 'M';
+  auto put32 = [&](size_t off, uint32_t v) { b[off] = v; b[off + 1] = v >> 8; b[off + 2] = v >> 16; b[off + 3] = v >> 24; };
+  put32(2, total); put32(10, 54); put32(14, 40); put32(18, w); put32(22, h);
+  b[26] = 1; b[28] = 24; put32(34, rowBytes * h);
+  static lgfx::rgb888_t row[320];
+  for (int y = 0; y < h; y++) {
+    ui->readRect(0, y, w, 1, row);
+    uint8_t* dst = shotBuf + 54 + (size_t)(h - 1 - y) * rowBytes;
+    for (int x = 0; x < w; x++) { dst[x * 3] = row[x].b; dst[x * 3 + 1] = row[x].g; dst[x * 3 + 2] = row[x].r; }
+  }
+  shotLen = total;
+  return true;
+}
+
+static void registerScreenshot() {
+  server.on(AsyncURIMatcher::exact("/api/screenshot"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!buildScreenshot()) { sendError(req, 500, "screenshot failed"); return; }
+    AsyncWebServerResponse* r = req->beginResponse("image/bmp", shotLen, [](uint8_t* buf, size_t maxLen, size_t index) -> size_t {
+      if (index >= shotLen) return 0;
+      size_t n = shotLen - index;
+      if (n > maxLen) n = maxLen;
+      memcpy(buf, shotBuf + index, n);
+      return n;
+    });
+    r->addHeader("Cache-Control", "no-store");
+    req->send(r);
+  });
+}
+
+// =====================
+// OTA FIRMWARE UPDATE
+// =====================
+// POST /api/system/update  multipart upload of firmware.bin (the app image
+// PlatformIO builds), written to the other OTA slot; the device reboots
+// into it on success.
+struct OtaUpload {
+  bool ok;
+  bool started;
+  size_t written;
+  char err[80];
+};
+
+static void registerUpdate() {
+  server.on(AsyncURIMatcher::exact("/api/system/update"), HTTP_POST,
+    [](AsyncWebServerRequest* req) {
+      OtaUpload* u = (OtaUpload*)req->_tempObject;
+      if (!u) { sendError(req, 400, "no file uploaded"); return; }
+      bool ok = u->ok && u->started;
+      char err[80];
+      strlcpy(err, u->err, sizeof(err));
+      size_t written = u->written;
+      delete u;
+      req->_tempObject = nullptr;
+      if (!ok) {
+        if (Update.isRunning()) Update.abort();
+        sendError(req, !strcmp(err, "unauthorized") ? 401 : 400, err[0] ? err : "update failed");
+        return;
+      }
+      if (!Update.end(true)) {
+        sendError(req, 500, Update.errorString());
+        return;
+      }
+      JsonDocument doc;
+      doc["ok"] = true;
+      doc["written"] = written;
+      doc["rebooting"] = true;
+      sendJson(req, 200, doc);
+      Serial.printf("[OTA] Update written (%u bytes), rebooting\n", (unsigned)written);
+      schedule(PendingAction::REBOOT, 800);
+    },
+    [](AsyncWebServerRequest* req, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
+      OtaUpload* u = (OtaUpload*)req->_tempObject;
+      if (index == 0) {
+        u = new OtaUpload();
+        u->ok = true;
+        u->started = false;
+        u->written = 0;
+        u->err[0] = '\0';
+        req->_tempObject = u;
+        if (!uploadAuthed(req)) { u->ok = false; strlcpy(u->err, "unauthorized", sizeof(u->err)); return; }
+        // The app image starts with the ESP image magic byte.
+        if (len < 1 || data[0] != 0xE9) { u->ok = false; strlcpy(u->err, "not an ESP32 app image (expected firmware.bin)", sizeof(u->err)); return; }
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH)) { u->ok = false; strlcpy(u->err, Update.errorString(), sizeof(u->err)); return; }
+        u->started = true;
+        Serial.printf("[OTA] Receiving %s\n", filename.c_str());
+      }
+      if (!u || !u->ok || !u->started) return;
+      if (len && Update.write(data, len) != len) {
+        u->ok = false;
+        strlcpy(u->err, Update.errorString(), sizeof(u->err));
+        Update.abort();
+        return;
+      }
+      u->written += len;
+      (void)final;
+    });
+}
+
 static void registerSystem() {
   server.on(AsyncURIMatcher::exact("/api/system/reboot"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
@@ -966,6 +1084,7 @@ void startWebServer() {
   registerSources();
   registerFonts();
   registerImages();
+  registerScreenshot();
   registerSystem();
 
   // Captive portal: any unknown URL requested over the hotspot lands on /setup.

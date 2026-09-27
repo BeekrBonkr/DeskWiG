@@ -102,6 +102,9 @@ static bool checkRecoveryJumper() {
 // =====================
 // SETUP
 // =====================
+// The composed screen, for the screenshot endpoint.
+lgfx::LGFX_Sprite* uiSprite() { return &ui; }
+
 void setup() {
   Serial.begin(115200);
 
