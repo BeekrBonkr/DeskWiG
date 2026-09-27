@@ -22,6 +22,9 @@ extern ScreenManager screens;
 
 static AsyncWebServer server(80);
 
+// Routes use exact matching: the library default also matches any
+// sub-path, so "/api/layouts" would swallow "/api/layouts/data".
+
 static const char* FW_VERSION = "0.6.0";
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
@@ -131,31 +134,31 @@ static void schedule(PendingAction a, uint32_t delayMs) {
 // ROUTES
 // =====================
 static void registerPages() {
-  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/style.css"), HTTP_GET, [](AsyncWebServerRequest* req) {
     AsyncWebServerResponse* r = req->beginResponse(200, "text/css", STYLE_CSS);
     r->addHeader("Cache-Control", "max-age=3600");
     req->send(r);
   });
 
-  server.on("/setup", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/setup"), HTTP_GET, [](AsyncWebServerRequest* req) {
     req->send(200, "text/html", SETUP_HTML);
   });
 
-  server.on("/widgets", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/widgets"), HTTP_GET, [](AsyncWebServerRequest* req) {
     req->send(200, "text/html", WIDGETS_HTML);
   });
 
-  server.on("/editor", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/editor"), HTTP_GET, [](AsyncWebServerRequest* req) {
     req->send(200, "text/html", EDITOR_HTML);
   });
 
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/"), HTTP_GET, [](AsyncWebServerRequest* req) {
     req->redirect(viaHotspot(req) ? "/setup" : "/widgets");
   });
 }
 
 static void registerStatus() {
-  server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/status"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     doc["firmware"]     = FW_VERSION;
     doc["uptimeMs"]     = millis();
@@ -170,13 +173,13 @@ static void registerStatus() {
 }
 
 static void registerWidgets() {
-  server.on("/api/widgets", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/widgets"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     fillWidgetList(doc);
     sendJson(req, 200, doc);
   });
 
-  server.on("/api/widgets", HTTP_POST, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/widgets"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("index", true)) {
       sendError(req, 400, "missing index");
@@ -216,7 +219,7 @@ static void fillLayoutList(JsonDocument& doc) {
 static void registerLayouts() {
   // GET /api/layouts           -> list
   // GET /api/layouts?id=<id>   -> the stored JSON file
-  server.on("/api/layouts", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/layouts"), HTTP_GET, [](AsyncWebServerRequest* req) {
     if (req->hasParam("id")) {
       String id = req->getParam("id")->value();
       if (!layoutValidId(id.c_str()) || !layoutFind(id.c_str())) {
@@ -231,7 +234,7 @@ static void registerLayouts() {
     sendJson(req, 200, doc);
   });
 
-  auto* put = new AsyncCallbackJsonWebHandler("/api/layouts", [](AsyncWebServerRequest* req, JsonVariant& json) {
+  auto* put = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/layouts"), [](AsyncWebServerRequest* req, JsonVariant& json) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("id")) {
       sendError(req, 400, "missing id");
@@ -252,7 +255,7 @@ static void registerLayouts() {
   put->setMaxContentLength(16384);
   server.addHandler(put);
 
-  server.on("/api/layouts", HTTP_DELETE, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/layouts"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("id")) {
       sendError(req, 400, "missing id");
@@ -271,7 +274,7 @@ static void registerLayouts() {
   });
 
   // Show a layout on the device without saving it.
-  auto* preview = new AsyncCallbackJsonWebHandler("/api/layouts/preview", [](AsyncWebServerRequest* req, JsonVariant& json) {
+  auto* preview = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/layouts/preview"), [](AsyncWebServerRequest* req, JsonVariant& json) {
     if (!requireAuth(req)) return;
     char err[96];
     if (!layoutPreview(json.as<JsonVariantConst>(), err, sizeof(err))) {
@@ -287,7 +290,7 @@ static void registerLayouts() {
   preview->setMaxContentLength(16384);
   server.addHandler(preview);
 
-  server.on("/api/layouts/preview", HTTP_DELETE, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/layouts/preview"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     layoutPreviewStop();
     sendOk(req);
@@ -295,7 +298,7 @@ static void registerLayouts() {
 
   // Built-in templates for the editor's picker. Assembled by hand so the
   // stored JSON text is passed through without re-serialising it.
-  server.on("/api/layouts/templates", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/layouts/templates"), HTTP_GET, [](AsyncWebServerRequest* req) {
     String out;
     out.reserve(12288);
     out += "[";
@@ -319,7 +322,7 @@ static void registerLayouts() {
   });
 
   // Every template key with its current value, for the editor's preview.
-  server.on("/api/layouts/data", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/layouts/data"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     layoutFillData(doc.to<JsonObject>());
     sendJson(req, 200, doc);
@@ -327,14 +330,14 @@ static void registerLayouts() {
 }
 
 static void registerWifi() {
-  server.on("/api/wifi", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/wifi"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     fillWifiStatus(doc.to<JsonObject>());
     sendJson(req, 200, doc);
   });
 
   // Async scan: first call starts it, later calls return results when ready.
-  server.on("/api/wifi/scan", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/wifi/scan"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     int16_t n = WiFi.scanComplete();
 
@@ -376,7 +379,7 @@ static void registerWifi() {
     sendJson(req, 200, doc);
   });
 
-  auto* join = new AsyncCallbackJsonWebHandler("/api/wifi/join", [](AsyncWebServerRequest* req, JsonVariant& json) {
+  auto* join = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/wifi/join"), [](AsyncWebServerRequest* req, JsonVariant& json) {
     if (!requireAuth(req)) return;
     const char* ssid = json["ssid"] | "";
     const char* pass = json["pass"] | "";
@@ -396,7 +399,7 @@ static void registerWifi() {
   join->setMethod(HTTP_POST);
   server.addHandler(join);
 
-  server.on("/api/wifi/forget", HTTP_POST, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/wifi/forget"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     wifiForget();
     sendOk(req);
@@ -404,13 +407,13 @@ static void registerWifi() {
 }
 
 static void registerConfig() {
-  server.on("/api/config", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/config"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     fillConfig(doc);
     sendJson(req, 200, doc);
   });
 
-  auto* put = new AsyncCallbackJsonWebHandler("/api/config", [](AsyncWebServerRequest* req, JsonVariant& json) {
+  auto* put = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/config"), [](AsyncWebServerRequest* req, JsonVariant& json) {
     if (!requireAuth(req)) return;
 
     bool hostnameChanged = false;
@@ -492,7 +495,7 @@ static void fillSourceList(JsonDocument& doc) {
 static void registerSources() {
   // GET /api/sources -> every source with its config (header value
   // redacted), fetch state and current values.
-  server.on("/api/sources", HTTP_GET, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/sources"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     fillSourceList(doc);
     sendJson(req, 200, doc);
@@ -501,7 +504,7 @@ static void registerSources() {
   // PUT /api/sources?id=<id> -> create or replace one source. An omitted
   // or empty header value keeps the stored one, so the UI can re-save a
   // source without knowing the secret.
-  auto* put = new AsyncCallbackJsonWebHandler("/api/sources", [](AsyncWebServerRequest* req, JsonVariant& json) {
+  auto* put = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/sources"), [](AsyncWebServerRequest* req, JsonVariant& json) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("id")) {
       sendError(req, 400, "missing id");
@@ -550,7 +553,7 @@ static void registerSources() {
   put->setMaxContentLength(4096);
   server.addHandler(put);
 
-  server.on("/api/sources", HTTP_DELETE, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/sources"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("id")) {
       sendError(req, 400, "missing id");
@@ -580,7 +583,7 @@ static void registerSources() {
 
   // POST /api/sources/test?id=<id> -> fetch now. The result shows up in
   // GET /api/sources a moment later.
-  server.on("/api/sources/test", HTTP_POST, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/sources/test"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("id")) {
       sendError(req, 400, "missing id");
@@ -607,13 +610,13 @@ static void registerSources() {
 }
 
 static void registerSystem() {
-  server.on("/api/system/reboot", HTTP_POST, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/system/reboot"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     schedule(PendingAction::REBOOT, 500);
     sendOk(req);
   });
 
-  server.on("/api/system/reset", HTTP_POST, [](AsyncWebServerRequest* req) {
+  server.on(AsyncURIMatcher::exact("/api/system/reset"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     schedule(PendingAction::FACTORY_RESET, 500);
     sendOk(req);
