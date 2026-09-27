@@ -16,8 +16,9 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 | ESP32-S3-DevKitC-1 (N16R8: 16 MB flash, 8 MB PSRAM) | https://a.co/d/0ay0gra1                                                          |
 | 1.9" 170×320 IPS LCD, ST7789V2, SPI                 | https://a.co/d/0bqQSNMt                                                          |
 | Printable enclosure (STL)                           | https://makerworld.com/en/models/2918927-esp-32-desktop-widget#profileId-3265758 |
+| Rotary encoder with push button (KY-040 module), optional | any                                                                        |
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)).
+The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)).
 
 ### Wiring
 
@@ -32,7 +33,26 @@ The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4
 | GND         | GND                                                 |
 | BL          | 3V3 (or a spare GPIO if you want backlight control) |
 
+| Encoder pin | ESP32-S3 GPIO |
+| ----------- | ------------- |
+| CLK (A)     | 5             |
+| DT (B)      | 6             |
+| SW          | 7             |
+| +           | 3V3           |
+| GND         | GND           |
+
 All pins are defined in `src/app/Board.h`.
+
+### Rotary encoder
+
+A KY-040 style encoder (or a bare encoder plus a button) turns the knob into a widget selector, no phone needed:
+
+- **Turn** goes to the next or previous widget, in the order the Widgets page lists them, wrapping at the ends. A banner with the widget's name and position appears for a moment, and the choice is saved so it survives a reboot. Turning also ends an editor preview.
+- **Click** shows the connection screen (address and API key) for 15 seconds; click again to dismiss it.
+
+Wire CLK, DT and SW to GPIO 5, 6 and 7, the module's `+` to 3V3 and `GND` to ground. The firmware enables the internal pull-ups, so a bare encoder works with its common pins to ground and no resistors; the KY-040's own pull-ups are fine alongside. Nothing needs configuring: with no encoder connected the pins simply stay high.
+
+If clockwise goes the wrong way, swap CLK and DT or set `ENC_REVERSE` in `src/app/Board.h`. If one click of the knob skips a widget or needs two clicks, set `ENC_STEPS_PER_DETENT` to 2 or 4 to match your encoder. Rotation is decoded in interrupts with a state table, so bounce doesn't register as extra steps.
 
 ## Building and flashing
 
