@@ -1,0 +1,179 @@
+{
+  "name": "3D Printer",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "speed": 2000,
+    "brightness": 40,
+    "rules": [
+      {
+        "key": "api.printer.state",
+        "is": "Printing",
+        "color": "ok",
+        "mode": "pulse",
+        "speed": 1500
+      },
+      {
+        "key": "api.printer.state",
+        "is": "Error",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 300
+      },
+      {
+        "when": "api.printer.progress >= 100",
+        "color": "ok",
+        "mode": "breathe",
+        "speed": 1000
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "align": "center",
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "OCTOPRINT",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.printer.state}",
+          "color": "{api.printer.color}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "arc",
+              "w": 120,
+              "value": "{api.printer.progress}",
+              "color": "ok",
+              "style": {
+                "thickness": 12
+              },
+              "x": 0,
+              "y": 0
+            },
+            {
+              "type": "text",
+              "text": "{round(api.printer.progress)}%",
+              "x": 60,
+              "y": 42,
+              "align": "center",
+              "font": "bold",
+              "size": 32
+            }
+          ],
+          "w": 120,
+          "h": 120
+        },
+        {
+          "type": "text",
+          "text": "",
+          "color": "dim",
+          "align": "center"
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 4,
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.printer.file}",
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "time left",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.printer.left / 60)} min",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "elapsed",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.printer.elapsed / 60)} min",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "nozzle",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.printer.tool)}° / {round(api.printer.bed)}° bed",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.printer.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

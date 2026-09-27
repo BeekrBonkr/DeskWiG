@@ -1,0 +1,171 @@
+{
+  "name": "Stocks",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "speed": 2000,
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.stock1.pct < 0 && api.stock2.pct < 0 && api.stock3.pct < 0",
+        "color": "bad",
+        "mode": "solid"
+      },
+      {
+        "when": "api.stock1.pct < 0 || api.stock2.pct < 0 || api.stock3.pct < 0",
+        "color": "warn",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "WATCHLIST",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "AAPL",
+          "font": "bold",
+          "size": 16,
+          "w": 48
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock1.price, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock1.pct, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 4,
+      "value": "{clamp(api.stock1.pct * 10 + 50, 0, 100)}",
+      "color": "ok",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "MSFT",
+          "font": "bold",
+          "size": 16,
+          "w": 48
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock2.price, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock2.pct, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 4,
+      "value": "{clamp(api.stock2.pct * 10 + 50, 0, 100)}",
+      "color": "ok",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "NVDA",
+          "font": "bold",
+          "size": 16,
+          "w": 48
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock3.price, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock3.pct, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 4,
+      "value": "{clamp(api.stock3.pct * 10 + 50, 0, 100)}",
+      "color": "ok",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "bars: -5% left, +5% right",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{api.stock1.age} ago · {time}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

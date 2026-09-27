@@ -1,0 +1,78 @@
+{
+  "name": "Steam",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 3000,
+    "rules": [
+      {
+        "when": "api.steam.players >= 1200000",
+        "color": "ok",
+        "mode": "pulse",
+        "speed": 1000
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "🎮",
+      "font": "emoji",
+      "size": 48,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{round(api.steam.players / 1000, 1)}k",
+      "font": "bold",
+      "size": 48,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "playing right now",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "Counter-Strike 2",
+      "font": "sans",
+      "size": 18,
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "bar",
+      "h": 8,
+      "value": "{min(api.steam.players / 15000, 100)}",
+      "color": "accent",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "text",
+      "text": "bar full at 1.5M players",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "Steam · {api.steam.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

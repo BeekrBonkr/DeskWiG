@@ -1,0 +1,203 @@
+{
+  "name": "Space Weather",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "speed": 2000,
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.swpc.g >= 3",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "when": "api.swpc.g >= 1",
+        "color": "warn",
+        "mode": "pulse",
+        "speed": 1000
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "NOAA SPACE WEATHER",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "GEO",
+              "color": "dim",
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "{api.swpc.g}",
+              "font": "bold",
+              "size": 40,
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "align": "center",
+            "gap": 2
+          }
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "SOLAR",
+              "color": "dim",
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "{api.swpc.s}",
+              "font": "bold",
+              "size": 40,
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "align": "center",
+            "gap": 2
+          }
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "RADIO",
+              "color": "dim",
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "{api.swpc.r}",
+              "font": "bold",
+              "size": 40,
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "align": "center",
+            "gap": 2
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "storm scales 0–5",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "geomagnetic",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.swpc.gtext}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "radiation",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.swpc.stext}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "blackout",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.swpc.rtext}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "G ≥ 1 : aurora may reach mid-latitudes",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "SWPC · {api.swpc.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

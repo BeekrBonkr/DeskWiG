@@ -1,0 +1,257 @@
+{
+  "name": "Rain Ahead",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "rules": [
+      {
+        "when": "api.rain.p0 >= 60 || api.rain.p1 >= 60",
+        "color": "accent",
+        "mode": "pulse",
+        "speed": 1000
+      },
+      {
+        "when": "max(api.rain.p0, api.rain.p1, api.rain.p2, api.rain.p3) < 20",
+        "color": "warn",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "☔ CHANCE OF RAIN",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "now",
+          "color": "dim",
+          "w": 34
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{api.rain.p0}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.rain.p0}%",
+          "align": "right",
+          "w": 34
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+1h",
+          "color": "dim",
+          "w": 34
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{api.rain.p1}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.rain.p1}%",
+          "align": "right",
+          "w": 34
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+2h",
+          "color": "dim",
+          "w": 34
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{api.rain.p2}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.rain.p2}%",
+          "align": "right",
+          "w": 34
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+3h",
+          "color": "dim",
+          "w": 34
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{api.rain.p3}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.rain.p3}%",
+          "align": "right",
+          "w": 34
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+4h",
+          "color": "dim",
+          "w": 34
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{api.rain.p4}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.rain.p4}%",
+          "align": "right",
+          "w": 34
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+5h",
+          "color": "dim",
+          "w": 34
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{api.rain.p5}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.rain.p5}%",
+          "align": "right",
+          "w": 34
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "peak",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{max(api.rain.p0, api.rain.p1, api.rain.p2, api.rain.p3)}%",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "Open-Meteo · {api.rain.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

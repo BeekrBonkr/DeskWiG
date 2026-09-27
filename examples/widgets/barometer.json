@@ -1,0 +1,169 @@
+{
+  "name": "Barometer",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "speed": 2000,
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.baro.pressure < 990",
+        "color": "bad",
+        "mode": "pulse",
+        "speed": 1500
+      },
+      {
+        "when": "api.baro.pressure < 1005",
+        "color": "warn",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "align": "center",
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "BAROMETER",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "arc",
+              "w": 120,
+              "value": "{clamp((api.baro.pressure - 950) / 100 * 100, 0, 100)}",
+              "color": "accent",
+              "style": {
+                "thickness": 12
+              },
+              "start": 225,
+              "end": 495,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "type": "text",
+              "text": "{round(api.baro.pressure)}",
+              "x": 60,
+              "y": 44,
+              "align": "center",
+              "font": "bold",
+              "size": 28
+            }
+          ],
+          "w": 120,
+          "h": 120
+        },
+        {
+          "type": "text",
+          "text": "hPa · 950 to 1050",
+          "color": "dim",
+          "align": "center"
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 4,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "storm",
+          "color": "bad"
+        },
+        {
+          "type": "text",
+          "text": "change",
+          "color": "warn",
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "fair",
+          "color": "ok",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "cloud cover",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.baro.cloud}%",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 6,
+      "value": "{api.baro.cloud}",
+      "color": "dim",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "UV index",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.baro.uv, 1)}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "Open-Meteo · {api.baro.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}
