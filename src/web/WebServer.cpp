@@ -11,6 +11,7 @@
 #include "../layout/LayoutData.h"
 #include "../layout/LayoutTemplates.h"
 #include "../layout/FontService.h"
+#include "../layout/ImageService.h"
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
 #include "../net/TimeService.h"
@@ -26,7 +27,7 @@ static AsyncWebServer server(80);
 // Routes use exact matching: the library default also matches any
 // sub-path, so "/api/layouts" would swallow "/api/layouts/data".
 
-static const char* FW_VERSION = "0.6.0";
+static const char* FW_VERSION = "0.7.0";
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
@@ -620,21 +621,29 @@ static void fillFontList(JsonDocument& doc) {
   doc["fsTotal"] = LittleFS.totalBytes();
 }
 
-// Per-request state for a font upload.
+// Per-request state for a file upload (fonts and images).
 struct FontUpload {
   File file;
   String name;
   String tmp;
   size_t written;
+  size_t maxSize;
   bool ok;
   char err[80];
 };
+typedef FontUpload FileUpload;
 
 static void fontUploadFail(FontUpload* u, const char* msg) {
   if (u->ok) strlcpy(u->err, msg, sizeof(u->err));
   u->ok = false;
   if (u->file) { u->file.close(); }
   if (u->tmp.length()) { LittleFS.remove(u->tmp); u->tmp = ""; }
+}
+
+static bool uploadAuthed(AsyncWebServerRequest* req) {
+  if (!req->hasHeader("Authorization")) return false;
+  String v = req->getHeader("Authorization")->value();
+  return v.startsWith("Bearer ") && v.substring(7) == settings.apiToken;
 }
 
 static void registerFonts() {
@@ -759,6 +768,129 @@ static void registerFonts() {
   });
 }
 
+// =====================
+// IMAGES
+// =====================
+static void fillImageList(JsonDocument& doc) {
+  imagesToJson(doc["images"].to<JsonArray>());
+  imageRemotesToJson(doc["remote"].to<JsonArray>());
+  doc["max"] = MAX_IMAGE_FILES;
+  doc["fsFree"] = LittleFS.totalBytes() - LittleFS.usedBytes();
+  doc["fsTotal"] = LittleFS.totalBytes();
+}
+
+static void registerImages() {
+  server.on(AsyncURIMatcher::exact("/api/images"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillImageList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // POST /api/images?name=<name>  multipart upload of a PNG, JPEG or GIF.
+  server.on(AsyncURIMatcher::exact("/api/images"), HTTP_POST,
+    [](AsyncWebServerRequest* req) {
+      FileUpload* u = (FileUpload*)req->_tempObject;
+      if (!u) { sendError(req, 400, "no file uploaded"); return; }
+      bool ok = u->ok;
+      char err[80];
+      strlcpy(err, u->err, sizeof(err));
+      String name = u->name, tmp = u->tmp;
+      if (u->file) u->file.close();
+      delete u;
+      req->_tempObject = nullptr;
+      if (!ok) { sendError(req, !strcmp(err, "unauthorized") ? 401 : 400, err[0] ? err : "upload failed"); return; }
+
+      // Type from the file's own bytes, not the name the browser sent.
+      File f = LittleFS.open(tmp, "r");
+      uint8_t head[32];
+      size_t n = f ? f.read(head, sizeof(head)) : 0;
+      if (f) f.close();
+      ImgType t = imageSniff(head, n);
+      const char* ext = t == ImgType::PNG ? "png" : t == ImgType::JPG ? "jpg" : t == ImgType::GIF ? "gif" : nullptr;
+      if (!ext) { LittleFS.remove(tmp); sendError(req, 400, "not a PNG, JPEG or GIF file"); return; }
+
+      // Replace any existing file of that name whatever its type.
+      String old = imagePath(name.c_str());
+      if (old.length()) LittleFS.remove(old);
+      String path = String("/img/") + name + "." + ext;
+      if (!LittleFS.rename(tmp, path)) {
+        LittleFS.remove(tmp);
+        sendError(req, 500, "failed to store image");
+        return;
+      }
+      imagesRescan();
+      JsonDocument doc;
+      fillImageList(doc);
+      doc["saved"] = name;
+      sendJson(req, 200, doc);
+    },
+    [](AsyncWebServerRequest* req, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
+      FileUpload* u = (FileUpload*)req->_tempObject;
+      if (index == 0) {
+        u = new FileUpload();
+        u->written = 0;
+        u->maxSize = IMAGE_MAX_FILE;
+        u->ok = true;
+        u->err[0] = '\0';
+        req->_tempObject = u;
+        if (!uploadAuthed(req)) { fontUploadFail(u, "unauthorized"); return; }
+
+        String name = req->hasParam("name") ? req->getParam("name")->value() : filename;
+        int dot = name.lastIndexOf('.');
+        if (dot > 0) name = name.substring(0, dot);
+        name.toLowerCase();
+        if (!imageValidName(name.c_str())) { fontUploadFail(u, "invalid name: use 1-23 lowercase letters, digits and dashes"); return; }
+        if (!imagePath(name.c_str()).length()) {
+          JsonDocument tmpDoc;
+          JsonArray arr = tmpDoc.to<JsonArray>();
+          imagesToJson(arr);
+          if (arr.size() >= MAX_IMAGE_FILES) { fontUploadFail(u, "no free image slots"); return; }
+        }
+        size_t total = req->contentLength();
+        if (total > IMAGE_MAX_FILE + 4096) { fontUploadFail(u, "image larger than 512 KB"); return; }
+        size_t freeBytes = LittleFS.totalBytes() - LittleFS.usedBytes();
+        if (total + 8192 > freeBytes) { fontUploadFail(u, "not enough space on the filesystem"); return; }
+        if (!LittleFS.exists("/img")) LittleFS.mkdir("/img");
+        u->name = name;
+        u->tmp = String("/img/") + name + ".tmp";
+        u->file = LittleFS.open(u->tmp, "w");
+        if (!u->file) { fontUploadFail(u, "cannot write file"); return; }
+      }
+      if (!u || !u->ok) return;
+      if (len) {
+        if (u->written + len > IMAGE_MAX_FILE) { fontUploadFail(u, "image larger than 512 KB"); return; }
+        if (u->file.write(data, len) != len) { fontUploadFail(u, "write failed (filesystem full?)"); return; }
+        u->written += len;
+      }
+      if (final) u->file.close();
+    });
+
+  server.on(AsyncURIMatcher::exact("/api/images"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("name")) { sendError(req, 400, "missing name"); return; }
+    String name = req->getParam("name")->value();
+    char err[80];
+    if (!imageDelete(name.c_str(), err, sizeof(err))) { sendError(req, 404, err); return; }
+    JsonDocument doc;
+    fillImageList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // GET /img/<name> or /img/<name>.<ext>: the stored file, for the editor's preview.
+  server.on(AsyncURIMatcher::prefix("/img/"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    String name = req->url().substring(5);
+    int dot = name.lastIndexOf('.');
+    if (dot > 0) name = name.substring(0, dot);
+    String path = imagePath(name.c_str());
+    if (!path.length()) { sendError(req, 404, "not found"); return; }
+    const char* ext = imageExt(name.c_str());
+    const char* type = !strcmp(ext, "png") ? "image/png" : !strcmp(ext, "jpg") ? "image/jpeg" : "image/gif";
+    AsyncWebServerResponse* r = req->beginResponse(LittleFS, path, type);
+    r->addHeader("Cache-Control", "no-cache");
+    req->send(r);
+  });
+}
+
 static void registerSystem() {
   server.on(AsyncURIMatcher::exact("/api/system/reboot"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
@@ -789,6 +921,7 @@ void startWebServer() {
   registerConfig();
   registerSources();
   registerFonts();
+  registerImages();
   registerSystem();
 
   // Captive portal: any unknown URL requested over the hotspot lands on /setup.

@@ -83,6 +83,10 @@ circle    w (or r)    ellipse  w h
 arc       w value start end thickness
 triangle  points [[x,y] x3]
 polygon   points [[x,y] ...max 8]
+image     src (name or URL) w h
+          style.fit contain|cover|stretch
+          refresh (s) for URLs
+box       style.image = background
 
 style: {font, size, color, background,
   border, borderWidth, radius, align,
@@ -143,6 +147,7 @@ let TEMPLATES = [
 ];
 
 loadFonts();
+loadImageList();
 
 async function loadTemplates() {
   try {
@@ -315,7 +320,43 @@ function expandKey(k) {
 const expand = t => String(t ?? '').replace(/\{([^}]+)\}/g, (m, k) => expandKey(k));
 
 const AUTO = null;
-const TYPES = ['text', 'line', 'rect', 'bar', 'box', 'circle', 'ellipse', 'arc', 'triangle', 'polygon'];
+const TYPES = ['text', 'line', 'rect', 'bar', 'box', 'circle', 'ellipse', 'arc', 'triangle', 'polygon', 'image'];
+
+// ---------- images ----------
+// Stored images come from the device; URLs load directly. Animated GIFs
+// show their first frame in the preview.
+let imageNames = [];
+const imgCache = {};
+async function loadImageList() {
+  try { const r = await fetch('/api/images'); const j = await r.json(); imageNames = (j.images || []).map(i => i.name); } catch (e) {}
+}
+function getImage(src) {
+  if (imgCache[src]) return imgCache[src];
+  const im = new Image();
+  im.onload = () => render();
+  im.onerror = () => { im.failed = true; };
+  im.src = /^https?:\/\//.test(src) ? src : '/img/' + src;
+  imgCache[src] = im;
+  return im;
+}
+function imageOk(src) { return /^https?:\/\//.test(src) ? src.length <= 159 : imageNames.includes(src); }
+function fitRect(fit, iw, ih, w, h) {
+  if (fit === 'stretch') return { x: 0, y: 0, w, h };
+  const sx = w / iw, sy = h / ih;
+  const sc = fit === 'contain' ? Math.min(sx, sy) : Math.max(sx, sy);
+  const dw = Math.max(1, Math.round(iw * sc)), dh = Math.max(1, Math.round(ih * sc));
+  return { x: Math.trunc((w - dw) / 2), y: Math.trunc((h - dh) / 2), w: dw, h: dh };
+}
+function drawImageFit(src, x, y, w, h, fit) {
+  const im = getImage(src);
+  if (!im.complete || im.failed || !im.naturalWidth) { if (w > 8 && h > 8) strokeRectR(x, y, w, h, 0, COLORS.dim); return; }
+  const r = fitRect(fit, im.naturalWidth, im.naturalHeight, w, h);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x * S, y * S, w * S, h * S); ctx.clip();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(im, (x + r.x) * S, (y + r.y) * S, r.w * S, r.h * S);
+  ctx.restore();
+}
 
 // Returns the CSS colour for a spec. present=false when the spec is empty.
 function color(spec, fallback) {
@@ -336,7 +377,7 @@ function checkColor(spec, path, what) {
 }
 
 function defaultStyle() {
-  return { font: '', color: 'text', bg: '', border: '', size: 1, borderW: 0, radius: 0, pad: 0, gap: 0, thick: 0,
+  return { font: '', image: '', fit: 'contain', color: 'text', bg: '', border: '', size: 1, borderW: 0, radius: 0, pad: 0, gap: 0, thick: 0,
            align: 'stretch', justify: 'start', row: false, fill: false, absolute: false };
 }
 
@@ -361,6 +402,8 @@ function parseStyle(st, obj, path) {
       case 'direction': if (v !== 'row' && v !== 'column') throw new Error('element ' + path + ': direction must be column or row'); st.row = v === 'row'; break;
       case 'fill': st.fill = !!v; break;
       case 'position': st.absolute = v === 'absolute'; break;
+      case 'fit': if (!['contain', 'cover', 'stretch'].includes(v)) throw new Error('element ' + path + ': fit must be contain, cover or stretch'); st.fit = v; break;
+      case 'image': if (v && !imageOk(String(v))) throw new Error('element ' + path + ': unknown image (upload it on the setup page, or use an http(s) URL)'); st.image = String(v ?? ''); break;
       default: throw new Error('element ' + path + ': unknown style property "' + String(k).slice(0, 20) + '"');
     }
   }
@@ -421,6 +464,13 @@ function buildNode(e, path, styles, depth) {
     }
     if (e.type === 'triangle' && n.pts.length !== 3) throw new Error('element ' + path + ': triangle needs exactly 3 points');
     if (n.pts.length < 3) throw new Error('element ' + path + ': polygon needs at least 3 points');
+  }
+  if (e.type === 'image') {
+    const src = String(e.src ?? '');
+    if (!src) throw new Error('element ' + path + ': image needs "src": an uploaded image name or an http(s) URL');
+    if (src.length > 159) throw new Error('element ' + path + ': image source too long');
+    if (!imageOk(src)) throw new Error('element ' + path + ': unknown image (upload it on the setup page, or use an http(s) URL)');
+    n.src = src;
   }
   let text = '';
   if (e.type === 'bar' || e.type === 'arc') text = String(e.value ?? '0');
@@ -542,6 +592,16 @@ function measure(n) {
       if (n.w !== AUTO && n.h === AUTO) h = n.w;
       if (n.h !== AUTO && n.w === AUTO) w = n.h;
       break;
+    case 'image': {
+      const im = getImage(n.src);
+      if (im.complete && im.naturalWidth) {
+        const iw = im.naturalWidth, ih = im.naturalHeight;
+        if (n.w !== AUTO && n.h === AUTO) h = Math.trunc(n.w * ih / iw);
+        else if (n.h !== AUTO && n.w === AUTO) w = Math.trunc(n.h * iw / ih);
+        else { w = iw; h = ih; }
+      }
+      break;
+    }
     case 'triangle': case 'polygon': {
       let mx = 0, my = 0;
       for (const p of n.pts) { mx = Math.max(mx, p[0]); my = Math.max(my, p[1]); }
@@ -717,9 +777,15 @@ function drawNode(n) {
       if (n.type === 'box') {
         ctx.save();
         ctx.beginPath(); ctx.rect(x * S, y * S, w * S, h * S); ctx.clip();
+        if (n.st.image) drawImageFit(n.st.image, x, y, w, h, 'cover');
         for (const c of n.children) drawNode(c);
         ctx.restore();
       }
+      break;
+    }
+    case 'image': {
+      if (bg.present) fillRectR(x, y, w, h, 0, bg.c);
+      drawImageFit(n.src, x, y, w, h, n.st.fit);
       break;
     }
     case 'text': {

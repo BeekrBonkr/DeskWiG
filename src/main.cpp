@@ -17,6 +17,7 @@
 #include "net/TimeService.h"
 #include "net/DataSource.h"
 #include "layout/FontService.h"
+#include "layout/ImageService.h"
 
 // How long the connection-info screen (IP + API token) stays up after WiFi connects.
 constexpr uint32_t INFO_SCREEN_MS = 30000;
@@ -118,6 +119,7 @@ void setup() {
 
   loadSettings();
   fontsBegin();
+  imagesBegin();
   ledApplySettings();
   wifiBegin(forceAp);
   timeBegin();
