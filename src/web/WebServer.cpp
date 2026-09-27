@@ -135,7 +135,30 @@ static void schedule(PendingAction a, uint32_t delayMs) {
 // =====================
 // ROUTES
 // =====================
+// CodeMirror bundle for the editor, built by tools/editor and embedded gzipped.
+extern const uint8_t cm_js_gz_start[] asm("_binary_web_cm_js_gz_start");
+extern const uint8_t cm_js_gz_end[]   asm("_binary_web_cm_js_gz_end");
+
 static void registerPages() {
+  server.on(AsyncURIMatcher::exact("/cm.js"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    // Revalidated on every load with an ETag so a new firmware's bundle is
+    // never shadowed by a cached one; a match costs a tiny 304.
+    size_t len = cm_js_gz_end - cm_js_gz_start;
+    char etag[32];
+    snprintf(etag, sizeof(etag), "\"cm-%u\"", (unsigned)len);
+    if (req->hasHeader("If-None-Match") && req->getHeader("If-None-Match")->value() == etag) {
+      AsyncWebServerResponse* r = req->beginResponse(304);
+      r->addHeader("ETag", etag);
+      req->send(r);
+      return;
+    }
+    AsyncWebServerResponse* r = req->beginResponse(200, "application/javascript", cm_js_gz_start, len);
+    r->addHeader("Content-Encoding", "gzip");
+    r->addHeader("Cache-Control", "no-cache");
+    r->addHeader("ETag", etag);
+    req->send(r);
+  });
+
   server.on(AsyncURIMatcher::exact("/style.css"), HTTP_GET, [](AsyncWebServerRequest* req) {
     AsyncWebServerResponse* r = req->beginResponse(200, "text/css", STYLE_CSS);
     r->addHeader("Cache-Control", "max-age=3600");

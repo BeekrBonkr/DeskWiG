@@ -443,7 +443,7 @@ A brace that is not a plain key is evaluated as arithmetic, with keys as variabl
 
 Values are read as numbers, and a leading number is enough, so `{api.weather.age}` reading `12s` gives 12. Without `round`, whole numbers print without decimals and anything else with up to two. Any unknown key, non-numeric value or division by zero makes the whole brace `--`, the same as an unknown key. Put spaces around a minus after a key that contains dashes (`{api.my-source.temp - 3}`), since `my-source` is read as one name first.
 
-The editor page lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
+The editor page is a real code editor: JSON highlighting, bracket matching and auto-closing, folding, search and replace (Ctrl+F), undo, a Format button, Ctrl+S to save, and validation errors underlined on the exact element, style or LED rule they refer to. It is CodeMirror, bundled by `tools/editor` and served gzipped from the firmware at `/cm.js`, so it works with no internet. It lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
 
 ```bash
 curl -X PUT "http://<device-ip>/api/layouts?id=clock" \
@@ -488,6 +488,8 @@ src/
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
 examples/widgets/     25 example layouts with a README of the data sources they use
+tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
+web/                  cm.js.gz, embedded in the firmware
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
 lib/stb/              stb_truetype (public domain) font rasteriser
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task)

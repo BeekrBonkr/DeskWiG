@@ -12,8 +12,11 @@ static const char EDITOR_HTML[] = R"html(
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Widget Editor</title>
 <link rel="stylesheet" href="/style.css">
+<script src="/cm.js"></script>
 <style>
 body{max-width:960px}
+#cm .cm-editor{min-height:380px;max-height:72vh;margin:8px 0}
+#cm .cm-scroller{overflow:auto}
 .cols{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
 .col{flex:1 1 320px;min-width:0}
 .row{display:flex;gap:8px}
@@ -44,12 +47,14 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
     <select id="tpl"><option value="">Insert template&hellip;</option></select>
   </div>
   <input id="id" placeholder="id (lowercase letters, digits, dashes)" autocapitalize="off" autocorrect="off" maxlength="24">
+  <div id="cm"></div>
   <textarea id="src" spellcheck="false"></textarea>
   <p id="err" class="err"></p>
   <label class="inline"><input type="checkbox" id="live"> Live preview on the device while typing</label>
   <div class="actions">
     <button id="run">Show on device</button>
-    <button id="save" class="primary">Save</button>
+    <button id="save" class="primary" title="Ctrl+S">Save</button>
+    <button id="fmt" title="Reformat the JSON">Format</button>
     <button id="del" class="danger">Delete</button>
   </div>
   <p id="msg"></p>
@@ -524,8 +529,10 @@ function buildNode(e, path, styles, depth) {
   return n;
 }
 
-function parse() {
-  const j = JSON.parse($('src').value);
+function parse() { return parseText(srcGet()); }
+
+function parseText(text) {
+  const j = JSON.parse(text);
   if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('layout must be a JSON object');
   if (!Array.isArray(j.elements)) throw new Error('"elements" must be an array');
   const styles = {};
@@ -983,7 +990,54 @@ let layouts = [];
 let current = '';        // id being edited, '' for a new widget
 let renderTimer = 0, liveTimer = 0, keepAlive = 0;
 
+// ---------- source editor ----------
+// CodeMirror when the bundle loaded (served by the device at /cm.js),
+// otherwise the plain textarea.
+let editor = null;
+function srcGet() { return editor ? editor.get() : $('src').value; }
+function srcSet(t) { if (editor) editor.set(t); else $('src').value = t; }
+function onSrcChange() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(render, 120);
+  if ($('live').checked) {
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(pushPreview, 600);
+  }
+}
+
+// Turns a validation error into an editor range: JSON syntax errors carry
+// a position, layout errors name an element path, style or led rule.
+function diagnostics(text) {
+  let j;
+  try { j = JSON.parse(text); }
+  catch (e) {
+    const m = /position (\d+)/.exec(e.message);
+    const pos = m ? Math.min(parseInt(m[1], 10), Math.max(0, text.length - 1)) : 0;
+    return [{ from: pos, to: Math.min(pos + 1, text.length), message: e.message }];
+  }
+  try { parseText(text); return []; }
+  catch (e) {
+    let path = null, m;
+    if ((m = /^element ([0-9.]+):/.exec(e.message))) path = 'elements.' + m[1].split('.').join('.children.');
+    else if ((m = /^style "([^"]+)"/.exec(e.message))) path = 'styles.' + m[1];
+    else if ((m = /^led rule (\d+)/.exec(e.message))) path = 'led.rules.' + m[1];
+    else if (/^led\b/.test(e.message) || /"led"/.test(e.message)) path = 'led';
+    else if (/"styles"/.test(e.message)) path = 'styles';
+    else if (/"elements"/.test(e.message)) path = 'elements';
+    const r = path && editor ? editor.locate(path) : null;
+    return [r ? { from: r.from, to: r.to, message: e.message } : { from: 0, to: Math.min(1, text.length), message: e.message }];
+  }
+}
+
+if (window.CM) {
+  try {
+    editor = CM.create($('cm'), '', onSrcChange, diagnostics);
+    $('src').style.display = 'none';
+  } catch (e) { editor = null; }
+}
+
 function fmt(o) {
+  if (editor) return JSON.stringify(o, null, 2);   // foldable, so full pretty print reads best
   const rest = Object.assign({}, o); delete rest.elements;
   const els = (o.elements || []).map(e => '    ' + JSON.stringify(e)).join(',\n');
   const head = Object.keys(rest).length ? JSON.stringify(rest, null, 2).replace(/\n}$/, '') + ',' : '{';
@@ -993,7 +1047,7 @@ function fmt(o) {
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
 
 function setSource(obj) {
-  $('src').value = fmt(obj);
+  srcSet(fmt(obj));
   render();
 }
 
@@ -1095,6 +1149,7 @@ function renderKeys() {
 }
 
 function insert(text) {
+  if (editor) { editor.insert(text); onSrcChange(); return; }
   const t = $('src');
   t.setRangeText(text, t.selectionStart, t.selectionEnd, 'end');
   t.focus();
@@ -1111,13 +1166,15 @@ async function pollData() {
 }
 
 // ---------- wiring ----------
-$('src').addEventListener('input', () => {
-  clearTimeout(renderTimer);
-  renderTimer = setTimeout(render, 120);
-  if ($('live').checked) {
-    clearTimeout(liveTimer);
-    liveTimer = setTimeout(pushPreview, 600);
-  }
+$('src').addEventListener('input', onSrcChange);
+
+$('fmt').onclick = () => {
+  try { srcSet(fmt(JSON.parse(srcGet()))); render(); msg(''); }
+  catch (e) { msg('Cannot format: ' + e.message); }
+};
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
 });
 
 $('which').addEventListener('change', () => open($('which').value));
