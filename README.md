@@ -105,6 +105,10 @@ Once on your network, the device serves:
 | `POST /api/fonts?name=<name>`   | yes  | Multipart upload of a `.ttf` (field `file`), up to 2 MB       |
 | `DELETE /api/fonts?name=<name>` | yes  | Remove an uploaded font                                        |
 | `GET /fonts/<name>.ttf`         | no   | The font file, used by the editor's preview                    |
+| `GET /api/images`               | no   | Uploaded images with type and size                             |
+| `POST /api/images?name=<name>`  | yes  | Multipart upload of a PNG, JPEG or GIF (field `file`), up to 512 KB |
+| `DELETE /api/images?name=<name>`| yes  | Remove an image                                                |
+| `GET /img/<name>`               | no   | The image file, used by the editor's preview                   |
 | `GET /api/sources`              | no   | Data sources with fetch state and current values (header value redacted) |
 | `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
 | `DELETE /api/sources?id=<id>`   | yes  | Remove a data source                                           |
@@ -275,6 +279,7 @@ The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel bui
 | `arc`      | `w`, `value`, `start`, `end`            | Ring gauge: filled from `start` to `end` degrees (0 = top, clockwise) in proportion to `value` 0–100. `style.thickness` sets the ring width, `style.background` the track (default dim) |
 | `triangle` | `points: [[x,y],[x,y],[x,y]]`           | Points are relative to the element's own top-left                           |
 | `polygon`  | `points: [[x,y], ...]`                  | 3 to 8 points                                                               |
+| `image`    | `src`, `w` `h`, `refresh`               | An uploaded image by name or an http(s) URL; see [Images](#images)          |
 
 ### Flow layout
 
@@ -328,6 +333,22 @@ Three fonts are built into the firmware: **sans** and **bold** (Inter, Latin sub
 
 Any character a font lacks falls back to the emoji font and then to sans, so emoji work in every font, including the bitmap one, and render in the element's colour. Glyphs are rasterised on the device with [stb_truetype](https://github.com/nothings/stb) into a cache in PSRAM. That library does no bounds checking on the font file, so only upload fonts you trust. The editor loads the same font files from the device, so the preview matches. Built-in fonts are subset with `tools/make_fonts.py`; regenerate them from the full fonts if you want a different character set.
 
+### Images
+
+Upload PNG, JPEG or animated GIF files (up to 512 KB each, 24 in total) under **Images** on the setup page or with `POST /api/images?name=<name>` as a multipart form with a `file` field. The screen is 170 × 320, so resize images first. Then:
+
+```json
+{"type":"image","src":"sun","w":48}
+{"type":"image","src":"https://example.com/radar.png","w":158,"h":120,"refresh":300,"style":{"fit":"cover"}}
+{"type":"box","style":{"image":"sky"},"children":[ ... ]}
+```
+
+An image element sizes itself to the picture, or keeps the aspect ratio when only `w` or `h` is given. `style.fit` is `contain` (default), `cover` or `stretch`. A box's `style.image` is drawn to cover the box behind its children, which is how a layout gets a picture background. Animated GIFs play at their own frame rate.
+
+`src` can be an http(s) URL. Like data sources, a URL image is downloaded only while a layout showing it is on screen, then every `refresh` seconds (default 600, minimum 30), so a weather radar or a camera still stays current without hammering the server. HTTPS is encrypted but the certificate is not verified. Until the first download finishes the element shows a dim frame.
+
+Images are decoded once per size into sprites cached in PSRAM, so drawing them each frame is cheap; a full-screen background costs about 108 KB of PSRAM. The editor's preview loads stored images from the device and URLs directly (a GIF shows its first frame there).
+
 ### Styles
 
 Style properties can be flat fields on the element (`color`, `size`, `align`, `fill`), a `style` object, or a named entry in the top-level `styles` map applied with `class`. Later ones win: class, then flat fields, then the `style` object.
@@ -344,6 +365,8 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `fill`                      | rect, shapes              | Fill with `color`                                       |
 | `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
 | `position`                  | any                       | `absolute` positions at `x`/`y` even if one is missing  |
+| `fit`                       | image                     | `contain`, `cover` or `stretch`                         |
+| `image`                     | box                       | Background image (name or URL), drawn to cover the box  |
 
 `color`, `background` and `border` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
 
@@ -433,7 +456,7 @@ src/
   main.cpp            display init, recovery jumper, boot sequence, main loop
   app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
-  layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, file store + preview, built-in templates
+  layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
 lib/stb/              stb_truetype (public domain) font rasteriser
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task)

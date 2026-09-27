@@ -78,6 +78,7 @@ void LayoutWidget::clear() {
   _loaded = false;
   _usesPing = false;
   _usesApi = false;
+  _usesImages = false;
   _count = 0;
   _name[0] = '\0';
 }
@@ -179,6 +180,17 @@ bool LayoutWidget::parseStyle(LayoutStyle& st, JsonObjectConst obj, const char* 
     } else if (!strcmp(k, "position")) {
       const char* p = v | "";
       st.absolute = !strcmp(p, "absolute");
+    } else if (!strcmp(k, "fit")) {
+      const char* f = v | "contain";
+      if (!strcmp(f, "contain")) st.fit = ImgFit::CONTAIN;
+      else if (!strcmp(f, "cover")) st.fit = ImgFit::COVER;
+      else if (!strcmp(f, "stretch")) st.fit = ImgFit::STRETCH;
+      else return fail(err, errLen, path, "fit must be contain, cover or stretch");
+    } else if (!strcmp(k, "image")) {
+      const char* src = v | "";
+      if (strlen(src) > IMAGE_SRC_LEN) return fail(err, errLen, path, "image source too long");
+      if (*src && !imageSourceOk(src)) return fail(err, errLen, path, "unknown image (upload it on the setup page, or use an http(s) URL)");
+      strlcpy(st.image, src, sizeof(st.image));
     } else {
       char m[64];
       snprintf(m, sizeof(m), "unknown style property \"%.20s\"", k);
@@ -220,7 +232,8 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     else if (!strcmp(type, "arc"))      e.type = ElType::ARC;
     else if (!strcmp(type, "triangle")) e.type = ElType::TRIANGLE;
     else if (!strcmp(type, "polygon"))  e.type = ElType::POLYGON;
-    else return fail(err, errLen, path, "unknown type (text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon)");
+    else if (!strcmp(type, "image"))    e.type = ElType::IMAGE;
+    else return fail(err, errLen, path, "unknown type (text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon, image)");
 
     // ---- style: defaults, class, flat fields, style object ----
     defaultStyle(e.st);
@@ -309,6 +322,19 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
       e.npts = n;
     }
 
+    // ---- image ----
+    if (e.type == ElType::IMAGE) {
+      const char* src = v["src"] | "";
+      if (!*src) return fail(err, errLen, path, "image needs \"src\": an uploaded image name or an http(s) URL");
+      if (strlen(src) > IMAGE_SRC_LEN) return fail(err, errLen, path, "image source too long");
+      if (!imageSourceOk(src)) return fail(err, errLen, path, "unknown image (upload it on the setup page, or use an http(s) URL)");
+      strlcpy(e.src, src, sizeof(e.src));
+      int refresh = v["refresh"] | (int)IMAGE_DEFAULT_REFRESH_S;
+      if (refresh < (int)IMAGE_MIN_REFRESH_S) refresh = IMAGE_MIN_REFRESH_S;
+      if (refresh > 86400) refresh = 86400;
+      e.refreshS = refresh;
+    }
+
     // ---- text / value ----
     const char* text = "";
     if (e.type == ElType::BAR || e.type == ElType::ARC) text = v["value"] | "0";
@@ -326,6 +352,7 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
       if (strstr(s, "ping.")) _usesPing = true;
       if (strstr(s, "api."))  _usesApi = true;
     }
+    if (e.type == ElType::IMAGE || e.st.image[0]) _usesImages = true;
   }
 
   // ---- children ----
@@ -451,6 +478,13 @@ void LayoutWidget::touchSources() {
 void LayoutWidget::update(uint32_t now) {
   if (_usesPing) pingLoop(now);
   if (_usesApi) touchSources();
+  if (_usesImages && now - _lastImageTouch >= 1000) {
+    _lastImageTouch = now;
+    for (uint8_t i = 1; i < _count; i++) {
+      if (_n[i].type == ElType::IMAGE) imageTouch(_n[i].src, _n[i].refreshS);
+      if (_n[i].st.image[0]) imageTouch(_n[i].st.image, IMAGE_DEFAULT_REFRESH_S);
+    }
+  }
 }
 
 uint16_t LayoutWidget::resolveColor(const char* spec, uint16_t fallback, bool* present) {
@@ -549,6 +583,16 @@ void LayoutWidget::measure(uint8_t i) {
     case ElType::RECT:
     case ElType::ELLIPSE:
       break;
+    case ElType::IMAGE: {
+      // Native size, or keep the aspect ratio when only one side is given.
+      int16_t iw, ih;
+      if (imageSize(e.src, iw, ih) && iw > 0 && ih > 0) {
+        if (e.w != EL_AUTO && e.h == EL_AUTO) h = (int16_t)((int32_t)e.w * ih / iw);
+        else if (e.h != EL_AUTO && e.w == EL_AUTO) w = (int16_t)((int32_t)e.h * iw / ih);
+        else { w = iw; h = ih; }
+      }
+      break;
+    }
     case ElType::CIRCLE:
     case ElType::ARC:
       if (e.w != EL_AUTO && e.h == EL_AUTO) h = e.w;
@@ -733,12 +777,21 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
         }
       }
       if (e.type == ElType::BOX) {
-        // Children are clipped to the box.
+        // Children (and a background image) are clipped to the box.
         int16_t nx = x, ny = y, nw = w, nh = h;
         clipIntersect(nx, ny, nw, nh, cx, cy, cw, ch);
         ui.setClipRect(nx, ny, nw, nh);
+        if (e.st.image[0]) imageDraw(ui, e.st.image, x, y, w, h, ImgFit::COVER, millis());
         for (uint8_t c = e.firstChild; c != NONE; c = _n[c].nextSibling) draw(ui, c, nx, ny, nw, nh);
         ui.setClipRect(cx, cy, cw, ch);
+      }
+      break;
+    }
+    case ElType::IMAGE: {
+      if (hasBg && w > 0 && h > 0) ui.fillRect(x, y, w, h, bg);
+      if (!imageDraw(ui, e.src, x, y, w, h, e.st.fit, millis()) && w > 8 && h > 8) {
+        // Not available yet (URL still loading, or failed): a dim frame.
+        ui.drawRect(x, y, w, h, COLOR_DIM);
       }
       break;
     }

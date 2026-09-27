@@ -33,6 +33,9 @@ label.inline input{width:auto;display:inline;margin:0}
 .src .btns{display:flex;gap:6px}
 .src .btns button{margin:0;padding:8px;font-size:14px;text-align:center}
 .ok{color:#3c3}.bad{color:#f66}.warn{color:#fc6}
+.thumb{display:flex;align-items:center;gap:10px}
+.thumb img{width:48px;height:48px;object-fit:contain;background:#000;border:1px solid #333;border-radius:4px}
+.thumb .btns{margin-left:auto}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -84,6 +87,14 @@ static const char SETUP_HTML[] = R"html(
   <button id="fontUpload" type="button">Upload</button>
 </div>
 <p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasteriser does no bounds checking.</p>
+
+<h3>Images</h3>
+<div id="imgList" class="dim">Loading&hellip;</div>
+<div class="row">
+  <input type="file" id="imgFile" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif" class="p">
+  <button id="imgUpload" type="button">Upload</button>
+</div>
+<p class="hint">PNG, JPEG or animated GIF up to 512 KB. The screen is 170 &times; 320, so resize images before uploading. Use one with <code>{"type":"image","src":"name","w":64}</code> or as a box background with <code>"style":{"image":"name"}</code>. <code>src</code> can also be an http(s) URL, fetched while the widget is on screen.</p>
 
 <h3>Data sources</h3>
 <div id="srcList" class="dim">Loading&hellip;</div>
@@ -382,6 +393,67 @@ async function deleteFont(name) {
 
 $('fontUpload').onclick = uploadFont;
 loadFonts();
+
+// ---------- images ----------
+let imgDelPending = null;
+
+async function loadImages() {
+  try {
+    const r = await api('/api/images');
+    const box = $('imgList');
+    box.className = '';
+    box.innerHTML = '';
+    if (!(r.images || []).length) box.innerHTML = '<div class="dim">No images yet.</div>';
+    (r.images || []).forEach(im => {
+      const d = document.createElement('div');
+      d.className = 'card src thumb';
+      d.innerHTML = '<img src="/img/' + esc(im.name) + '.' + esc(im.type) + '?t=' + Date.now() + '" alt="">' +
+        '<div><b>' + esc(im.name) + '</b><br><span class="dim">' + esc(im.type) + ' &middot; ' + fmtBytes(im.size) + '</span></div>' +
+        '<div class="btns"><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
+      d.querySelector('.del').onclick = () => deleteImage(im.name);
+      box.appendChild(d);
+    });
+  } catch (e) { $('imgList').textContent = e.message; }
+}
+
+async function uploadImage() {
+  const f = $('imgFile').files[0];
+  if (!f) { msg('Choose an image first.'); return; }
+  const name = f.name.replace(/\.[a-z0-9]+$/i, '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 23);
+  if (!name) { msg('The file name gives no usable image name.'); return; }
+  if (f.size > 512 * 1024) { msg('That image is larger than 512 KB. Resize it for the 170 x 320 screen first.'); return; }
+  const fd = new FormData();
+  fd.append('file', f, f.name);
+  $('imgUpload').disabled = true;
+  msg('Uploading ' + name + '\u2026');
+  try {
+    const r = await fetch('/api/images?name=' + encodeURIComponent(name), { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    msg('Image "' + name + '" uploaded. Use "src":"' + name + '" in a layout.');
+    $('imgFile').value = '';
+    loadImages();
+  } catch (e) { msg(e.message); }
+  $('imgUpload').disabled = false;
+}
+
+async function deleteImage(name) {
+  if (imgDelPending !== name) {
+    imgDelPending = name;
+    loadImages();
+    setTimeout(() => { if (imgDelPending === name) { imgDelPending = null; loadImages(); } }, 4000);
+    return;
+  }
+  imgDelPending = null;
+  try {
+    await api('/api/images?name=' + encodeURIComponent(name), 'DELETE');
+    msg('Deleted image ' + name + '.');
+    loadImages();
+  } catch (e) { msg(e.message); }
+}
+
+$('imgUpload').onclick = uploadImage;
+loadImages();
 
 // ---------- data sources ----------
 let sources = [];

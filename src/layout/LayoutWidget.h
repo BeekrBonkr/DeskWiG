@@ -2,6 +2,7 @@
 
 #include <ArduinoJson.h>
 #include "../app/Widget.h"
+#include "ImageService.h"
 
 // A widget described by a JSON document instead of C++.
 //
@@ -38,11 +39,14 @@
 // top-level "styles" map referenced with "class". Later ones win:
 // class, then flat fields, then the style object.
 //
-// Types: text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon.
+// Types: text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon,
+// image. An image element shows an uploaded image by name or an http(s)
+// URL ("src"), scaled by style.fit; a box can have a background image
+// (style.image) drawn to cover it. Animated GIFs play.
 // Colours are role names (bg, text, dim, ok, warn, bad, accent), "#rrggbb",
 // or a template that resolves to a role name, e.g. "{ping.0.color}".
 
-enum class ElType : uint8_t { TEXT, LINE, RECT, BAR, BOX, CIRCLE, ELLIPSE, ARC, TRIANGLE, POLYGON };
+enum class ElType : uint8_t { TEXT, LINE, RECT, BAR, BOX, CIRCLE, ELLIPSE, ARC, TRIANGLE, POLYGON, IMAGE };
 enum class ElAlign : uint8_t { START, CENTER, END, STRETCH };
 enum class ElJustify : uint8_t { START, CENTER, END, BETWEEN };
 
@@ -64,6 +68,8 @@ struct LayoutStyle {
   bool row;            // box direction: row instead of column
   bool fill;           // shapes: fill with colour instead of outline
   bool absolute;       // forced absolute positioning
+  ImgFit fit;          // image scaling: contain (default), cover, stretch
+  char image[IMAGE_SRC_LEN + 1];   // background image for a box (name or URL)
 };
 
 struct LayoutNode {
@@ -75,6 +81,8 @@ struct LayoutNode {
   int16_t pts[16];
   LayoutStyle st;
   char text[64];               // text template, or bar/arc value template
+  char src[IMAGE_SRC_LEN + 1]; // image source (name or URL)
+  uint16_t refreshS;           // URL image refresh interval
   uint8_t firstChild;          // 0xFF = none
   uint8_t nextSibling;         // 0xFF = none
   bool hasXY;
@@ -131,7 +139,9 @@ private:
   bool _loaded = false;
   bool _usesPing = false;
   bool _usesApi = false;
+  bool _usesImages = false;
   uint32_t _lastTouch = 0;
+  uint32_t _lastImageTouch = 0;
   uint8_t _count = 0;
   LayoutNode* _n = nullptr;            // MAX_NODES, in PSRAM when available
   char (*_txt)[TEXT_BUF] = nullptr;    // expanded text per node
