@@ -115,9 +115,15 @@ static const char SETUP_HTML[] = R"html(
 </div>
 <p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified.</p>
 
-<h3>API token</h3>
-<input id="token" placeholder="Shown on the device screen after it connects" autocapitalize="off" autocorrect="off">
-<p class="hint">Not needed while you're connected through the setup hotspot.</p>
+<h3>Account</h3>
+<div class="card" id="acct">Loading&hellip;</div>
+<button id="showKey" type="button">Show API key</button>
+<pre id="keyBox" style="display:none"></pre>
+<p class="hint">Scripts can use the key instead of logging in: send it as <code>Authorization: Bearer &lt;key&gt;</code>. Forgot your password? Log out and use the link on the login page: the device shows the key on its screen.</p>
+<input id="pwCurrent" type="password" placeholder="Current password" maxlength="64" autocomplete="current-password">
+<input id="pwNew" type="password" placeholder="New password (8+ characters)" maxlength="64" autocomplete="new-password">
+<button id="pwChange" type="button">Change password</button>
+<button id="logout" type="button">Log out</button>
 
 <h3>Firmware</h3>
 <div class="card" id="fwInfo">Loading&hellip;</div>
@@ -134,25 +140,56 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 const bars = r => r > -55 ? '||||' : r > -65 ? '|||.' : r > -75 ? '||..' : '|...';
 const msg = t => { $('msg').textContent = t; };
 
-let token = '';
-try { token = localStorage.getItem('apiToken') || ''; } catch (e) {}
-$('token').value = token;
-$('token').addEventListener('change', () => {
-  token = $('token').value.trim();
-  try { localStorage.setItem('apiToken', token); } catch (e) {}
-});
+// Every page starts by checking the login; unauthenticated browsers go to /login.
+const toLogin = () => { location.replace('/login?next=' + encodeURIComponent(location.pathname)); };
+let auth = null;
+async function requireLogin() {
+  try { auth = await (await fetch('/api/auth')).json(); } catch (e) { return null; }
+  if (!auth.loggedIn) { toLogin(); return null; }
+  return auth;
+}
+requireLogin();
 
 async function api(path, method, body) {
   const r = await fetch(path, {
     method: method || 'GET',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    headers: { 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined
   });
-  if (r.status === 401) throw new Error('Unauthorized. Enter the API token shown on the device.');
+  if (r.status === 401) { toLogin(); throw new Error('Not logged in.'); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
   return j;
 }
+
+// ---------- account ----------
+async function loadAccount() {
+  const a = auth || await requireLogin();
+  if (!a) return;
+  $('acct').innerHTML = a.hotspot && !a.configured
+    ? 'No account yet. Create one on the <a href="/login">login page</a> once the device is on your network.'
+    : 'Logged in as <b>' + esc(a.user || '') + '</b>';
+}
+$('showKey').onclick = async () => {
+  try {
+    const r = await api('/api/auth/key');
+    const box = $('keyBox');
+    box.textContent = r.key + '\n\ncurl -H "Authorization: Bearer ' + r.key + '" http://' + location.host + '/api/status';
+    box.style.display = '';
+  } catch (e) { msg(e.message); }
+};
+$('pwChange').onclick = async () => {
+  try {
+    await api('/api/auth/password', 'PUT', { current: $('pwCurrent').value, pass: $('pwNew').value });
+    $('pwCurrent').value = ''; $('pwNew').value = '';
+    msg('Password changed.');
+  } catch (e) { msg(e.message); }
+};
+$('logout').onclick = async () => {
+  try { await api('/api/auth/logout', 'POST'); } catch (e) {}
+  location.href = '/login';
+};
+setTimeout(loadAccount, 0);
 
 function showStatus(s) {
   let t;
@@ -351,7 +388,6 @@ function uploadFw() {
   fd.append('file', f, f.name);
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/system/update');
-  xhr.setRequestHeader('Authorization', 'Bearer ' + token);
   $('fwUpload').disabled = true;
   xhr.upload.onprogress = e => { if (e.lengthComputable) msg('Uploading firmware\u2026 ' + Math.round(100 * e.loaded / e.total) + '%'); };
   xhr.onerror = () => { msg('Upload failed (connection lost).'); $('fwUpload').disabled = false; };
@@ -407,7 +443,7 @@ async function uploadFont() {
   $('fontUpload').disabled = true;
   msg('Uploading ' + name + '\u2026');
   try {
-    const r = await fetch('/api/fonts?name=' + encodeURIComponent(name), { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    const r = await fetch('/api/fonts?name=' + encodeURIComponent(name), { method: 'POST', body: fd });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     msg('Font "' + name + '" uploaded. Use "font":"' + name + '" in a layout.');
@@ -468,7 +504,7 @@ async function uploadImage() {
   $('imgUpload').disabled = true;
   msg('Uploading ' + name + '\u2026');
   try {
-    const r = await fetch('/api/images?name=' + encodeURIComponent(name), { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    const r = await fetch('/api/images?name=' + encodeURIComponent(name), { method: 'POST', body: fd });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     msg('Image "' + name + '" uploaded. Use "src":"' + name + '" in a layout.');
@@ -670,18 +706,17 @@ static const char WIDGETS_HTML[] = R"html(
 <div id="list"></div>
 <p id="msg"></p>
 
-<h3>API token</h3>
-<input id="token" placeholder="Shown on the device screen after it connects" autocapitalize="off" autocorrect="off">
-
 <script>
 const $ = id => document.getElementById(id);
-let token = '';
-try { token = localStorage.getItem('apiToken') || ''; } catch (e) {}
-$('token').value = token;
-$('token').addEventListener('change', () => {
-  token = $('token').value.trim();
-  try { localStorage.setItem('apiToken', token); } catch (e) {}
-});
+// Every page starts by checking the login; unauthenticated browsers go to /login.
+const toLogin = () => { location.replace('/login?next=' + encodeURIComponent(location.pathname)); };
+let auth = null;
+async function requireLogin() {
+  try { auth = await (await fetch('/api/auth')).json(); } catch (e) { return null; }
+  if (!auth.loggedIn) { toLogin(); return null; }
+  return auth;
+}
+requireLogin();
 
 async function load() {
   $('msg').textContent = '';
@@ -705,16 +740,10 @@ async function load() {
 async function activate(i) {
   const r = await fetch('/api/widgets', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Bearer ' + token
-    },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'index=' + i
   });
-  if (r.status === 401) {
-    $('msg').textContent = 'Unauthorized. Enter the API token shown on the device.';
-    return;
-  }
+  if (r.status === 401) { toLogin(); return; }
   load();
 }
 

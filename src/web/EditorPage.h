@@ -87,8 +87,6 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
     <button id="del" class="danger">Delete</button>
   </div>
   <p id="msg"></p>
-  <h3>API token</h3>
-  <input id="token" placeholder="Shown on the device screen after it connects" autocapitalize="off" autocorrect="off">
 </div>
 
 <div class="col">
@@ -177,21 +175,23 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const msg = t => { $('msg').textContent = t; };
 
-let token = '';
-try { token = localStorage.getItem('apiToken') || ''; } catch (e) {}
-$('token').value = token;
-$('token').addEventListener('change', () => {
-  token = $('token').value.trim();
-  try { localStorage.setItem('apiToken', token); } catch (e) {}
-});
+// Every page starts by checking the login; unauthenticated browsers go to /login.
+const toLogin = () => { location.replace('/login?next=' + encodeURIComponent(location.pathname)); };
+let auth = null;
+async function requireLogin() {
+  try { auth = await (await fetch('/api/auth')).json(); } catch (e) { return null; }
+  if (!auth.loggedIn) { toLogin(); return null; }
+  return auth;
+}
+requireLogin();
 
 async function api(path, method, body) {
   const r = await fetch(path, {
     method: method || 'GET',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+    headers: { 'Content-Type': 'application/json' },
     body: body !== undefined ? JSON.stringify(body) : undefined
   });
-  if (r.status === 401) throw new Error('Unauthorized. Enter the API token shown on the device.');
+  if (r.status === 401) { toLogin(); throw new Error('Not logged in.'); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
   return j;
