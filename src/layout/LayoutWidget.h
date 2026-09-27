@@ -47,6 +47,7 @@ public:
 
   bool isLoaded() const { return _loaded; }
   bool usesPing() const { return _usesPing; }
+  bool usesApi() const { return _usesApi; }
   const char* id() const { return _id; }
   void setId(const char* id);
 
@@ -57,11 +58,14 @@ public:
 
 private:
   uint16_t resolveColor(const char* spec, uint16_t fallback);
+  void touchSources();
 
   char _id[ID_LEN + 1] = "";
   char _name[NAME_LEN + 1] = "";
   bool _loaded = false;
   bool _usesPing = false;
+  bool _usesApi = false;
+  uint32_t _lastTouch = 0;
   uint8_t _count = 0;
   LayoutElement _el[MAX_ELEMENTS];
 };

@@ -2,6 +2,7 @@
 
 #include "LayoutData.h"
 #include "../net/PingService.h"
+#include "../net/DataSource.h"
 
 static const uint16_t COLOR_BG     = 0x0000;
 static const uint16_t COLOR_TEXT   = 0xFFFF;
@@ -37,6 +38,7 @@ static bool roleColor(const char* name, uint16_t& out) {
 void LayoutWidget::clear() {
   _loaded = false;
   _usesPing = false;
+  _usesApi = false;
   _count = 0;
   _name[0] = '\0';
 }
@@ -114,6 +116,7 @@ bool LayoutWidget::load(JsonVariantConst doc, char* err, size_t errLen) {
     strlcpy(e.text, text, sizeof(e.text));
 
     if (strstr(e.text, "{ping.") || strstr(e.color, "{ping.")) _usesPing = true;
+    if (strstr(e.text, "{api.")  || strstr(e.color, "{api."))  _usesApi = true;
 
     _count++;
     idx++;
@@ -126,8 +129,34 @@ bool LayoutWidget::load(JsonVariantConst doc, char* err, size_t errLen) {
 // =====================
 // RUNTIME
 // =====================
+// Tells every data source this layout references that it is on screen,
+// so it gets fetched on its interval. Cheap, but no need to do it per frame.
+void LayoutWidget::touchSources() {
+  uint32_t now = millis();
+  if (now - _lastTouch < 500 && _lastTouch != 0) return;
+  _lastTouch = now;
+
+  for (uint8_t i = 0; i < _count; i++) {
+    const char* fields[2] = { _el[i].text, _el[i].color };
+    for (const char* f : fields) {
+      for (const char* p = strstr(f, "{api."); p; p = strstr(p + 1, "{api.")) {
+        const char* start = p + 5;
+        const char* end = strchr(start, '.');
+        if (!end) continue;
+        size_t len = end - start;
+        if (len == 0 || len > SOURCE_ID_LEN) continue;
+        char id[SOURCE_ID_LEN + 1];
+        memcpy(id, start, len);
+        id[len] = '\0';
+        sourceTouch(id, now);
+      }
+    }
+  }
+}
+
 void LayoutWidget::update(uint32_t now) {
   if (_usesPing) pingLoop(now);
+  if (_usesApi) touchSources();
 }
 
 uint16_t LayoutWidget::resolveColor(const char* spec, uint16_t fallback) {

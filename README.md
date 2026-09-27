@@ -7,7 +7,7 @@ It currently ships with two widgets:
 - **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers*.
 - **Clock** – NTP-synced clock with 12/24-hour display. Time can come from the internet, from your router, or from any NTP server you name; timezones use POSIX TZ strings so daylight saving is automatic.
 
-You can also build your own screens without a toolchain: [JSON layout widgets](#json-layout-widgets) are written in the browser, previewed live, and stored on the device. Native widgets in C++ are still a matter of implementing four methods (see [Writing a widget](#writing-a-widget)).
+You can also build your own screens without a toolchain: [JSON layout widgets](#json-layout-widgets) are written in the browser, previewed live, and stored on the device. They can show live values from any web API through [data sources](#data-sources): weather, stock prices, a Home Assistant sensor, anything that answers HTTP with JSON or text. Native widgets in C++ are still a matter of implementing four methods (see [Writing a widget](#writing-a-widget)).
 
 ## Hardware
 
@@ -91,7 +91,7 @@ Once on your network, the device serves:
 
 | Route                           | Auth | Purpose                                                        |
 | ------------------------------- | ---- | -------------------------------------------------------------- |
-| `/setup`                        | no   | WiFi scan/join, device name, clock and timezone settings       |
+| `/setup`                        | no   | WiFi scan/join, device name, clock, data sources               |
 | `/widgets`                      | no   | Page with a button per widget to switch the active screen      |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
 | `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget, clock sync  |
@@ -101,6 +101,10 @@ Once on your network, the device serves:
 | `POST /api/wifi/forget`         | yes  | Clears credentials, returns to hotspot                         |
 | `GET /api/config`               | no   | Hostname, ping interval, clock, LED settings                   |
 | `PUT /api/config`               | yes  | JSON with any subset of the above; saved immediately           |
+| `GET /api/sources`              | no   | Data sources with fetch state and current values (header value redacted) |
+| `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
+| `DELETE /api/sources?id=<id>`   | yes  | Remove a data source                                           |
+| `POST /api/sources/test?id=<id>`| yes  | Fetch it now; poll `GET /api/sources` for the result           |
 | `GET /api/widgets`              | no   | JSON list of widgets and the active index                      |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
 | `GET /api/layouts`              | no   | List of layout widgets (`id`, `name`, `index`) and free slots  |
@@ -144,6 +148,13 @@ Everything except WiFi credentials and the token lives in `/config.json` on the 
   "activeWidget": 0,
   "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
+  "sources": [
+    { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
+      "intervalS": 600,
+      "fields": [ { "name": "temp", "path": "current.temperature_2m", "decimals": 0 },
+                  { "name": "humidity", "path": "current.relative_humidity_2m" },
+                  { "name": "wind", "path": "current.wind_speed_10m", "decimals": 0 } ] }
+  ],
   "targets": [
     { "name": "Cloudflare", "host": "1.1.1.1", "port": 443, "type": "service" },
     { "name": "Router", "host": "192.168.88.1", "port": 0, "type": "server" }
@@ -183,6 +194,47 @@ curl -X PUT http://<device-ip>/api/config \
   -H "Content-Type: application/json" \
   -d '{"clock":{"tz":"EST5EDT,M3.2.0,M11.1.0","ntpSource":"router"}}'
 ```
+
+## Data sources
+
+A data source is a URL the device polls and picks values out of. Each value becomes a layout key, so a screen can show the temperature outside, a stock price, a Home Assistant sensor, or the number of open issues on a repo. Add them under **Data sources** on `http://deskwig.local/setup`, or push one with the API:
+
+```bash
+curl -X PUT "http://<device-ip>/api/sources?id=weather" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
+    "intervalS": 600,
+    "fields": [
+      { "name": "temp",     "path": "current.temperature_2m", "decimals": 0 },
+      { "name": "humidity", "path": "current.relative_humidity_2m" },
+      { "name": "wind",     "path": "current.wind_speed_10m", "decimals": 0 }
+    ]
+  }'
+```
+
+| Field            | Meaning                                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------------------------- |
+| `id`             | Name used in layouts: 1–16 lowercase letters, digits or dashes. Up to 6 sources                      |
+| `url`            | `http://` or `https://`, up to 191 characters. Put API keys that go in the query string here          |
+| `intervalS`      | Seconds between fetches, minimum 10, default 300                                                     |
+| `header`         | Optional `{ "name": "Authorization", "value": "Bearer ..." }` for APIs that want a key in a header    |
+| `fields`         | Up to 8 of `{ "name", "path", "decimals" }`. `path` is a dot path into the JSON: `current.temp`, `items[0].price`, `data.0.value`. An empty path takes the whole response as text, for endpoints that answer with a bare value. `decimals` rounds numbers |
+
+A layout then uses `{api.<id>.<field>}`, for example `{api.weather.temp}`. Every source also provides:
+
+| Key                    | Value                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `api.<id>.status`      | `ok`, `stale` (last fetch failed or is overdue, old values still shown), `error`, `wait` |
+| `api.<id>.color`       | `ok`, `warn`, `bad` or `dim` for the same states, so a colour can track the fetch state  |
+| `api.<id>.age`         | Time since the last successful fetch: `12s`, `5m`, `2h`                                 |
+| `api.<id>.updated`     | Clock time of the last successful fetch                                                 |
+| `api.<id>.error`       | The last error, e.g. `HTTP 401` or `not JSON: InvalidInput`                             |
+
+Values are strings of up to 31 characters; nested objects and arrays are serialised and truncated. Like pings, a source is only fetched while a widget that references it is on screen, so an API quota is not spent on screens nobody is looking at. Saving a source or pressing **Test** on the setup page fetches it immediately and shows the extracted values. Fetches run in a background task, so a slow API never stalls the display, and the response is parsed with a filter that keeps only the requested paths, so large API responses cost little memory. Responses over 64 KB are rejected.
+
+HTTPS connections are encrypted but the server certificate is **not** verified. Header values are stored in `/config.json` and never returned by the API; `GET /api/config` omits sources entirely. The editor's template picker includes a **Weather** layout built for the Open-Meteo source above.
 
 ## JSON layout widgets
 
@@ -230,7 +282,10 @@ The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel bui
 | `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; colour role            |
 | `ping.N.bars`, `ping.N.trend`                  | Last 8 results as `\|\|.\|\|\|\|\|`; `^`, `v` or `>`            |
 
-`N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen.
+| `api.<id>.<field>`                             | A value from a [data source](#data-sources)                |
+| `api.<id>.status`, `.color`, `.age`, `.updated`| Fetch state of that source                                  |
+
+`N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen, and the same goes for data sources.
 
 The editor page lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
 
@@ -276,7 +331,7 @@ src/
   app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, file store + preview, built-in templates
-  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone
+  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task)
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps
 ```

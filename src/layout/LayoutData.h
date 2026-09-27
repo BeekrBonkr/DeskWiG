@@ -10,6 +10,7 @@
 //   hostname, uptime, heap
 //   ping.count
 //   ping.<N|name>.name, .host, .ms, .status, .color, .bars, .trend
+//   api.<source>.<field>, .status, .color, .age, .updated, .error
 //
 // Colour keys resolve to a colour role name (ok, warn, bad, dim, text).
 

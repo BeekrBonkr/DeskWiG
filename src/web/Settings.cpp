@@ -198,6 +198,17 @@ static bool loadConfigFile() {
   }
   if (settings.targetCount == 0) loadDefaultTargets();
 
+  settings.sourceCount = 0;
+  for (JsonVariantConst v : doc["sources"].as<JsonArrayConst>()) {
+    if (settings.sourceCount >= MAX_SOURCES) break;
+    char err[96];
+    if (sourceFromJson(settings.sources[settings.sourceCount], v, err, sizeof(err))) {
+      settings.sourceCount++;
+    } else {
+      Serial.printf("[CFG] Skipping data source: %s\n", err);
+    }
+  }
+
   return true;
 }
 
@@ -226,6 +237,11 @@ bool saveSettings() {
     t["host"] = src.host;
     t["port"] = src.port;
     t["type"] = typeName(src.type);
+  }
+
+  JsonArray sources = doc["sources"].to<JsonArray>();
+  for (uint8_t i = 0; i < settings.sourceCount; i++) {
+    sourceToJson(settings.sources[i], sources.add<JsonObject>(), true);
   }
 
   // Write to a temp file, then rename over the real one so a power loss

@@ -62,7 +62,7 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
   <canvas id="cv" width="340" height="640"></canvas>
   <p class="hint">Rendered in the browser with live values from the device. "Show on device" puts it on the real screen for 60 seconds.</p>
   <h3>Keys</h3>
-  <p class="hint">Tap to insert at the cursor. <code>ping.N</code> also accepts the target name, e.g. <code>{ping.router.ms}</code>.</p>
+  <p class="hint">Tap to insert at the cursor. <code>ping.N</code> also accepts the target name, e.g. <code>{ping.router.ms}</code>. <code>api.*</code> keys come from the data sources on the <a href="/setup">setup page</a>.</p>
   <div class="keys" id="keys"></div>
   <h3>Reference</h3>
 <pre>screen 170 x 320, black background
@@ -77,7 +77,9 @@ bar   x y w h color value   (0-100)
 align: left | center | right
 color: bg text dim ok warn bad accent
        #rrggbb, or {ping.0.color}
-text and value take {keys}</pre>
+text and value take {keys}
+api.&lt;source&gt;.&lt;field&gt; plus .status
+  .color .age .updated .error</pre>
 </div>
 </div>
 

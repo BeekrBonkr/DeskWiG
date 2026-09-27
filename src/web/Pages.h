@@ -24,6 +24,15 @@ nav{display:flex;gap:16px;margin-bottom:8px;font-size:14px}
 select{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box}
 label.inline{display:flex;align-items:center;gap:10px;font-size:15px;margin:8px 0}
 label.inline input{width:auto;display:inline;margin:0}
+.row{display:flex;gap:6px;margin:8px 0}
+.row input{margin:0;min-width:0}
+.row input.n{flex:2}.row input.p{flex:4}.row input.d{flex:1}
+.row button{width:auto;margin:0;padding:10px}
+.src{margin:8px 0}
+.src .vals{font:13px ui-monospace,monospace;color:#ccc;margin:6px 0;word-break:break-all}
+.src .btns{display:flex;gap:6px}
+.src .btns button{margin:0;padding:8px;font-size:14px;text-align:center}
+.ok{color:#3c3}.bad{color:#f66}.warn{color:#fc6}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -67,6 +76,25 @@ static const char SETUP_HTML[] = R"html(
 <label class="inline"><input type="checkbox" id="h24"> 24-hour clock</label>
 <button id="saveClock">Save clock settings</button>
 <p class="hint">"Router" asks your WiFi gateway for the time, which works on networks without internet access if the router runs an NTP server (most do). The timezone converts NTP's UTC to local time and handles daylight saving.</p>
+
+<h3>Data sources</h3>
+<div id="srcList" class="dim">Loading&hellip;</div>
+<button id="srcAdd">Add data source</button>
+<div class="card" id="srcForm" style="display:none">
+  <input id="srcId" placeholder="Name used in layouts, e.g. weather" autocapitalize="off" autocorrect="off" maxlength="16">
+  <input id="srcUrl" placeholder="https://api.example.com/data?key=..." autocapitalize="off" autocorrect="off" maxlength="191">
+  <input id="srcInterval" type="number" min="10" placeholder="Refresh every N seconds (default 300)">
+  <div class="row">
+    <input id="srcHdrName" class="n" placeholder="Header (optional)" autocapitalize="off" autocorrect="off" maxlength="31">
+    <input id="srcHdrValue" class="p" placeholder="Header value, e.g. Bearer abc123" autocapitalize="off" autocorrect="off" maxlength="127">
+  </div>
+  <p class="hint">Fields: a name for the layout key and the JSON path to read, e.g. <code>current.temperature_2m</code> or <code>items[0].price</code>. Leave the path empty to use the whole response as text. Decimals rounds numbers.</p>
+  <div id="srcFields"></div>
+  <button id="srcFieldAdd">Add field</button>
+  <button id="srcSave" class="primary">Save data source</button>
+  <button id="srcCancel">Cancel</button>
+</div>
+<p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified.</p>
 
 <h3>API token</h3>
 <input id="token" placeholder="Shown on the device screen after it connects" autocapitalize="off" autocorrect="off">
@@ -282,6 +310,154 @@ async function saveClock() {
 $('saveClock').onclick = saveClock;
 setInterval(async () => { try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
 loadClock();
+
+// ---------- data sources ----------
+let sources = [];
+let editingId = null;
+let pendingDelete = null;
+
+function fieldRow(f) {
+  const d = document.createElement('div');
+  d.className = 'row';
+  d.innerHTML = '<input class="n" placeholder="name" maxlength="16" autocapitalize="off" autocorrect="off">' +
+                '<input class="p" placeholder="json.path" maxlength="63" autocapitalize="off" autocorrect="off">' +
+                '<input class="d" type="number" min="0" max="6" placeholder="dec">' +
+                '<button type="button" title="Remove">&times;</button>';
+  d.children[0].value = f ? f.name : '';
+  d.children[1].value = f ? f.path : '';
+  d.children[2].value = (f && f.decimals !== undefined) ? f.decimals : '';
+  d.children[3].onclick = () => d.remove();
+  return d;
+}
+
+function openForm(src) {
+  editingId = src ? src.id : null;
+  $('srcId').value = src ? src.id : '';
+  $('srcId').disabled = !!src;
+  $('srcUrl').value = src ? src.url : '';
+  $('srcInterval').value = src ? src.intervalS : '';
+  $('srcHdrName').value = (src && src.header) ? src.header.name : '';
+  $('srcHdrValue').value = '';
+  $('srcHdrValue').placeholder = (src && src.header && src.header.set) ? '(unchanged, enter to replace)' : 'Header value, e.g. Bearer abc123';
+  const box = $('srcFields');
+  box.innerHTML = '';
+  (src ? src.fields : [{ name: '', path: '' }]).forEach(f => box.appendChild(fieldRow(f)));
+  $('srcForm').style.display = '';
+  $('srcAdd').style.display = 'none';
+  $('srcForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeForm() {
+  $('srcForm').style.display = 'none';
+  $('srcAdd').style.display = '';
+  editingId = null;
+}
+
+function ageText(s) {
+  if (s === undefined) return 'never fetched';
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s / 60) + 'm ago';
+  return Math.floor(s / 3600) + 'h ago';
+}
+
+function renderSources() {
+  const box = $('srcList');
+  box.className = '';
+  if (!sources.length) { box.innerHTML = '<div class="dim">No data sources yet.</div>'; return; }
+  box.innerHTML = '';
+  sources.forEach(src => {
+    const d = document.createElement('div');
+    d.className = 'card src';
+    let st;
+    if (src.state === 'fetching') st = '<span class="dim">fetching&hellip;</span>';
+    else if (src.state === 'error') st = '<span class="bad">' + esc(src.error || 'error') + '</span>' + (src.everOk ? ' <span class="dim">(showing old values)</span>' : '');
+    else if (src.everOk) st = '<span class="ok">ok</span> <span class="dim">' + ageText(src.ageS) + '</span>';
+    else st = '<span class="dim">waiting for first fetch</span>';
+    const vals = Object.keys(src.values || {}).map(k => '{api.' + esc(src.id) + '.' + esc(k) + '} = ' + esc(src.values[k])).join('<br>');
+    d.innerHTML = '<b>' + esc(src.id) + '</b> &middot; ' + st +
+      '<div class="dim" style="font-size:13px;word-break:break-all">' + esc(src.url) + '</div>' +
+      '<div class="vals">' + vals + '</div>' +
+      '<div class="btns"><button class="edit">Edit</button><button class="test">Test</button><button class="danger del">' +
+      (pendingDelete === src.id ? 'Tap again to delete' : 'Delete') + '</button></div>';
+    d.querySelector('.edit').onclick = () => openForm(src);
+    d.querySelector('.test').onclick = () => testSource(src.id);
+    d.querySelector('.del').onclick = () => deleteSource(src.id);
+    box.appendChild(d);
+  });
+}
+
+async function loadSources() {
+  try {
+    const r = await api('/api/sources');
+    sources = r.sources || [];
+    renderSources();
+    $('srcAdd').disabled = r.free === 0;
+    $('srcAdd').textContent = r.free === 0 ? 'All ' + r.max + ' source slots used' : 'Add data source';
+  } catch (e) { $('srcList').textContent = e.message; }
+}
+
+async function saveSource() {
+  const id = (editingId || $('srcId').value.trim().toLowerCase());
+  if (!id) { msg('Enter a name for the source.'); return; }
+  const url = $('srcUrl').value.trim();
+  if (!url) { msg('Enter the URL.'); return; }
+  const body = { url: url, fields: [] };
+  const iv = parseInt($('srcInterval').value, 10);
+  if (!isNaN(iv)) body.intervalS = iv;
+  const hn = $('srcHdrName').value.trim();
+  if (hn) body.header = { name: hn, value: $('srcHdrValue').value };
+  for (const row of $('srcFields').children) {
+    const name = row.children[0].value.trim();
+    const path = row.children[1].value.trim();
+    if (!name && !path) continue;
+    const f = { name: name, path: path };
+    const dec = parseInt(row.children[2].value, 10);
+    if (!isNaN(dec)) f.decimals = dec;
+    body.fields.push(f);
+  }
+  if (!body.fields.length) { msg('Add at least one field.'); return; }
+  try {
+    const r = await api('/api/sources?id=' + encodeURIComponent(id), 'PUT', body);
+    sources = r.sources || [];
+    closeForm();
+    renderSources();
+    msg('Saved. Fetching now…');
+    setTimeout(loadSources, 2500);
+    setTimeout(loadSources, 8000);
+  } catch (e) { msg(e.message); }
+}
+
+async function testSource(id) {
+  try {
+    await api('/api/sources/test?id=' + encodeURIComponent(id), 'POST');
+    msg('Fetching ' + id + '…');
+    setTimeout(loadSources, 2500);
+    setTimeout(loadSources, 8000);
+  } catch (e) { msg(e.message); }
+}
+
+async function deleteSource(id) {
+  if (pendingDelete !== id) {
+    pendingDelete = id;
+    renderSources();
+    setTimeout(() => { if (pendingDelete === id) { pendingDelete = null; renderSources(); } }, 4000);
+    return;
+  }
+  pendingDelete = null;
+  try {
+    const r = await api('/api/sources?id=' + encodeURIComponent(id), 'DELETE');
+    sources = r.sources || [];
+    renderSources();
+    msg('Deleted ' + id + '.');
+  } catch (e) { msg(e.message); }
+}
+
+$('srcAdd').onclick = () => openForm(null);
+$('srcCancel').onclick = closeForm;
+$('srcSave').onclick = saveSource;
+$('srcFieldAdd').onclick = () => $('srcFields').appendChild(fieldRow(null));
+setInterval(() => { if (!editingId && $('srcForm').style.display === 'none') loadSources(); }, 10000);
+loadSources();
 
 $('host').addEventListener('input', () => { $('hostPreview').textContent = $('host').value || 'deskwig'; });
 $('scan').onclick = scan;
