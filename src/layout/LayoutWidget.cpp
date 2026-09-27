@@ -97,8 +97,9 @@ void LayoutWidget::setId(const char* id) {
 // PARSING
 // =====================
 static bool fail(char* err, size_t n, const char* path, const char* msg) {
-  if (path && *path) snprintf(err, n, "element %s: %s", path, msg);
-  else strlcpy(err, msg, n);
+  if (!path || !*path) strlcpy(err, msg, n);
+  else if (!strncmp(path, "style", 5) || !strncmp(path, "led", 3) || !strcmp(path, "root")) snprintf(err, n, "%s: %s", path, msg);
+  else snprintf(err, n, "element %s: %s", path, msg);
   return false;
 }
 
