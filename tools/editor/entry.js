@@ -2,7 +2,7 @@
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter,
          drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightSpecialChars } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap, indentWithTab, undo, redo } from "@codemirror/commands";
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput, syntaxHighlighting,
          HighlightStyle, syntaxTree } from "@codemirror/language";
 import { closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
@@ -61,6 +61,8 @@ function create(parent, initial, onChange, lint) {
     set: text => view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } }),
     insert: text => { const { from, to } = view.state.selection.main; view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } }); view.focus(); },
     focus: () => view.focus(),
+    undo: () => undo(view),
+    redo: () => redo(view),
     // Node names with positions, for debugging path lookup.
     nodes: (limit = 60) => {
       const out = [];
