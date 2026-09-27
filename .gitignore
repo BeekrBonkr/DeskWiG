@@ -4,3 +4,8 @@
 .vscode/launch.json
 .vscode/ipch
 PLANNING.md
+
+# editor bundle build
+tools/editor/node_modules
+tools/editor/package-lock.json
+web/cm.js
