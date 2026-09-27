@@ -21,6 +21,7 @@ input{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;backgrou
 #msg{color:#fc6;min-height:1.4em}
 a{color:#6cf}
 nav{display:flex;gap:16px;margin-bottom:8px;font-size:14px}
+nav a.gh{margin-left:auto;color:#999}
 select{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box}
 label.inline{display:flex;align-items:center;gap:10px;font-size:15px;margin:8px 0}
 label.inline input{width:auto;display:inline;margin:0}
@@ -48,7 +49,7 @@ static const char SETUP_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Device Setup</h2>
 <div class="card" id="status">Loading&hellip;</div>
 
@@ -701,7 +702,7 @@ static const char WIDGETS_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Widget Selector</h2>
 <div id="list"></div>
 <p id="msg"></p>
