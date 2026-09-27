@@ -287,6 +287,26 @@ The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel bui
 
 `N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen, and the same goes for data sources.
 
+### Math in braces
+
+A brace that is not a plain key is evaluated as arithmetic, with keys as variables. That is how a layout converts units or scales a value for a bar:
+
+```json
+{"type":"text","text":"{round(api.weather.temp * 9/5 + 32, 1)} F"}
+{"type":"bar","value":"{min(ping.0.ms / 2, 100)}"}
+{"type":"text","text":"{ping.router.ms - ping.gateway.ms} ms"}
+```
+
+| Syntax                                        | Notes                                                                            |
+| --------------------------------------------- | -------------------------------------------------------------------------------- |
+| `+ - * / % ^ ( )`                             | Usual precedence; `^` is power                                                   |
+| `round(x, n)`                                 | Round to `n` decimals (0–6) and print exactly that many. `round(x)` is to a whole number |
+| `abs(x)`, `floor(x)`, `ceil(x)`, `sqrt(x)`    |                                                                                  |
+| `min(a, b, ...)`, `max(a, b, ...)`            | Up to four arguments                                                             |
+| `clamp(x, lo, hi)`                            |                                                                                  |
+
+Values are read as numbers, and a leading number is enough, so `{api.weather.age}` reading `12s` gives 12. Without `round`, whole numbers print without decimals and anything else with up to two. Any unknown key, non-numeric value or division by zero makes the whole brace `--`, the same as an unknown key. Put spaces around a minus after a key that contains dashes (`{api.my-source.temp - 3}`), since `my-source` is read as one name first.
+
 The editor page lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
 
 ```bash

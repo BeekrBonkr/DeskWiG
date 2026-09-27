@@ -1,4 +1,5 @@
 #include "LayoutData.h"
+#include "LayoutExpr.h"
 
 #include <WiFi.h>
 #include <time.h>
@@ -253,7 +254,7 @@ bool layoutResolveKey(const char* key, char* out, size_t n) {
 
 void layoutExpand(const char* tpl, char* out, size_t outLen) {
   size_t o = 0;
-  char key[40];
+  char key[96];
   char val[64];
 
   while (*tpl && o + 1 < outLen) {
@@ -263,7 +264,9 @@ void layoutExpand(const char* tpl, char* out, size_t outLen) {
       if (end && klen > 0 && klen < sizeof(key)) {
         memcpy(key, tpl + 1, klen);
         key[klen] = '\0';
-        if (!layoutResolveKey(key, val, sizeof(val))) strlcpy(val, "--", sizeof(val));
+        if (!layoutResolveKey(key, val, sizeof(val))) {
+          if (!layoutIsExpr(key) || !layoutEval(key, val, sizeof(val))) strlcpy(val, "--", sizeof(val));
+        }
         for (const char* v = val; *v && o + 1 < outLen; v++) out[o++] = *v;
         tpl = end + 1;
         continue;
