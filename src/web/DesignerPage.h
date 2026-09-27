@@ -56,7 +56,15 @@ function findNode(root, path) {
 }
 
 // Writes the model to the code editor; that re-renders and rebuilds the tree.
-function commit() { srcSet(fmt(model)); }
+// A no-op write is skipped so it does not land in the undo history.
+function commit() {
+  clearTimeout(inspTimer); inspTimer = 0;
+  const text = fmt(model);
+  if (text !== srcGet()) srcSet(text);
+}
+// Commits a debounced field edit right away (before an undo, so the undo
+// applies to it rather than being overtaken by the pending write).
+window.designerFlush = function () { if (inspTimer) commit(); };
 
 // Re-renders from the model without touching the code (used while dragging).
 function quickRender() {
