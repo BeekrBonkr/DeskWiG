@@ -94,6 +94,9 @@ struct Parser {
       r = a[0];
       if (r.v < a[1].v) r.v = a[1].v;
       if (r.v > a[2].v) r.v = a[2].v;
+    } else if (is("if")) {
+      if (n != 3) { err = true; return r; }
+      r = a[0].v != 0 ? a[1] : a[2];
     } else {
       err = true;
     }
@@ -137,6 +140,7 @@ struct Parser {
     skip();
     if (*p == '-') { p++; Value r = unary(); r.v = -r.v; return r; }
     if (*p == '+') { p++; return unary(); }
+    if (*p == '!' && p[1] != '=') { p++; Value r = unary(); r.v = r.v == 0 ? 1 : 0; r.decimals = 0; return r; }
     Value r = primary();
     skip();
     if (*p == '^') { p++; Value e = unary(); r.v = pow(r.v, e.v); r.decimals = -1; }
@@ -159,7 +163,7 @@ struct Parser {
     }
   }
 
-  Value expr() {
+  Value sum() {
     Value r = term();
     for (;;) {
       skip();
@@ -170,6 +174,55 @@ struct Parser {
       if (err) return r;
       r.v = op == '+' ? r.v + b.v : r.v - b.v;
       if (b.decimals > r.decimals) r.decimals = b.decimals;
+    }
+  }
+
+  Value cmp() {
+    Value r = sum();
+    skip();
+    int op = 0;   // 1 <, 2 >, 3 <=, 4 >=, 5 ==, 6 !=
+    if (p[0] == '<' && p[1] == '=')      { op = 3; p += 2; }
+    else if (p[0] == '>' && p[1] == '=') { op = 4; p += 2; }
+    else if (p[0] == '=' && p[1] == '=') { op = 5; p += 2; }
+    else if (p[0] == '!' && p[1] == '=') { op = 6; p += 2; }
+    else if (p[0] == '<')                { op = 1; p += 1; }
+    else if (p[0] == '>')                { op = 2; p += 1; }
+    if (!op) return r;
+    Value b = sum();
+    if (err) return r;
+    bool t = false;
+    switch (op) {
+      case 1: t = r.v < b.v; break;
+      case 2: t = r.v > b.v; break;
+      case 3: t = r.v <= b.v; break;
+      case 4: t = r.v >= b.v; break;
+      case 5: t = r.v == b.v; break;
+      case 6: t = r.v != b.v; break;
+    }
+    return { t ? 1.0 : 0.0, 0 };
+  }
+
+  Value andExpr() {
+    Value r = cmp();
+    for (;;) {
+      skip();
+      if (p[0] != '&' || p[1] != '&') return r;
+      p += 2;
+      Value b = cmp();
+      if (err) return r;
+      r = { (r.v != 0 && b.v != 0) ? 1.0 : 0.0, 0 };
+    }
+  }
+
+  Value expr() {
+    Value r = andExpr();
+    for (;;) {
+      skip();
+      if (p[0] != '|' || p[1] != '|') return r;
+      p += 2;
+      Value b = andExpr();
+      if (err) return r;
+      r = { (r.v != 0 || b.v != 0) ? 1.0 : 0.0, 0 };
     }
   }
 };
@@ -199,9 +252,18 @@ void format(const Value& v, char* out, size_t n) {
 // minus here even though key names may contain dashes.
 bool layoutIsExpr(const char* body) {
   for (const char* c = body; *c; c++) {
-    if (*c == '(' || *c == '+' || *c == '-' || *c == '*' || *c == '/' || *c == '%' || *c == '^' || *c == ' ') return true;
+    if (strchr("(+-*/%^ <>=!&|", *c)) return true;
   }
   return body[0] >= '0' && body[0] <= '9';
+}
+
+bool layoutEvalNumber(const char* body, double& out) {
+  Parser ps = { body, false, 0 };
+  Value v = ps.expr();
+  ps.skip();
+  if (ps.err || *ps.p != '\0' || isnan(v.v) || isinf(v.v)) return false;
+  out = v.v;
+  return true;
 }
 
 bool layoutEval(const char* body, char* out, size_t n) {

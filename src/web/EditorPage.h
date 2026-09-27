@@ -109,7 +109,8 @@ math in braces, keys as variables:
   {round(api.weather.temp * 9/5 + 32, 1)}
   {min(ping.0.ms / 2, 100)}
   + - * / % ^ ( )  round(x,n) abs
-  min max floor ceil sqrt clamp(x,lo,hi)</pre>
+  min max floor ceil sqrt clamp(x,lo,hi)
+  &lt; &gt; &lt;= &gt;= == != &amp;&amp; || !  if(c,a,b)</pre>
 </div>
 </div>
 
@@ -190,7 +191,8 @@ function lookup(key, strict) {
 // ---------- expressions ----------
 // Mirrors LayoutExpr.cpp on the device: a brace body that is not a key is
 // arithmetic with keys as variables. round(x, n) fixes the decimals.
-function isExpr(b) { return /[()+\-*\/%^ ]/.test(b) || /^[0-9]/.test(b); }
+function isExpr(b) { return /[()+\-*\/%^ <>=!&|]/.test(b) || /^[0-9]/.test(b); }
+function evalNumber(body) { const r = evalExpr(body); return r === '--' ? null : parseFloat(r); }
 
 function evalExpr(body) {
   let p = 0, err = false, depth = 0;
@@ -244,6 +246,7 @@ function evalExpr(body) {
       case 'sqrt':  return n === 1 ? { v: Math.sqrt(a[0].v), d: -1 } : bad();
       case 'min': case 'max': { if (n < 1) return bad(); let r = a[0]; for (let i = 1; i < n; i++) if (name === 'min' ? a[i].v < r.v : a[i].v > r.v) r = a[i]; return r; }
       case 'clamp': { if (n !== 3) return bad(); return { v: Math.min(Math.max(a[0].v, a[1].v), a[2].v), d: a[0].d }; }
+      case 'if': { if (n !== 3) return bad(); return a[0].v !== 0 ? a[1] : a[2]; }
       default: return bad();
     }
   }
@@ -272,6 +275,7 @@ function evalExpr(body) {
     skip();
     if (s[p] === '-') { p++; const r = unary(); r.v = -r.v; return r; }
     if (s[p] === '+') { p++; return unary(); }
+    if (s[p] === '!' && s[p + 1] !== '=') { p++; const r = unary(); return { v: r.v === 0 ? 1 : 0, d: 0 }; }
     const r = primary();
     skip();
     if (s[p] === '^') { p++; const e = unary(); return { v: Math.pow(r.v, e.v), d: -1 }; }
@@ -290,7 +294,7 @@ function evalExpr(body) {
       if (b.d > r.d) r.d = b.d;
     }
   }
-  function expr() {
+  function sum() {
     let r = term();
     for (;;) {
       skip();
@@ -302,6 +306,27 @@ function evalExpr(body) {
       r.v = op === '+' ? r.v + b.v : r.v - b.v;
       if (b.d > r.d) r.d = b.d;
     }
+  }
+  function cmp() {
+    const r = sum();
+    skip();
+    const two = s.substr(p, 2), one = s[p];
+    let op = null;
+    if (['<=', '>=', '==', '!='].includes(two)) { op = two; p += 2; }
+    else if (one === '<' || one === '>') { op = one; p += 1; }
+    if (!op) return r;
+    const b = sum();
+    if (err) return r;
+    const t = op === '<' ? r.v < b.v : op === '>' ? r.v > b.v : op === '<=' ? r.v <= b.v : op === '>=' ? r.v >= b.v : op === '==' ? r.v === b.v : r.v !== b.v;
+    return { v: t ? 1 : 0, d: 0 };
+  }
+  function andExpr() {
+    let r = cmp();
+    for (;;) { skip(); if (s.substr(p, 2) !== '&&') return r; p += 2; const b = cmp(); if (err) return r; r = { v: (r.v !== 0 && b.v !== 0) ? 1 : 0, d: 0 }; }
+  }
+  function expr() {
+    let r = andExpr();
+    for (;;) { skip(); if (s.substr(p, 2) !== '||') return r; p += 2; const b = andExpr(); if (err) return r; r = { v: (r.v !== 0 || b.v !== 0) ? 1 : 0, d: 0 }; }
   }
   const v = expr();
   skip();

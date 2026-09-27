@@ -7,8 +7,9 @@
 //   {round(api.weather.temp * 9/5 + 32, 1)}
 //   {min(ping.0.ms / 2, 100)}
 //
-// Operators: + - * / % ^ and parentheses. Functions: round(x[, n]),
-// abs, min, max, floor, ceil, sqrt, clamp(x, lo, hi).
+// Operators: + - * / % ^ and parentheses, comparisons < > <= >= == !=
+// (giving 1 or 0), && || and !. Functions: round(x[, n]), abs, min, max,
+// floor, ceil, sqrt, clamp(x, lo, hi), if(cond, a, b).
 //
 // Key values are read as numbers (a leading number is enough, so "12s"
 // is 12). A key that is unknown or has no number makes the whole
@@ -22,3 +23,6 @@ bool layoutIsExpr(const char* body);
 
 // Evaluates body into out. Returns false (out = "--") on any error.
 bool layoutEval(const char* body, char* out, size_t outLen);
+
+// Evaluates body as a number. Returns false on any error.
+bool layoutEvalNumber(const char* body, double& out);

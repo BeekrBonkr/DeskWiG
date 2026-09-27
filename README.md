@@ -412,6 +412,9 @@ A brace that is not a plain key is evaluated as arithmetic, with keys as variabl
 | `abs(x)`, `floor(x)`, `ceil(x)`, `sqrt(x)`    |                                                                                  |
 | `min(a, b, ...)`, `max(a, b, ...)`            | Up to four arguments                                                             |
 | `clamp(x, lo, hi)`                            |                                                                                  |
+| `< > <= >= == !=`                             | Comparisons give `1` or `0`                                                      |
+| `&&`, `\|\|`, `!`                              | Logic on those                                                                   |
+| `if(cond, a, b)`                              | `a` when `cond` is non-zero, else `b`                                            |
 
 Values are read as numbers, and a leading number is enough, so `{api.weather.age}` reading `12s` gives 12. Without `round`, whole numbers print without decimals and anything else with up to two. Any unknown key, non-numeric value or division by zero makes the whole brace `--`, the same as an unknown key. Put spaces around a minus after a key that contains dashes (`{api.my-source.temp - 3}`), since `my-source` is read as one name first.
 
