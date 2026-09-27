@@ -84,10 +84,14 @@ arc       w value start end thickness
 triangle  points [[x,y] x3]
 polygon   points [[x,y] ...max 8]
 
-style: {color, background, border,
-  borderWidth, radius, size, align,
+style: {font, size, color, background,
+  border, borderWidth, radius, align,
   fill, thickness, gap, padding,
   direction, justify, position}
+font: sans | bold | emoji | uploaded;
+  size is then pixels (6-160).
+  no font = 6x8 bitmap, size 1-8;
+  emoji work in both.
 "styles": {"name": {...}} then
   "class": "name" on an element
 align: left | center | right | stretch
@@ -137,6 +141,8 @@ let TEMPLATES = [
     { type: 'text', x: 85, y: 150, size: 2, align: 'center', color: 'text', text: 'Hello' }
   ] } }
 ];
+
+loadFonts();
 
 async function loadTemplates() {
   try {
@@ -330,7 +336,7 @@ function checkColor(spec, path, what) {
 }
 
 function defaultStyle() {
-  return { color: 'text', bg: '', border: '', size: 1, borderW: 0, radius: 0, pad: 0, gap: 0, thick: 0,
+  return { font: '', color: 'text', bg: '', border: '', size: 1, borderW: 0, radius: 0, pad: 0, gap: 0, thick: 0,
            align: 'stretch', justify: 'start', row: false, fill: false, absolute: false };
 }
 
@@ -348,7 +354,8 @@ function parseStyle(st, obj, path) {
       case 'padding': st.pad = Math.max(0, Math.min(80, v | 0)); break;
       case 'gap': st.gap = Math.max(0, Math.min(200, v | 0)); break;
       case 'thickness': case 'width': st.thick = Math.max(1, Math.min(80, v | 0)); break;
-      case 'size': if (!Number.isInteger(v) || v < 1 || v > 8) throw new Error('element ' + path + ': size must be 1-8'); st.size = v; break;
+      case 'size': if (!Number.isInteger(v) || v < 1 || v > 160) throw new Error('element ' + path + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = v; break;
+      case 'font': if (v && !fontNames.includes(v)) throw new Error('element ' + path + ': unknown font (see the setup page for the list)'); st.font = String(v ?? ''); break;
       case 'align': if (!ALIGNS[v]) throw new Error('element ' + path + ': align must be left/start, center, right/end or stretch'); st.align = ALIGNS[v]; break;
       case 'justify': if (!['start', 'center', 'end', 'between'].includes(v)) throw new Error('element ' + path + ': justify must be start, center, end or between'); st.justify = v; break;
       case 'direction': if (v !== 'row' && v !== 'column') throw new Error('element ' + path + ': direction must be column or row'); st.row = v === 'row'; break;
@@ -384,10 +391,15 @@ function buildNode(e, path, styles, depth) {
     Object.assign(st, m);
   }
   if (e.color !== undefined) { checkColor(e.color, path, 'color'); st.color = String(e.color); }
-  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 8) throw new Error('element ' + path + ': size must be 1-8'); st.size = e.size; }
+  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 160) throw new Error('element ' + path + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = e.size; }
+  if (e.font !== undefined) { if (e.font && !fontNames.includes(e.font)) throw new Error('element ' + path + ': unknown font (see the setup page for the list)'); st.font = String(e.font ?? ''); }
   if (e.align !== undefined) { if (!ALIGNS[e.align]) throw new Error('element ' + path + ': align must be left, center or right'); st.align = ALIGNS[e.align]; }
   if (e.fill !== undefined) st.fill = !!e.fill;
   if (e.style && typeof e.style === 'object') parseStyle(st, e.style, path);
+  if (e.type === 'text') {
+    if (!st.font && st.size > 8) throw new Error('element ' + path + ': size must be 1-8 with the bitmap font; set "font" for pixel sizes');
+    if (st.font && st.size < 6) throw new Error('element ' + path + ': size must be at least 6 with a TrueType font');
+  }
   n.st = st;
 
   if (e.x !== undefined) n.x = e.x | 0;
@@ -448,13 +460,78 @@ function parse() {
   return j;
 }
 
+// ---------- fonts ----------
+// Device fonts are served from /fonts/<name>.ttf, so the preview draws
+// with the same files. The device scales a font so ascent-descent equals
+// the size; canvas sizes by em, so each font gets a correction ratio.
+let fontNames = ['sans', 'bold', 'emoji'];
+const fontRatio = {};
+const mctx = document.createElement('canvas').getContext('2d');
+
+async function loadFonts() {
+  try {
+    const r = await fetch('/api/fonts');
+    const j = await r.json();
+    if (Array.isArray(j.fonts) && j.fonts.length) fontNames = j.fonts.map(f => f.name);
+  } catch (e) {}
+  // One at a time: the device serves large files more reliably that way.
+  for (const n of fontNames) {
+    for (let attempt = 0; attempt < 2 && !fontRatio[n]; attempt++) {
+      try {
+        const ff = new FontFace('dw-' + n, 'url(/fonts/' + n + '.ttf)');
+        await ff.load();
+        document.fonts.add(ff);
+        mctx.font = '100px "dw-' + n + '"';
+        const m = mctx.measureText('Hg');
+        const box = (m.fontBoundingBoxAscent || 80) + (m.fontBoundingBoxDescent || 20);
+        fontRatio[n] = { r: 100 / box, asc: (m.fontBoundingBoxAscent || 80) / box };
+        render();
+      } catch (e) {}
+    }
+  }
+}
+
+function canvasFont(name, px) {
+  const fr = fontRatio[name] || { r: 1, asc: 0.8 };
+  return { font: Math.round(px * fr.r * 100) / 100 + 'px "dw-' + name + '", "dw-emoji", "dw-sans", sans-serif', ascent: Math.round(px * fr.asc) };
+}
+
+// The device draws emoji from the monochrome font. Chrome would swap in
+// its colour emoji font for emoji-presentation characters, so the text
+// presentation selector (U+FE0E) is appended to keep the preview honest.
+function monoEmoji(s) {
+  let out = '';
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (cp === 0xFE0F) continue;
+    out += ch;
+    if (cp >= 0x2190) out += '\uFE0E';
+  }
+  return out;
+}
+
+function ttfWidth(name, s, px) {
+  mctx.font = canvasFont(name, px).font;
+  return Math.round(mctx.measureText(monoEmoji(s)).width);
+}
+
 // ---------- layout (mirrors LayoutWidget.cpp) ----------
-const textW = (s, size) => s.length * 6 * size;
+const isAscii = ch => ch.charCodeAt(0) < 128;
+
+// Bitmap font width; non-ASCII characters (emoji) come from the emoji font at the same line height.
+function bitmapW(s, size) {
+  let w = 0;
+  for (const ch of s) w += isAscii(ch) ? 6 * size : ttfWidth('emoji', ch, 8 * size);
+  return w;
+}
+
+const textW = (st, s) => st.font ? ttfWidth(st.font, s, st.size) : bitmapW(s, st.size);
+const textH = st => st.font ? st.size : 8 * st.size;
 
 function measure(n) {
   let w = AUTO, h = AUTO;
   switch (n.type) {
-    case 'text': n.txt = expand(n.text); w = textW(n.txt, n.st.size); h = 8 * n.st.size; break;
+    case 'text': n.txt = expand(n.text); w = textW(n.st, n.txt); h = textH(n.st); break;
     case 'line':
       if (n.hasXY && n.x2 !== AUTO) { w = Math.abs(n.x2 - n.x) + 1; h = (n.y2 === AUTO ? 0 : Math.abs(n.y2 - n.y)) + 1; }
       else h = n.st.thick;
@@ -541,9 +618,24 @@ function place(n, x, y, w, h) {
 }
 
 // ---------- drawing ----------
-function drawText(s, x, y, size, col) {
+function drawTtf(name, s, x, y, px, col) {
+  const f = canvasFont(name, px);
+  ctx.font = f.font;
+  ctx.fillStyle = col;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
+  ctx.save();
+  ctx.scale(S, S);
+  ctx.fillText(monoEmoji(s), x, y + f.ascent);
+  ctx.restore();
+}
+
+function drawText(st, s, x, y, col) {
+  if (st.font) { drawTtf(st.font, s, x, y, st.size, col); return; }
+  const size = st.size;
   ctx.fillStyle = col;
   for (const ch of s) {
+    if (!isAscii(ch)) { drawTtf('emoji', ch, x, y, 8 * size, col); x += ttfWidth('emoji', ch, 8 * size); continue; }
     let code = ch.charCodeAt(0);
     if (code < 32 || code > 126) code = 63;
     const off = (code - 32) * 5;
@@ -632,14 +724,14 @@ function drawNode(n) {
     }
     case 'text': {
       const s = n.txt;
-      const tw = textW(s, n.st.size);
+      const tw = textW(n.st, s);
       let tx = x;
       if (w > tw) {
         if (n.st.align === 'center') tx = x + Math.trunc((w - tw) / 2);
         else if (n.st.align === 'end') tx = x + w - tw;
       }
       if (bg.present) fillRectR(x, y, w, h, 0, bg.c);
-      drawText(s, tx, y, n.st.size, col);
+      drawText(n.st, s, tx, y, col);
       break;
     }
     case 'line': {

@@ -2,6 +2,7 @@
 
 #include <esp_heap_caps.h>
 #include "LayoutData.h"
+#include "FontService.h"
 #include "../net/PingService.h"
 #include "../net/DataSource.h"
 
@@ -17,6 +18,7 @@ static const int16_t SCREEN_W = 170;
 static const int16_t SCREEN_H = 320;
 static const int16_t CHAR_W = 6;
 static const int16_t CHAR_H = 8;
+static const size_t TEXT_RUN = 96;
 
 struct LayoutWidget::NamedStyle {
   char name[17];
@@ -156,8 +158,13 @@ bool LayoutWidget::parseStyle(LayoutStyle& st, JsonObjectConst obj, const char* 
       st.thick = clampU8(v | 1, 1, 80);
     } else if (!strcmp(k, "size")) {
       int size = v | 1;
-      if (size < 1 || size > 8) return fail(err, errLen, path, "size must be 1-8");
+      if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-8 (bitmap font) or 6-160 (TrueType font)");
       st.size = size;
+    } else if (!strcmp(k, "font")) {
+      const char* f = v | "";
+      if (strlen(f) >= sizeof(st.font)) return fail(err, errLen, path, "font name too long");
+      if (*f && !fontExists(f)) return fail(err, errLen, path, "unknown font (see the setup page for the list)");
+      strlcpy(st.font, f, sizeof(st.font));
     } else if (!strcmp(k, "align")) {
       if (!parseAlign(v | "", st.align)) return fail(err, errLen, path, "align must be left/start, center, right/end or stretch");
     } else if (!strcmp(k, "justify")) {
@@ -245,8 +252,14 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     }
     if (!v["size"].isNull()) {
       int size = v["size"] | 1;
-      if (size < 1 || size > 8) return fail(err, errLen, path, "size must be 1-8");
+      if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-8 (bitmap font) or 6-160 (TrueType font)");
       e.st.size = size;
+    }
+    if (!v["font"].isNull()) {
+      const char* f = v["font"] | "";
+      if (strlen(f) >= sizeof(e.st.font)) return fail(err, errLen, path, "font name too long");
+      if (*f && !fontExists(f)) return fail(err, errLen, path, "unknown font (see the setup page for the list)");
+      strlcpy(e.st.font, f, sizeof(e.st.font));
     }
     if (!v["align"].isNull()) {
       if (!parseAlign(v["align"] | "", e.st.align)) return fail(err, errLen, path, "align must be left, center or right");
@@ -255,6 +268,10 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
 
     if (v["style"].is<JsonObjectConst>()) {
       if (!parseStyle(e.st, v["style"].as<JsonObjectConst>(), path, err, errLen)) return false;
+    }
+    if (e.type == ElType::TEXT) {
+      if (!e.st.font[0] && e.st.size > 8) return fail(err, errLen, path, "size must be 1-8 with the bitmap font; set \"font\" for pixel sizes");
+      if (e.st.font[0] && e.st.size < FONT_MIN_PX) return fail(err, errLen, path, "size must be at least 6 with a TrueType font");
     }
 
     // ---- geometry ----
@@ -465,8 +482,46 @@ void LayoutWidget::expandAll() {
   }
 }
 
-static int16_t textW(const char* s, uint8_t size) {
-  return (int16_t)(strlen(s) * CHAR_W * size);
+// Width of a string in the bitmap font. Characters the bitmap font lacks
+// (anything non-ASCII, e.g. emoji) come from the TrueType fallback at the
+// same line height.
+static int16_t bitmapTextW(const char* s, uint8_t size) {
+  int16_t w = 0;
+  const char* p = s;
+  for (uint32_t cp = utf8Next(&p); cp; cp = utf8Next(&p)) {
+    if (cp < 0x80) w += CHAR_W * size;
+    else w += fontDrawFallbackGlyph(nullptr, cp, CHAR_H * size, 0, 0, 0);
+  }
+  return w;
+}
+
+static int16_t textW(const LayoutStyle& st, const char* s) {
+  if (st.font[0]) return fontTextWidth(st.font, s, st.size);
+  return bitmapTextW(s, st.size);
+}
+
+static int16_t textH(const LayoutStyle& st) {
+  return st.font[0] ? st.size : CHAR_H * st.size;
+}
+
+// Bitmap-font text with TrueType fallback for characters it lacks.
+static void drawBitmapText(lgfx::LGFX_Sprite& ui, const char* s, int16_t x, int16_t y, uint8_t size, uint16_t color, uint16_t bg) {
+  ui.setTextSize(size);
+  ui.setTextColor(color, bg);
+  ui.setTextDatum(top_left);
+  char run[TEXT_RUN];
+  size_t rl = 0;
+  int16_t pen = x;
+  const char* p = s;
+  for (;;) {
+    const char* before = p;
+    uint32_t cp = utf8Next(&p);
+    if (cp && cp < 0x80 && rl + 1 < sizeof(run)) { run[rl++] = (char)cp; continue; }
+    if (rl) { run[rl] = '\0'; ui.drawString(run, pen, y); pen += rl * CHAR_W * size; rl = 0; }
+    if (!cp) break;
+    if (cp < 0x80) { p = before; continue; }   // run buffer was full; retry this char
+    pen += fontDrawFallbackGlyph(&ui, cp, CHAR_H * size, pen, y, color);
+  }
 }
 
 // Intrinsic size into lw/lh. Explicit w/h win; EL_AUTO stays for a
@@ -477,8 +532,8 @@ void LayoutWidget::measure(uint8_t i) {
 
   switch (e.type) {
     case ElType::TEXT:
-      w = textW(_txt[i], e.st.size);
-      h = CHAR_H * e.st.size;
+      w = textW(e.st, _txt[i]);
+      h = textH(e.st);
       break;
     case ElType::LINE:
       if (e.hasXY && e.x2 != EL_AUTO) {
@@ -689,17 +744,15 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
     }
     case ElType::TEXT: {
       const char* s = _txt[i];
-      int16_t tw = textW(s, e.st.size);
+      int16_t tw = textW(e.st, s);
       int16_t tx = x;
       if (w > tw) {
         if (e.st.align == ElAlign::CENTER) tx = x + (w - tw) / 2;
         else if (e.st.align == ElAlign::END) tx = x + w - tw;
       }
       if (hasBg && w > 0 && h > 0) ui.fillRect(x, y, w, h, bg);
-      ui.setTextSize(e.st.size);
-      ui.setTextColor(color, hasBg ? bg : COLOR_BG);
-      ui.setTextDatum(top_left);
-      ui.drawString(s, tx, y);
+      if (e.st.font[0]) fontDrawText(ui, e.st.font, s, e.st.size, tx, y, color);
+      else drawBitmapText(ui, s, tx, y, e.st.size, color, hasBg ? bg : COLOR_BG);
       break;
     }
     case ElType::LINE: {

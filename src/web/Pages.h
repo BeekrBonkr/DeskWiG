@@ -77,6 +77,14 @@ static const char SETUP_HTML[] = R"html(
 <button id="saveClock">Save clock settings</button>
 <p class="hint">"Router" asks your WiFi gateway for the time, which works on networks without internet access if the router runs an NTP server (most do). The timezone converts NTP's UTC to local time and handles daylight saving.</p>
 
+<h3>Fonts</h3>
+<div id="fontList" class="dim">Loading&hellip;</div>
+<div class="row">
+  <input type="file" id="fontFile" accept=".ttf,font/ttf" class="p">
+  <button id="fontUpload" type="button">Upload</button>
+</div>
+<p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasteriser does no bounds checking.</p>
+
 <h3>Data sources</h3>
 <div id="srcList" class="dim">Loading&hellip;</div>
 <button id="srcAdd">Add data source</button>
@@ -310,6 +318,70 @@ async function saveClock() {
 $('saveClock').onclick = saveClock;
 setInterval(async () => { try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
 loadClock();
+
+// ---------- fonts ----------
+let fontDelPending = null;
+function fmtBytes(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB'; }
+
+async function loadFonts() {
+  try {
+    const r = await api('/api/fonts');
+    const box = $('fontList');
+    box.className = '';
+    box.innerHTML = '';
+    (r.fonts || []).forEach(f => {
+      const d = document.createElement('div');
+      d.className = 'card src';
+      d.innerHTML = '<b>' + esc(f.name) + '</b> <span class="dim">' + fmtBytes(f.size) + (f.builtin ? ' &middot; built in' : '') + '</span>' +
+        (f.builtin ? '' : '<div class="btns"><button class="danger del">' + (fontDelPending === f.name ? 'Tap again to delete' : 'Delete') + '</button></div>');
+      const del = d.querySelector('.del');
+      if (del) del.onclick = () => deleteFont(f.name);
+      box.appendChild(d);
+    });
+    const free = document.createElement('div');
+    free.className = 'hint';
+    free.textContent = fmtBytes(r.fsFree) + ' free on the device for fonts, images and layouts.';
+    box.appendChild(free);
+  } catch (e) { $('fontList').textContent = e.message; }
+}
+
+async function uploadFont() {
+  const f = $('fontFile').files[0];
+  if (!f) { msg('Choose a .ttf file first.'); return; }
+  const name = f.name.replace(/\.ttf$/i, '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 23);
+  if (!name) { msg('The file name gives no usable font name.'); return; }
+  const fd = new FormData();
+  fd.append('file', f, f.name);
+  $('fontUpload').disabled = true;
+  msg('Uploading ' + name + '\u2026');
+  try {
+    const r = await fetch('/api/fonts?name=' + encodeURIComponent(name), { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    msg('Font "' + name + '" uploaded. Use "font":"' + name + '" in a layout.');
+    $('fontFile').value = '';
+    loadFonts();
+  } catch (e) { msg(e.message); }
+  $('fontUpload').disabled = false;
+}
+
+async function deleteFont(name) {
+  if (fontDelPending !== name) {
+    fontDelPending = name;
+    loadFonts();
+    setTimeout(() => { if (fontDelPending === name) { fontDelPending = null; loadFonts(); } }, 4000);
+    return;
+  }
+  fontDelPending = null;
+  try {
+    await api('/api/fonts?name=' + encodeURIComponent(name), 'DELETE');
+    msg('Deleted font ' + name + '.');
+    loadFonts();
+  } catch (e) { msg(e.message); }
+}
+
+$('fontUpload').onclick = uploadFont;
+loadFonts();
 
 // ---------- data sources ----------
 let sources = [];

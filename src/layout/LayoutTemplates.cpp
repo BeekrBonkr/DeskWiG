@@ -261,13 +261,13 @@ static const char CARDS[] = R"json({
   "styles": {
     "label": {"color":"dim"},
     "card":  {"background":"#101820","border":"#2a3a4a","radius":8,"padding":8,"gap":4},
-    "big":   {"size":4,"align":"center"}
+    "big":   {"font":"bold","size":44,"align":"center"}
   },
   "elements": [
     {"type":"box","class":"card","children":[
       {"type":"text","class":"label","text":"TIME"},
       {"type":"text","class":"big","text":"{time}"},
-      {"type":"text","text":"{date.day} {date.md}","style":{"align":"center","color":"dim"}}
+      {"type":"text","text":"{date.day} {date.md}","font":"sans","size":14,"style":{"align":"center","color":"dim"}}
     ]},
     {"type":"box","class":"card","style":{"direction":"row","align":"center","gap":10},"children":[
       {"type":"arc","w":56,"value":"{wifi.pct}","color":"{wifi.color}","style":{"thickness":7}},
@@ -278,7 +278,7 @@ static const char CARDS[] = R"json({
       ]}
     ]},
     {"type":"box","class":"card","children":[
-      {"type":"text","class":"label","text":"SERVERS"},
+      {"type":"text","class":"label","text":"SERVERS 🖥"},
       {"type":"box","style":{"direction":"row","align":"center","gap":6},"children":[
         {"type":"circle","w":10,"color":"{ping.0.color}"},
         {"type":"text","text":"{ping.0.name}"},
