@@ -69,12 +69,28 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
 size 1 = 6x8 px per char (28 cols)
 size 2 = 14 cols, size 4 = 7 cols
 
-text  x y size align color text
-line  x y x2 y2 color
-rect  x y w h color fill
-bar   x y w h color value   (0-100)
+elements flow top to bottom like HTML;
+give x AND y to place one absolutely.
 
-align: left | center | right
+text      text  (w h optional)
+line      w h | x2 y2 (absolute)
+rect      w h  fill | style.bg
+bar       w h  value (0-100)
+box       children[] + style:
+          direction row|column, gap,
+          padding, align, justify
+circle    w (or r)    ellipse  w h
+arc       w value start end thickness
+triangle  points [[x,y] x3]
+polygon   points [[x,y] ...max 8]
+
+style: {color, background, border,
+  borderWidth, radius, size, align,
+  fill, thickness, gap, padding,
+  direction, justify, position}
+"styles": {"name": {...}} then
+  "class": "name" on an element
+align: left | center | right | stretch
 color: bg text dim ok warn bad accent
        #rrggbb, or {ping.0.color}
 text and value take {keys}
@@ -292,19 +308,240 @@ function expandKey(k) {
 
 const expand = t => String(t ?? '').replace(/\{([^}]+)\}/g, (m, k) => expandKey(k));
 
-function color(spec) {
-  let n = String(spec ?? 'text');
+const AUTO = null;
+const TYPES = ['text', 'line', 'rect', 'bar', 'box', 'circle', 'ellipse', 'arc', 'triangle', 'polygon'];
+
+// Returns the CSS colour for a spec. present=false when the spec is empty.
+function color(spec, fallback) {
+  const raw = String(spec ?? '');
+  if (!raw) return { c: fallback, present: false };
+  let n = raw;
   const templated = n.includes('{');
-  if (templated) n = expand(n);
-  if (COLORS[n]) return COLORS[n];
-  if (/^#[0-9a-f]{6}$/i.test(n)) return n;
-  return templated ? COLORS.dim : COLORS.text;   // unresolved template renders dim, like the device
+  let fb = fallback;
+  if (templated) { n = expand(n); fb = COLORS.dim; }
+  if (COLORS[n]) return { c: COLORS[n], present: true };
+  if (/^#[0-9a-f]{6}$/i.test(n)) return { c: n, present: true };
+  return { c: fb, present: true };
 }
 
-function drawText(s, x, y, size, align, col) {
-  const w = s.length * 6 * size;
-  if (align === 'center') x -= Math.floor(w / 2);
-  else if (align === 'right') x -= w;
+function checkColor(spec, path, what) {
+  const c = String(spec ?? '');
+  if (c && !c.includes('{') && !COLORS[c] && !/^#[0-9a-f]{6}$/i.test(c)) throw new Error('element ' + path + ': unknown ' + what + ' (use a role name or #rrggbb)');
+}
+
+function defaultStyle() {
+  return { color: 'text', bg: '', border: '', size: 1, borderW: 0, radius: 0, pad: 0, gap: 0, thick: 0,
+           align: 'stretch', justify: 'start', row: false, fill: false, absolute: false };
+}
+
+const ALIGNS = { left: 'start', start: 'start', top: 'start', center: 'center', right: 'end', end: 'end', bottom: 'end', stretch: 'stretch' };
+
+function parseStyle(st, obj, path) {
+  for (const k of Object.keys(obj)) {
+    const v = obj[k];
+    switch (k) {
+      case 'color': checkColor(v, path, 'color'); st.color = String(v ?? 'text'); break;
+      case 'background': case 'bg': checkColor(v, path, 'background'); st.bg = String(v ?? ''); break;
+      case 'border': checkColor(v, path, 'border'); st.border = String(v ?? ''); if (st.border && !st.borderW) st.borderW = 1; break;
+      case 'borderWidth': st.borderW = Math.max(0, Math.min(20, v | 0)); break;
+      case 'radius': st.radius = Math.max(0, Math.min(80, v | 0)); break;
+      case 'padding': st.pad = Math.max(0, Math.min(80, v | 0)); break;
+      case 'gap': st.gap = Math.max(0, Math.min(200, v | 0)); break;
+      case 'thickness': case 'width': st.thick = Math.max(1, Math.min(80, v | 0)); break;
+      case 'size': if (!Number.isInteger(v) || v < 1 || v > 8) throw new Error('element ' + path + ': size must be 1-8'); st.size = v; break;
+      case 'align': if (!ALIGNS[v]) throw new Error('element ' + path + ': align must be left/start, center, right/end or stretch'); st.align = ALIGNS[v]; break;
+      case 'justify': if (!['start', 'center', 'end', 'between'].includes(v)) throw new Error('element ' + path + ': justify must be start, center, end or between'); st.justify = v; break;
+      case 'direction': if (v !== 'row' && v !== 'column') throw new Error('element ' + path + ': direction must be column or row'); st.row = v === 'row'; break;
+      case 'fill': st.fill = !!v; break;
+      case 'position': st.absolute = v === 'absolute'; break;
+      default: throw new Error('element ' + path + ': unknown style property "' + String(k).slice(0, 20) + '"');
+    }
+  }
+}
+
+let nodeCount = 0;
+
+function buildNode(e, path, styles, depth) {
+  if (!e || typeof e !== 'object' || Array.isArray(e)) throw new Error('element ' + path + ': must be an object');
+  if (++nodeCount > 63) throw new Error('too many elements (max 63 including nested)');
+  if (depth > 6) throw new Error('element ' + path + ': nested too deep');
+  if (!TYPES.includes(e.type)) throw new Error('element ' + path + ': unknown type (' + TYPES.join(', ') + ')');
+  const n = { type: e.type, x: AUTO, y: AUTO, w: AUTO, h: AUTO, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: false };
+  const st = defaultStyle();
+  const shape = ['circle', 'ellipse', 'triangle', 'polygon'].includes(e.type);
+  if (shape) st.fill = true;
+  if (e.type === 'arc') { st.thick = 8; st.bg = 'dim'; }
+  if (e.type === 'line') st.thick = 1;
+
+  const cls = e.class ?? (typeof e.style === 'string' ? e.style : '');
+  if (cls) {
+    if (!styles[cls]) throw new Error('element ' + path + ': unknown class (define it in "styles")');
+    const m = Object.assign({}, styles[cls]);
+    m.fill = styles[cls].fill || st.fill;
+    if (e.type === 'arc' && !m.thick) m.thick = 8;
+    if (e.type === 'arc' && !m.bg) m.bg = 'dim';
+    if (e.type === 'line' && !m.thick) m.thick = 1;
+    Object.assign(st, m);
+  }
+  if (e.color !== undefined) { checkColor(e.color, path, 'color'); st.color = String(e.color); }
+  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 8) throw new Error('element ' + path + ': size must be 1-8'); st.size = e.size; }
+  if (e.align !== undefined) { if (!ALIGNS[e.align]) throw new Error('element ' + path + ': align must be left, center or right'); st.align = ALIGNS[e.align]; }
+  if (e.fill !== undefined) st.fill = !!e.fill;
+  if (e.style && typeof e.style === 'object') parseStyle(st, e.style, path);
+  n.st = st;
+
+  if (e.x !== undefined) n.x = e.x | 0;
+  if (e.y !== undefined) n.y = e.y | 0;
+  if (e.w !== undefined) n.w = e.w | 0;
+  if (e.h !== undefined) n.h = e.h | 0;
+  if (e.r !== undefined) n.w = n.h = (e.r | 0) * 2;
+  if (e.x2 !== undefined) n.x2 = e.x2 | 0;
+  if (e.y2 !== undefined) n.y2 = e.y2 | 0;
+  n.hasXY = (n.x !== AUTO && n.y !== AUTO) || st.absolute;
+  if (n.hasXY) { if (n.x === AUTO) n.x = 0; if (n.y === AUTO) n.y = 0; }
+  if (e.type === 'arc') { n.a0 = e.start ?? 0; n.a1 = e.end ?? 360; }
+  if (e.type === 'triangle' || e.type === 'polygon') {
+    if (!Array.isArray(e.points)) throw new Error('element ' + path + ': "points" must be an array of [x,y] pairs');
+    if (e.points.length > 8) throw new Error('element ' + path + ': too many points (max 8)');
+    for (const p of e.points) {
+      if (!Array.isArray(p) || p.length !== 2) throw new Error('element ' + path + ': each point must be [x,y]');
+      n.pts.push([p[0] | 0, p[1] | 0]);
+    }
+    if (e.type === 'triangle' && n.pts.length !== 3) throw new Error('element ' + path + ': triangle needs exactly 3 points');
+    if (n.pts.length < 3) throw new Error('element ' + path + ': polygon needs at least 3 points');
+  }
+  let text = '';
+  if (e.type === 'bar' || e.type === 'arc') text = String(e.value ?? '0');
+  else if (e.type === 'text') text = String(e.text ?? '');
+  if (text.length > 63) throw new Error('element ' + path + ': text longer than 63 characters');
+  n.text = text;
+
+  if (e.children !== undefined) {
+    if (e.type !== 'box') throw new Error('element ' + path + ': only a box can have children');
+    if (!Array.isArray(e.children)) throw new Error('element ' + path + ': "children" must be an array');
+    e.children.forEach((c, i) => n.children.push(buildNode(c, path + '.' + i, styles, depth + 1)));
+  }
+  return n;
+}
+
+function parse() {
+  const j = JSON.parse($('src').value);
+  if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('layout must be a JSON object');
+  if (!Array.isArray(j.elements)) throw new Error('"elements" must be an array');
+  const styles = {};
+  if (j.styles !== undefined) {
+    if (!j.styles || typeof j.styles !== 'object' || Array.isArray(j.styles)) throw new Error('"styles" must be an object');
+    const names = Object.keys(j.styles);
+    if (names.length > 8) throw new Error('too many styles (max 8)');
+    for (const name of names) {
+      if (!j.styles[name] || typeof j.styles[name] !== 'object') throw new Error('style "' + name + '": must be an object');
+      const st = defaultStyle();
+      parseStyle(st, j.styles[name], 'style "' + name + '"');
+      styles[name] = st;
+    }
+  }
+  nodeCount = 0;
+  const root = { type: 'box', x: 0, y: 0, w: 170, h: 320, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: true, st: defaultStyle() };
+  if (j.style && typeof j.style === 'object') parseStyle(root.st, j.style, 'root');
+  j.elements.forEach((e, i) => root.children.push(buildNode(e, String(i), styles, 1)));
+  j._root = root;
+  return j;
+}
+
+// ---------- layout (mirrors LayoutWidget.cpp) ----------
+const textW = (s, size) => s.length * 6 * size;
+
+function measure(n) {
+  let w = AUTO, h = AUTO;
+  switch (n.type) {
+    case 'text': n.txt = expand(n.text); w = textW(n.txt, n.st.size); h = 8 * n.st.size; break;
+    case 'line':
+      if (n.hasXY && n.x2 !== AUTO) { w = Math.abs(n.x2 - n.x) + 1; h = (n.y2 === AUTO ? 0 : Math.abs(n.y2 - n.y)) + 1; }
+      else h = n.st.thick;
+      break;
+    case 'bar': n.txt = expand(n.text); h = 8; break;
+    case 'arc': n.txt = expand(n.text); // fall through
+    case 'circle':
+      if (n.w !== AUTO && n.h === AUTO) h = n.w;
+      if (n.h !== AUTO && n.w === AUTO) w = n.h;
+      break;
+    case 'triangle': case 'polygon': {
+      let mx = 0, my = 0;
+      for (const p of n.pts) { mx = Math.max(mx, p[0]); my = Math.max(my, p[1]); }
+      w = mx + 1; h = my + 1;
+      break;
+    }
+    case 'box': {
+      let main = 0, cross = 0, cnt = 0;
+      for (const c of n.children) {
+        measure(c);
+        if (c.hasXY) continue;
+        const cw = c.lw === AUTO ? 0 : c.lw, chh = c.lh === AUTO ? 0 : c.lh;
+        main += n.st.row ? cw : chh;
+        cross = Math.max(cross, n.st.row ? chh : cw);
+        cnt++;
+      }
+      if (cnt > 1) main += n.st.gap * (cnt - 1);
+      main += 2 * n.st.pad; cross += 2 * n.st.pad;
+      w = n.st.row ? main : cross; h = n.st.row ? cross : main;
+      break;
+    }
+  }
+  n.lw = n.w !== AUTO ? n.w : w;
+  n.lh = n.h !== AUTO ? n.h : h;
+}
+
+function place(n, x, y, w, h) {
+  n.lx = x; n.ly = y; n.lw = w; n.lh = h;
+  if (n.type !== 'box') return;
+  const cx = x + n.st.pad, cy = y + n.st.pad;
+  const cw = Math.max(0, w - 2 * n.st.pad), ch = Math.max(0, h - 2 * n.st.pad);
+  const mainAvail = n.st.row ? cw : ch, crossAvail = n.st.row ? ch : cw;
+  let total = 0, cnt = 0;
+  for (const k of n.children) {
+    if (k.hasXY) continue;
+    const m = n.st.row ? k.lw : k.lh;
+    total += m === AUTO ? 0 : m; cnt++;
+  }
+  let gap = n.st.gap;
+  if (cnt > 1) total += gap * (cnt - 1);
+  const free = mainAvail - total;
+  let offset = 0;
+  if (free > 0) {
+    if (n.st.justify === 'center') offset = Math.trunc(free / 2);
+    else if (n.st.justify === 'end') offset = free;
+    else if (n.st.justify === 'between' && cnt > 1) gap += Math.trunc(free / (cnt - 1));
+  }
+  let cursor = offset;
+  for (const k of n.children) {
+    if (k.hasXY) {
+      const kw = k.lw === AUTO ? 0 : k.lw, kh = k.lh === AUTO ? 0 : k.lh;
+      let kx = cx + k.x;
+      if (k.type === 'text' && k.w === AUTO) {
+        if (k.st.align === 'center') kx -= Math.trunc(kw / 2);
+        else if (k.st.align === 'end') kx -= kw;
+      }
+      place(k, kx, cy + k.y, kw, kh);
+      continue;
+    }
+    let mainSize = n.st.row ? k.lw : k.lh;
+    if (mainSize === AUTO) mainSize = 0;
+    let crossSize = n.st.row ? k.lh : k.lw;
+    const stretch = n.st.align === 'stretch';
+    const crossExplicit = (n.st.row ? k.h : k.w) !== AUTO;
+    if (crossSize === AUTO) crossSize = stretch ? crossAvail : 0;
+    else if (stretch && !crossExplicit && ['text', 'bar', 'box', 'line'].includes(k.type)) crossSize = crossAvail;
+    let crossOff = 0;
+    if (n.st.align === 'center') crossOff = Math.trunc((crossAvail - crossSize) / 2);
+    else if (n.st.align === 'end') crossOff = crossAvail - crossSize;
+    if (n.st.row) place(k, cx + cursor, cy + crossOff, mainSize, crossSize);
+    else place(k, cx + crossOff, cy + cursor, crossSize, mainSize);
+    cursor += mainSize + gap;
+  }
+}
+
+// ---------- drawing ----------
+function drawText(s, x, y, size, col) {
   ctx.fillStyle = col;
   for (const ch of s) {
     let code = ch.charCodeAt(0);
@@ -320,7 +557,12 @@ function drawText(s, x, y, size, align, col) {
   }
 }
 
-function drawLine(x1, y1, x2, y2, col) {
+function drawLine(x1, y1, x2, y2, col, thick) {
+  if (thick > 1) {
+    ctx.strokeStyle = col; ctx.lineWidth = thick * S; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo((x1 + 0.5) * S, (y1 + 0.5) * S); ctx.lineTo((x2 + 0.5) * S, (y2 + 0.5) * S); ctx.stroke();
+    return;
+  }
   ctx.fillStyle = col;
   let dx = Math.abs(x2 - x1), dy = -Math.abs(y2 - y1);
   let sx = x1 < x2 ? 1 : -1, sy = y1 < y2 ? 1 : -1, e = dx + dy;
@@ -333,31 +575,128 @@ function drawLine(x1, y1, x2, y2, col) {
   }
 }
 
-function drawRect(x, y, w, h, col, fill) {
-  ctx.fillStyle = col;
-  if (fill) { ctx.fillRect(x * S, y * S, w * S, h * S); return; }
-  ctx.fillRect(x * S, y * S, w * S, S);
-  ctx.fillRect(x * S, (y + h - 1) * S, w * S, S);
-  ctx.fillRect(x * S, y * S, S, h * S);
-  ctx.fillRect((x + w - 1) * S, y * S, S, h * S);
+function rrPath(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo((x + r) * S, y * S);
+  ctx.arcTo((x + w) * S, y * S, (x + w) * S, (y + h) * S, r * S);
+  ctx.arcTo((x + w) * S, (y + h) * S, x * S, (y + h) * S, r * S);
+  ctx.arcTo(x * S, (y + h) * S, x * S, y * S, r * S);
+  ctx.arcTo(x * S, y * S, (x + w) * S, y * S, r * S);
+  ctx.closePath();
 }
 
-function parse() {
-  const j = JSON.parse($('src').value);
-  if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('layout must be a JSON object');
-  if (!Array.isArray(j.elements)) throw new Error('"elements" must be an array');
-  if (j.elements.length > 32) throw new Error('too many elements (max 32)');
-  j.elements.forEach((e, i) => {
-    if (!e || typeof e !== 'object') throw new Error('element ' + i + ': must be an object');
-    if (!['text', 'line', 'rect', 'bar'].includes(e.type)) throw new Error('element ' + i + ': unknown type (use text, line, rect or bar)');
-    const size = e.size ?? 1;
-    if (!Number.isInteger(size) || size < 1 || size > 8) throw new Error('element ' + i + ': size must be 1-8');
-    if (e.align && !['left', 'center', 'right'].includes(e.align)) throw new Error('element ' + i + ': align must be left, center or right');
-    const c = String(e.color ?? 'text');
-    if (!c.includes('{') && !COLORS[c] && !/^#[0-9a-f]{6}$/i.test(c)) throw new Error('element ' + i + ': unknown color');
-    if (String(e.type === 'bar' ? (e.value ?? '') : (e.text ?? '')).length > 63) throw new Error('element ' + i + ': text longer than 63 characters');
-  });
-  return j;
+function fillRectR(x, y, w, h, r, col) {
+  ctx.fillStyle = col;
+  if (w <= 0 || h <= 0) return;
+  if (!r) { ctx.fillRect(x * S, y * S, w * S, h * S); return; }
+  rrPath(x, y, w, h, r); ctx.fill();
+}
+
+function strokeRectR(x, y, w, h, r, col) {
+  if (w <= 0 || h <= 0) return;
+  if (!r) {
+    ctx.fillStyle = col;
+    ctx.fillRect(x * S, y * S, w * S, S); ctx.fillRect(x * S, (y + h - 1) * S, w * S, S);
+    ctx.fillRect(x * S, y * S, S, h * S); ctx.fillRect((x + w - 1) * S, y * S, S, h * S);
+    return;
+  }
+  ctx.strokeStyle = col; ctx.lineWidth = S;
+  rrPath(x + 0.5, y + 0.5, w - 1, h - 1, r); ctx.stroke();
+}
+
+function drawNode(n) {
+  let { lx: x, ly: y, lw: w, lh: h } = n;
+  w = Math.max(0, w); h = Math.max(0, h);
+  const col = color(n.st.color, COLORS.text).c;
+  const bg = color(n.st.bg, COLORS.bg);
+  const border = color(n.st.border, COLORS.dim);
+  const bw = border.present ? (n.st.borderW || 1) : 0;
+
+  switch (n.type) {
+    case 'box': case 'rect': {
+      const fillIt = bg.present || (n.type === 'rect' && n.st.fill);
+      const fillColor = bg.present ? bg.c : col;
+      const outline = bw > 0 || (n.type === 'rect' && !n.st.fill && !bg.present);
+      const oc = bw > 0 ? border.c : col;
+      const ow = bw > 0 ? bw : 1;
+      if (fillIt) fillRectR(x, y, w, h, n.st.radius, fillColor);
+      if (outline) for (let k = 0; k < ow && k * 2 < w && k * 2 < h; k++) strokeRectR(x + k, y + k, w - 2 * k, h - 2 * k, Math.max(0, n.st.radius - k), oc);
+      if (n.type === 'box') {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(x * S, y * S, w * S, h * S); ctx.clip();
+        for (const c of n.children) drawNode(c);
+        ctx.restore();
+      }
+      break;
+    }
+    case 'text': {
+      const s = n.txt;
+      const tw = textW(s, n.st.size);
+      let tx = x;
+      if (w > tw) {
+        if (n.st.align === 'center') tx = x + Math.trunc((w - tw) / 2);
+        else if (n.st.align === 'end') tx = x + w - tw;
+      }
+      if (bg.present) fillRectR(x, y, w, h, 0, bg.c);
+      drawText(s, tx, y, n.st.size, col);
+      break;
+    }
+    case 'line': {
+      let x1, y1;
+      if (n.hasXY && n.x2 !== AUTO) { x1 = x + (n.x2 - n.x); y1 = y + (n.y2 === AUTO ? 0 : n.y2 - n.y); }
+      else { x1 = x + (w > 0 ? w - 1 : 0); y1 = y + (h > 0 ? h - 1 : 0); if (h <= n.st.thick) y1 = y; }
+      drawLine(x, y, x1, y1, col, n.st.thick);
+      break;
+    }
+    case 'bar': {
+      let v = parseInt(n.txt, 10); if (isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
+      if (w <= 0 || h <= 0) break;
+      strokeRectR(x, y, w, h, n.st.radius, bg.present ? bg.c : COLORS.dim);
+      const fw = Math.floor(Math.max(0, w - 2) * v / 100);
+      if (fw > 0 && h > 2) fillRectR(x + 1, y + 1, fw, h - 2, Math.max(0, n.st.radius - 1), col);
+      break;
+    }
+    case 'circle': case 'ellipse': {
+      let rx = Math.trunc(w / 2), ry = Math.trunc(h / 2);
+      if (n.type === 'circle') rx = ry = Math.trunc(Math.min(w, h) / 2);
+      const mx = x + Math.trunc(w / 2), my = y + Math.trunc(h / 2);
+      if (rx <= 0 || ry <= 0) break;
+      const fillIt = n.st.fill || bg.present;
+      if (fillIt) { ctx.fillStyle = bg.present ? bg.c : col; ctx.beginPath(); ctx.ellipse((mx + 0.5) * S, (my + 0.5) * S, (rx + 0.5) * S, (ry + 0.5) * S, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (bw > 0 || !fillIt) {
+        ctx.strokeStyle = bw > 0 ? border.c : col; ctx.lineWidth = (bw > 0 ? bw : 1) * S;
+        const inset = (bw > 0 ? bw : 1) / 2;
+        ctx.beginPath(); ctx.ellipse((mx + 0.5) * S, (my + 0.5) * S, Math.max(0.5, rx + 0.5 - inset) * S, Math.max(0.5, ry + 0.5 - inset) * S, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      break;
+    }
+    case 'arc': {
+      const r = Math.trunc(Math.min(w, h) / 2);
+      const mx = x + Math.trunc(w / 2), my = y + Math.trunc(h / 2);
+      if (r <= 1) break;
+      const t = Math.min(n.st.thick, r);
+      let v = parseInt(n.txt, 10); if (isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
+      const rad = a => (a - 90) * Math.PI / 180;
+      ctx.lineWidth = t * S; ctx.lineCap = 'butt';
+      if (bg.present) { ctx.strokeStyle = bg.c; ctx.beginPath(); ctx.arc((mx + 0.5) * S, (my + 0.5) * S, (r - t / 2 + 0.5) * S, rad(n.a0), rad(n.a1)); ctx.stroke(); }
+      if (v > 0) { ctx.strokeStyle = col; ctx.beginPath(); ctx.arc((mx + 0.5) * S, (my + 0.5) * S, (r - t / 2 + 0.5) * S, rad(n.a0), rad(n.a0 + (n.a1 - n.a0) * v / 100)); ctx.stroke(); }
+      break;
+    }
+    case 'triangle': case 'polygon': {
+      const pts = n.pts.map(p => [x + p[0], y + p[1]]);
+      const fillIt = n.st.fill || bg.present;
+      if (fillIt) {
+        ctx.fillStyle = bg.present ? bg.c : col;
+        ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo((p[0] + 0.5) * S, (p[1] + 0.5) * S) : ctx.moveTo((p[0] + 0.5) * S, (p[1] + 0.5) * S)); ctx.closePath(); ctx.fill();
+      }
+      if (bw > 0 || !fillIt) {
+        const oc = bw > 0 ? border.c : col;
+        for (let k = 0; k < pts.length; k++) { const j = (k + 1) % pts.length; drawLine(pts[k][0], pts[k][1], pts[j][0], pts[j][1], oc, bw > 1 ? bw : 1); }
+      }
+      break;
+    }
+  }
 }
 
 function render() {
@@ -366,21 +705,14 @@ function render() {
   let j;
   try { j = parse(); $('err').textContent = ''; }
   catch (e) { $('err').textContent = e.message; return null; }
-
-  for (const e of j.elements) {
-    const col = color(e.color);
-    const x = e.x | 0, y = e.y | 0;
-    if (e.type === 'text') drawText(expand(e.text), x, y, e.size ?? 1, e.align || 'left', col);
-    else if (e.type === 'line') drawLine(x, y, e.x2 ?? x, e.y2 ?? y, col);
-    else if (e.type === 'rect') drawRect(x, y, e.w | 0, e.h | 0, col, !!e.fill);
-    else if (e.type === 'bar') {
-      let v = parseInt(expand(e.value), 10); if (isNaN(v)) v = 0; v = Math.max(0, Math.min(100, v));
-      const w = e.w | 0, h = e.h | 0;
-      drawRect(x, y, w, h, COLORS.dim, false);
-      const fw = Math.floor(Math.max(0, w - 2) * v / 100);
-      if (fw > 0 && h > 2) drawRect(x + 1, y + 1, fw, h - 2, col, true);
-    }
-  }
+  const root = j._root;
+  measure(root);
+  place(root, 0, 0, 170, 320);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, 170 * S, 320 * S); ctx.clip();
+  drawNode(root);
+  ctx.restore();
+  delete j._root;
   return j;
 }
 

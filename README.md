@@ -240,7 +240,7 @@ HTTPS connections are encrypted but the server certificate is **not** verified. 
 
 A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
 
-Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack and Signal Meter. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
+Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack, Signal Meter, Weather and Cards. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 
 ```json
 {
@@ -255,16 +255,81 @@ Eight layouts are preloaded on first boot so the device is useful out of the box
 }
 ```
 
-The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 32 elements per layout.
+The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 63 elements per layout, nested up to 6 deep.
 
-| Type   | Fields                                   | Notes                                                        |
-| ------ | ---------------------------------------- | ------------------------------------------------------------ |
-| `text` | `x y size align color text`              | `align` is `left` (default), `center` or `right`, relative to `x` |
-| `line` | `x y x2 y2 color`                        |                                                              |
-| `rect` | `x y w h color fill`                     | `fill` defaults to `false` (outline)                         |
-| `bar`  | `x y w h color value`                    | Horizontal progress bar; `value` is 0–100 after expansion    |
+### Elements
 
-`color` is a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
+| Type       | Fields                                  | Notes                                                                       |
+| ---------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| `text`     | `text`, `w` `h` optional                | Sizes itself to the text unless `w`/`h` are given                           |
+| `line`     | `w` `h`, or `x2` `y2` when absolute     | In flow, a line with only `h: 1` is a full-width rule                       |
+| `rect`     | `w` `h` `fill`                          | `fill: true` fills with `color`, otherwise outlines. `style.radius` rounds it |
+| `bar`      | `w` `h` `value`                         | Horizontal progress bar; `value` is 0–100 after expansion                   |
+| `box`      | `children`                              | A container; see [Flow layout](#flow-layout)                                |
+| `circle`   | `w` or `r`                              | Filled with `color`; `style.border` outlines                                |
+| `ellipse`  | `w` `h`                                 |                                                                             |
+| `arc`      | `w`, `value`, `start`, `end`            | Ring gauge: filled from `start` to `end` degrees (0 = top, clockwise) in proportion to `value` 0–100. `style.thickness` sets the ring width, `style.background` the track (default dim) |
+| `triangle` | `points: [[x,y],[x,y],[x,y]]`           | Points are relative to the element's own top-left                           |
+| `polygon`  | `points: [[x,y], ...]`                  | 3 to 8 points                                                               |
+
+### Flow layout
+
+Elements are laid out like blocks in HTML: the screen is a column, and each element takes the next slot. A `box` groups children and stacks them along its `direction` (`column` or `row`) with a `gap`, inside its `padding`. Children fill the cross axis by default (`align: stretch`), so a text element in a column is as wide as the box and its `align` positions the text within it. Nothing overlaps when a value changes length.
+
+```json
+{
+  "name": "Cards",
+  "style": {"direction":"column","gap":8,"padding":6},
+  "styles": {
+    "label": {"color":"dim"},
+    "card":  {"background":"#101820","border":"#2a3a4a","radius":8,"padding":8,"gap":4}
+  },
+  "elements": [
+    {"type":"box","class":"card","children":[
+      {"type":"text","class":"label","text":"TIME"},
+      {"type":"text","text":"{time}","style":{"size":4,"align":"center"}}
+    ]},
+    {"type":"box","class":"card","style":{"direction":"row","align":"center","gap":10},"children":[
+      {"type":"arc","w":56,"value":"{wifi.pct}","color":"{wifi.color}"},
+      {"type":"text","text":"{wifi.rssi} dBm","size":2}
+    ]}
+  ]
+}
+```
+
+An element with both `x` and `y` is positioned absolutely inside its parent's content box instead of flowing, which is how every layout written before this model still renders unchanged. Absolute text without `w` keeps its old anchor semantics: `x` is the left, centre or right edge according to `align`.
+
+Box properties, all in `style`:
+
+| Property    | Values                                  | Meaning                                                              |
+| ----------- | --------------------------------------- | -------------------------------------------------------------------- |
+| `direction` | `column` (default), `row`               | Main axis                                                            |
+| `gap`       | px                                      | Space between children                                               |
+| `padding`   | px                                      | Space inside the box edge                                            |
+| `align`     | `stretch` (default), `start`, `center`, `end` | Cross-axis placement of children                               |
+| `justify`   | `start` (default), `center`, `end`, `between` | Main-axis distribution when children do not fill the box       |
+
+The top-level `style` applies to the implicit root box, so `{"style":{"direction":"column","gap":8,"padding":6}}` is how a layout gets margins and spacing.
+
+### Styles
+
+Style properties can be flat fields on the element (`color`, `size`, `align`, `fill`), a `style` object, or a named entry in the top-level `styles` map applied with `class`. Later ones win: class, then flat fields, then the `style` object.
+
+| Property                    | Applies to                | Meaning                                                 |
+| --------------------------- | ------------------------- | ------------------------------------------------------- |
+| `color`                     | all                       | Text, fill or outline colour                            |
+| `background` (or `bg`)      | box, rect, text, shapes, bar, arc | Fill behind the element; the track for bar and arc |
+| `border`, `borderWidth`     | box, rect, shapes         | Outline colour and width                                |
+| `radius`                    | box, rect, bar            | Corner radius                                           |
+| `size`                      | text                      | Font scale 1–8                                          |
+| `align`                     | text, box                 | Text alignment, or a box's cross-axis alignment         |
+| `fill`                      | rect, shapes              | Fill with `color`                                       |
+| `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
+| `position`                  | any                       | `absolute` positions at `x`/`y` even if one is missing  |
+
+`color`, `background` and `border` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
+
+### Keys
 
 `text` and `value` are templates. Any `{key}` is replaced with a live value; unknown keys render as `--`.
 
