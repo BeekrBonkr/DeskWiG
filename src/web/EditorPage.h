@@ -16,6 +16,35 @@ static const char EDITOR_HTML[] = R"html(
 <style>
 body{max-width:960px}
 #cm .cm-editor{min-height:380px;max-height:72vh;margin:8px 0}
+.cvwrap{position:relative;width:340px;max-width:100%}
+.cvwrap canvas{display:block;width:100%}
+#ov{position:absolute;left:0;top:0;pointer-events:none;background:transparent;border-color:transparent}
+#cv{touch-action:none;cursor:crosshair}
+.dtools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.dtools select{width:auto;margin:0;padding:6px 8px;font-size:14px}
+.dtools button{width:auto;margin:0;padding:6px 10px;font-size:14px}
+.tree{background:#151515;border:1px solid #444;border-radius:6px;max-height:240px;overflow:auto;font:13px ui-monospace,monospace;user-select:none}
+.trow{padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid #222;cursor:pointer}
+.trow.root{color:#9cf;border-top:none}
+.trow.sel{background:#1e3a52;color:#fff}
+.trow:hover{background:#222}
+.trow.dragging{opacity:.4}
+.trow.drop-before{box-shadow:inset 0 2px 0 #3c3}
+.trow.drop-after{box-shadow:inset 0 -2px 0 #3c3}
+.trow.drop-into{outline:2px solid #3c3;outline-offset:-2px}
+.insp{background:#151515;border:1px solid #444;border-radius:6px;padding:8px;margin-top:8px}
+.ihead{font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.08em;margin:6px 0 8px}
+.ihead.small{margin-top:12px;color:#7a9}
+.irow{display:grid;grid-template-columns:110px 1fr;gap:6px;align-items:center;margin:4px 0}
+.irow label{font-size:13px;color:#bbb}
+.irow input,.irow select{margin:0;padding:6px 8px;font-size:14px;width:100%}
+.irow input[type=checkbox]{width:auto;justify-self:start}
+.irow .ihint{grid-column:2;font-size:11px;color:#777}
+.colorctl{display:flex;gap:6px}
+.colorctl input[type=color]{width:40px;padding:0;height:34px;flex:0 0 auto}
+.lrule{border-top:1px solid #333;padding-top:4px;margin-top:6px}
+.lrule button{margin:6px 0 0;width:auto;padding:6px 10px;font-size:13px}
+.insp>button{width:auto;padding:8px 12px;font-size:14px;margin:6px 6px 0 0;display:inline-block}
 #cm .cm-scroller{overflow:auto}
 .cols{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
 .col{flex:1 1 320px;min-width:0}
@@ -65,8 +94,22 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
 <div class="col">
   <h3>Preview</h3>
   <p class="hint"><span id="ledDot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#000;border:1px solid #444;vertical-align:middle;margin-right:6px"></span><span id="ledText">LED: off</span></p>
-  <canvas id="cv" width="340" height="640"></canvas>
+  <div class="cvwrap"><canvas id="cv" width="340" height="640"><canvas id="ov" width="340" height="640"></canvas></div></canvas>
   <p class="hint">Rendered in the browser with live values from the device. "Show on device" puts it on the real screen for 60 seconds.</p>
+  <h3>Design</h3>
+  <p class="hint">Click an element in the preview or the tree to edit it. Drag elements with a fixed position on the preview; drag rows in the tree to reorder or drop into a box. Every change is written to the code, so undo covers it.</p>
+  <div class="dtools">
+    <select id="addType"><option value="">Add element…</option><option>text</option><option>box</option><option>line</option><option>rect</option><option>bar</option><option>circle</option><option>ellipse</option><option>arc</option><option>triangle</option><option>polygon</option><option>image</option></select>
+    <button id="elDup" type="button">Duplicate</button>
+    <button id="elUp" type="button">&uarr;</button>
+    <button id="elDown" type="button">&darr;</button>
+    <button id="elDel" type="button" class="danger">Delete</button>
+    <button id="undo" type="button">Undo</button>
+    <button id="redo" type="button">Redo</button>
+  </div>
+  <div class="tree" id="tree"></div>
+  <div class="insp" id="insp"></div>
+
   <h3>Keys</h3>
   <p class="hint">Tap to insert at the cursor. <code>ping.N</code> also accepts the target name, e.g. <code>{ping.router.ms}</code>. <code>api.*</code> keys come from the data sources on the <a href="/setup">setup page</a>.</p>
   <div class="keys" id="keys"></div>
@@ -459,7 +502,7 @@ function buildNode(e, path, styles, depth) {
   if (++nodeCount > 63) throw new Error('too many elements (max 63 including nested)');
   if (depth > 6) throw new Error(at(path) + ': nested too deep');
   if (!TYPES.includes(e.type)) throw new Error(at(path) + ': unknown type (' + TYPES.join(', ') + ')');
-  const n = { type: e.type, x: AUTO, y: AUTO, w: AUTO, h: AUTO, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: false };
+  const n = { type: e.type, x: AUTO, y: AUTO, w: AUTO, h: AUTO, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: false, el: e, path: path };
   const st = defaultStyle();
   const shape = ['circle', 'ellipse', 'triangle', 'polygon'].includes(e.type);
   if (shape) st.fill = true;
@@ -530,9 +573,11 @@ function buildNode(e, path, styles, depth) {
 }
 
 function parse() { return parseText(srcGet()); }
+function parseText(text) { return validate(JSON.parse(text)); }
 
-function parseText(text) {
-  const j = JSON.parse(text);
+// Validates a layout object and attaches its render tree as a
+// non-enumerable _root, so the object still serialises cleanly.
+function validate(j) {
   if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('layout must be a JSON object');
   if (!Array.isArray(j.elements)) throw new Error('"elements" must be an array');
   const styles = {};
@@ -549,10 +594,10 @@ function parseText(text) {
   }
   if (j.led !== undefined) parseLed(j.led);
   nodeCount = 0;
-  const root = { type: 'box', x: 0, y: 0, w: 170, h: 320, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: true, st: defaultStyle() };
+  const root = { type: 'box', x: 0, y: 0, w: 170, h: 320, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: true, st: defaultStyle(), el: j, path: 'root' };
   if (j.style && typeof j.style === 'object') parseStyle(root.st, j.style, 'root');
   j.elements.forEach((e, i) => root.children.push(buildNode(e, String(i), styles, 1)));
-  j._root = root;
+  Object.defineProperty(j, '_root', { value: root, enumerable: false, configurable: true, writable: true });
   return j;
 }
 
@@ -962,12 +1007,21 @@ function drawNode(n) {
   }
 }
 
+let lastRoot = null;   // render tree of the last successful render, for the designer
+
 function render() {
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, cv.width, cv.height);
   let j;
   try { j = parse(); $('err').textContent = ''; }
-  catch (e) { $('err').textContent = e.message; return null; }
+  catch (e) { $('err').textContent = e.message; if (window.designerOnError) designerOnError(e); return null; }
+  renderObj(j, true);
+  return j;
+}
+
+// Draws a validated layout object. fromText says the object came from the
+// code editor, so the designer should adopt it as its model.
+function renderObj(j, fromText) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, cv.width, cv.height);
   const root = j._root;
   measure(root);
   place(root, 0, 0, 170, 320);
@@ -975,14 +1029,14 @@ function render() {
   ctx.beginPath(); ctx.rect(0, 0, 170 * S, 320 * S); ctx.clip();
   drawNode(root);
   ctx.restore();
-  delete j._root;
+  lastRoot = root;
+  if (window.designerOnRender) designerOnRender(j, fromText);
   try {
     const st = j.led !== undefined ? ledState(parseLed(j.led)) : { rgb: '#000000', mode: 'off', speed: 0 };
     $('ledDot').style.background = st.mode === 'off' ? '#000' : st.rgb;
     $('ledDot').style.boxShadow = st.mode === 'off' ? 'none' : '0 0 8px ' + st.rgb;
     $('ledText').textContent = 'LED: ' + st.mode + (st.mode === 'off' ? '' : ' ' + st.rgb + (st.mode === 'solid' ? '' : ' ' + st.speed + ' ms'));
   } catch (e) {}
-  return j;
 }
 
 // ---------- editor state ----------
@@ -1209,6 +1263,7 @@ window.addEventListener('beforeunload', () => { if ($('live').checked) navigator
   open(layouts.some(l => l.id === want) ? want : '');
 })();
 </script>
+<script src="/designer.js"></script>
 </body>
 </html>
 )html";

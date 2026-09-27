@@ -19,6 +19,7 @@
 #include "Settings.h"
 #include "Pages.h"
 #include "EditorPage.h"
+#include "DesignerPage.h"
 
 extern ScreenManager screens;
 
@@ -171,6 +172,12 @@ static void registerPages() {
 
   server.on(AsyncURIMatcher::exact("/widgets"), HTTP_GET, [](AsyncWebServerRequest* req) {
     req->send(200, "text/html", WIDGETS_HTML);
+  });
+
+  server.on(AsyncURIMatcher::exact("/designer.js"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    AsyncWebServerResponse* r = req->beginResponse(200, "application/javascript", (const uint8_t*)DESIGNER_JS, strlen(DESIGNER_JS));
+    r->addHeader("Cache-Control", "no-cache");
+    req->send(r);
   });
 
   server.on(AsyncURIMatcher::exact("/editor"), HTTP_GET, [](AsyncWebServerRequest* req) {
