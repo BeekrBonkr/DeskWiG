@@ -70,13 +70,37 @@ function clean(el) {
 }
 
 // ---------- hooks from the page ----------
+// The page re-renders every couple of seconds to show fresh data values.
+// Only a change to the code is a reason to rebuild the tree and inspector;
+// rebuilding on every render closed open dropdowns and lost the caret
+// while typing in a field.
+let builtSrc = null;
 window.designerOnRender = function (j, fromText) {
-  if (fromText) model = j;
-  if (!getEl(sel)) sel = 'root';
-  buildTree();
-  buildInspector();
+  const src = srcGet();
+  if (src !== builtSrc) {
+    if (fromText) model = j;
+    if (!getEl(sel)) sel = 'root';
+    builtSrc = src;
+    rebuildPanels();
+  }
   drawOverlay();
 };
+
+// Rebuilds the tree and inspector, keeping focus and caret position in
+// whichever field was being edited (the field's own edit caused the rebuild).
+function rebuildPanels() {
+  const a = document.activeElement;
+  let keep = null;
+  if (a && inspEl.contains(a) && a.dataset.field) {
+    keep = { f: a.dataset.field, s: a.selectionStart, e: a.selectionEnd };
+  }
+  buildTree();
+  buildInspector();
+  if (keep) {
+    const c = inspEl.querySelector('[data-field="' + keep.f + '"]');
+    if (c) { c.focus(); try { if (keep.s !== null && keep.s !== undefined) c.setSelectionRange(keep.s, keep.e); } catch (e) {} }
+  }
+}
 window.designerOnError = function () { drawOverlay(); };
 
 // ---------- overlay ----------
@@ -500,7 +524,10 @@ function buildInspector() {
   }
   for (const f of FIELDS) {
     if (!applies(f, el, type)) continue;
-    inspEl.appendChild(row(f.label, makeControl(f, el), f.hint));
+    const c = makeControl(f, el);
+    const focusable = c.tagName === 'DIV' ? c.querySelector('input') : c;
+    if (focusable) focusable.dataset.field = (f.style ? 'style.' : '') + f.key;
+    inspEl.appendChild(row(f.label, c, f.hint));
   }
   if (sel === 'root') buildLed();
 }
@@ -522,6 +549,7 @@ function ledRuleRow(rule, i) {
       c.value = rule[key] === undefined ? '' : rule[key];
       c.addEventListener('input', () => { const v = kind === 'num' ? parseFloat(c.value) : c.value; if (c.value === '' || (kind === 'num' && isNaN(v))) delete rule[key]; else rule[key] = v; debouncedCommit(); });
     }
+    c.dataset.field = 'led.' + i + '.' + key;
     box.appendChild(row(label, c));
   };
   const title = document.createElement('div');
@@ -585,6 +613,6 @@ setTimeout(refreshImageList, 1500);
 setTimeout(refreshImageList, 5000);
 
 // First build once the page has rendered something.
-if (lastRoot) { try { model = parse(); } catch (e) {} buildTree(); buildInspector(); drawOverlay(); }
+if (lastRoot) { try { model = parse(); builtSrc = srcGet(); } catch (e) {} buildTree(); buildInspector(); drawOverlay(); }
 })();
 )js";
