@@ -209,6 +209,7 @@ bool layoutDelete(const char* id, char* err, size_t errLen) {
     screens->remove(w);
     if (screens->getActive() != before) {
       settings.activeWidget = screens->getActive();
+      strlcpy(settings.activeWidgetName, screens->getName(settings.activeWidget), sizeof(settings.activeWidgetName));
       saveSettings();
     }
   }

@@ -128,7 +128,14 @@ void setup() {
   screens.add(&pingWidget);
   screens.add(&clockWidget);
   layoutsBegin(screens);            // JSON widgets from /widgets/*.json
+  // Restore the active widget by name; the index is only a fallback for
+  // configs written before names were stored.
   screens.setActive(settings.activeWidget);
+  if (settings.activeWidgetName[0]) {
+    for (uint8_t i = 0; i < screens.getCount(); i++) {
+      if (!strcmp(screens.getName(i), settings.activeWidgetName)) { screens.setActive(i); break; }
+    }
+  }
   screens.begin();
 
   // The async server binds fine before the network is up.
