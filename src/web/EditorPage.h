@@ -79,7 +79,13 @@ color: bg text dim ok warn bad accent
        #rrggbb, or {ping.0.color}
 text and value take {keys}
 api.&lt;source&gt;.&lt;field&gt; plus .status
-  .color .age .updated .error</pre>
+  .color .age .updated .error
+
+math in braces, keys as variables:
+  {round(api.weather.temp * 9/5 + 32, 1)}
+  {min(ping.0.ms / 2, 100)}
+  + - * / % ^ ( )  round(x,n) abs
+  min max floor ceil sqrt clamp(x,lo,hi)</pre>
 </div>
 </div>
 
@@ -141,7 +147,7 @@ const ctx = cv.getContext('2d');
 
 let data = {};
 
-function lookup(key) {
+function lookup(key, strict) {
   if (key in data) return data[key];
   const m = /^ping\.([^.]+)\.(\w+)$/.exec(key);
   if (m && !/^\d+$/.test(m[1])) {
@@ -151,10 +157,140 @@ function lookup(key) {
       if (n.toLowerCase() === m[1].toLowerCase()) return data['ping.' + i + '.' + m[2]] ?? '--';
     }
   }
-  return '--';
+  return strict ? undefined : '--';
 }
 
-const expand = t => String(t ?? '').replace(/\{([^}]+)\}/g, (m, k) => lookup(k));
+// ---------- expressions ----------
+// Mirrors LayoutExpr.cpp on the device: a brace body that is not a key is
+// arithmetic with keys as variables. round(x, n) fixes the decimals.
+function isExpr(b) { return /[()+\-*\/%^ ]/.test(b) || /^[0-9]/.test(b); }
+
+function evalExpr(body) {
+  let p = 0, err = false, depth = 0;
+  const s = body;
+  const skip = () => { while (s[p] === ' ' || s[p] === '\t') p++; };
+  const identStart = c => /[A-Za-z_]/.test(c || '');
+  const identChar = c => /[A-Za-z0-9_.\-]/.test(c || '');
+  function variable() {
+    const start = p;
+    while (identChar(s[p])) p++;
+    let len = p - start;
+    for (;;) {
+      if (len === 0) return null;
+      const name = s.substr(start, len);
+      const v = lookup(name, true);
+      if (v !== undefined) {
+        const m = /^\s*[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?/.exec(v);
+        if (!m) return null;
+        p = start + len;
+        return { v: parseFloat(m[0]), d: -1 };
+      }
+      const cut = name.lastIndexOf('-');
+      if (cut <= 0) return null;
+      len = cut;
+    }
+  }
+  function args() {
+    const a = [];
+    skip();
+    if (s[p] === ')') { p++; return a; }
+    for (;;) {
+      if (a.length >= 4) { err = true; return a; }
+      a.push(expr());
+      if (err) return a;
+      skip();
+      if (s[p] === ',') { p++; continue; }
+      if (s[p] === ')') { p++; return a; }
+      err = true; return a;
+    }
+  }
+  function call(name) {
+    const a = args();
+    if (err) return { v: NaN, d: -1 };
+    const n = a.length;
+    const bad = () => { err = true; return { v: NaN, d: -1 }; };
+    switch (name) {
+      case 'round': { if (n < 1 || n > 2) return bad(); let d = n === 2 ? Math.trunc(a[1].v) : 0; d = Math.max(0, Math.min(6, d)); const m = Math.pow(10, d); return { v: Math.round(a[0].v * m) / m, d: d }; }
+      case 'abs':   return n === 1 ? { v: Math.abs(a[0].v), d: a[0].d } : bad();
+      case 'floor': return n === 1 ? { v: Math.floor(a[0].v), d: 0 } : bad();
+      case 'ceil':  return n === 1 ? { v: Math.ceil(a[0].v), d: 0 } : bad();
+      case 'sqrt':  return n === 1 ? { v: Math.sqrt(a[0].v), d: -1 } : bad();
+      case 'min': case 'max': { if (n < 1) return bad(); let r = a[0]; for (let i = 1; i < n; i++) if (name === 'min' ? a[i].v < r.v : a[i].v > r.v) r = a[i]; return r; }
+      case 'clamp': { if (n !== 3) return bad(); return { v: Math.min(Math.max(a[0].v, a[1].v), a[2].v), d: a[0].d }; }
+      default: return bad();
+    }
+  }
+  function primary() {
+    skip();
+    if (++depth > 24) { err = true; return { v: NaN, d: -1 }; }
+    let r = { v: NaN, d: -1 };
+    if (s[p] === '(') {
+      p++; r = expr(); skip();
+      if (s[p] !== ')') err = true; else p++;
+    } else if (/[0-9]/.test(s[p] || '') || (s[p] === '.' && /[0-9]/.test(s[p + 1] || ''))) {
+      const m = /^(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?/.exec(s.slice(p));
+      r.v = parseFloat(m[0]); p += m[0].length;
+    } else if (identStart(s[p])) {
+      const start = p;
+      while (/[A-Za-z0-9_]/.test(s[p] || '')) p++;
+      const save = p;
+      skip();
+      if (s[p] === '(') { p++; r = call(s.substring(start, save)); }
+      else { p = start; const v = variable(); if (!v) err = true; else r = v; }
+    } else err = true;
+    depth--;
+    return r;
+  }
+  function unary() {
+    skip();
+    if (s[p] === '-') { p++; const r = unary(); r.v = -r.v; return r; }
+    if (s[p] === '+') { p++; return unary(); }
+    const r = primary();
+    skip();
+    if (s[p] === '^') { p++; const e = unary(); return { v: Math.pow(r.v, e.v), d: -1 }; }
+    return r;
+  }
+  function term() {
+    let r = unary();
+    for (;;) {
+      skip();
+      const op = s[p];
+      if (op !== '*' && op !== '/' && op !== '%') return r;
+      p++;
+      const b = unary();
+      if (err) return r;
+      if (op === '*') r.v = r.v * b.v; else if (op === '/') r.v = b.v === 0 ? NaN : r.v / b.v; else r.v = b.v === 0 ? NaN : r.v % b.v;
+      if (b.d > r.d) r.d = b.d;
+    }
+  }
+  function expr() {
+    let r = term();
+    for (;;) {
+      skip();
+      const op = s[p];
+      if (op !== '+' && op !== '-') return r;
+      p++;
+      const b = term();
+      if (err) return r;
+      r.v = op === '+' ? r.v + b.v : r.v - b.v;
+      if (b.d > r.d) r.d = b.d;
+    }
+  }
+  const v = expr();
+  skip();
+  if (err || p !== s.length || !isFinite(v.v)) return '--';
+  if (v.d >= 0) return v.v.toFixed(v.d);
+  if (v.v === Math.floor(v.v) && Math.abs(v.v) < 1e15) return v.v.toFixed(0);
+  return String(parseFloat(v.v.toFixed(2)));
+}
+
+function expandKey(k) {
+  const v = lookup(k, true);
+  if (v !== undefined) return v;
+  return isExpr(k) ? evalExpr(k) : '--';
+}
+
+const expand = t => String(t ?? '').replace(/\{([^}]+)\}/g, (m, k) => expandKey(k));
 
 function color(spec) {
   let n = String(spec ?? 'text');

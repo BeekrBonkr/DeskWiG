@@ -115,8 +115,10 @@ bool LayoutWidget::load(JsonVariantConst doc, char* err, size_t errLen) {
     }
     strlcpy(e.text, text, sizeof(e.text));
 
-    if (strstr(e.text, "{ping.") || strstr(e.color, "{ping.")) _usesPing = true;
-    if (strstr(e.text, "{api.")  || strstr(e.color, "{api."))  _usesApi = true;
+    // Keys may sit inside an expression, so look for the prefix anywhere
+    // in a brace rather than right after it.
+    if (strstr(e.text, "ping.") || strstr(e.color, "ping.")) _usesPing = true;
+    if (strstr(e.text, "api.")  || strstr(e.color, "api."))  _usesApi = true;
 
     _count++;
     idx++;
@@ -139,8 +141,14 @@ void LayoutWidget::touchSources() {
   for (uint8_t i = 0; i < _count; i++) {
     const char* fields[2] = { _el[i].text, _el[i].color };
     for (const char* f : fields) {
-      for (const char* p = strstr(f, "{api."); p; p = strstr(p + 1, "{api.")) {
-        const char* start = p + 5;
+      for (const char* p = strstr(f, "api."); p; p = strstr(p + 1, "api.")) {
+        // Must be the start of a key: preceded by nothing, a brace, space or operator.
+        if (p > f) {
+          char b = p[-1];
+          bool boundary = b == '{' || b == ' ' || b == '(' || b == ',' || b == '+' || b == '-' || b == '*' || b == '/' || b == '%' || b == '^';
+          if (!boundary) continue;
+        }
+        const char* start = p + 4;
         const char* end = strchr(start, '.');
         if (!end) continue;
         size_t len = end - start;
