@@ -94,7 +94,7 @@ static const char SETUP_HTML[] = R"html(
   <input type="file" id="imgFile" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif" class="p">
   <button id="imgUpload" type="button">Upload</button>
 </div>
-<p class="hint">PNG, JPEG or animated GIF up to 512 KB. The screen is 170 &times; 320, so resize images before uploading. Use one with <code>{"type":"image","src":"name","w":64}</code> or as a box background with <code>"style":{"image":"name"}</code>. <code>src</code> can also be an http(s) URL, fetched while the widget is on screen.</p>
+<p class="hint">PNG, JPEG or animated GIF up to 512 KB. The screen is 170 &times; 320, so resize images before uploading: <a href="https://ezgif.com/resize" target="_blank" rel="noopener">ezgif.com/resize</a> shrinks any image or GIF to the size you need, and <a href="https://ezgif.com/optimize" target="_blank" rel="noopener">ezgif.com/optimize</a> squeezes it under the limit. Use one with <code>{"type":"image","src":"name","w":64}</code> or as a box background with <code>"style":{"image":"name"}</code>. <code>src</code> can also be an http(s) URL, fetched while the widget is on screen.</p>
 
 <h3>Data sources</h3>
 <div id="srcList" class="dim">Loading&hellip;</div>
