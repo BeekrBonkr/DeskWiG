@@ -42,6 +42,15 @@ static void blank(lgfx::LGFX_Sprite& ui) {
   ui.println("");
 }
 
+// The API key at double size so it can be read from across a desk.
+static void keyLine(lgfx::LGFX_Sprite& ui) {
+  ui.setTextSize(2);
+  ui.setTextColor(C_TEXT, TFT_BLACK);
+  ui.setCursor(MARGIN, ui.getCursorY());
+  ui.println(settings.apiToken);
+  ui.setTextSize(1);
+}
+
 // =====================
 // SETUP HOTSPOT
 // =====================
@@ -122,16 +131,35 @@ void drawInfoScreen(lgfx::LGFX_Sprite& ui, uint32_t secondsLeft) {
   ui.println(WiFi.localIP());
   blank(ui);
 
-  line(ui, "API token:", C_DIM);
-  // 32 hex chars don't fit on a 28-column line; split in two.
-  char half[17];
-  strlcpy(half, settings.apiToken, sizeof(half));
-  line(ui, half);
-  strlcpy(half, settings.apiToken + 16, sizeof(half));
-  line(ui, half);
+  line(ui, "API key:", C_DIM);
+  keyLine(ui);
+  blank(ui);
+  line(ui, "Enter it on the login page", C_DIM);
+  line(ui, "to create your account.", C_DIM);
 
   char buf[32];
   snprintf(buf, sizeof(buf), "Widgets start in %lus", (unsigned long)secondsLeft);
+  footer(ui, buf);
+}
+
+// =====================
+// API KEY (forgot password)
+// =====================
+void drawKeyScreen(lgfx::LGFX_Sprite& ui, uint32_t secondsLeft) {
+  title(ui, "API key", C_WARN);
+
+  line(ui, "Requested from the login", C_DIM);
+  line(ui, "page to reset the password.", C_DIM);
+  blank(ui);
+  keyLine(ui);
+  blank(ui);
+  line(ui, "Enter it in the browser", C_DIM);
+  line(ui, "with a new username and", C_DIM);
+  line(ui, "password. The key changes", C_DIM);
+  line(ui, "after the reset.", C_DIM);
+
+  char buf[32];
+  snprintf(buf, sizeof(buf), "Screen clears in %lus", (unsigned long)secondsLeft);
   footer(ui, buf);
 }
 

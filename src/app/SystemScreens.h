@@ -9,5 +9,6 @@
 void drawApScreen(lgfx::LGFX_Sprite& ui, ApReason reason, const char* connectingTo);
 void drawConnectingScreen(lgfx::LGFX_Sprite& ui, const char* ssid);
 void drawInfoScreen(lgfx::LGFX_Sprite& ui, uint32_t secondsLeft);
+void drawKeyScreen(lgfx::LGFX_Sprite& ui, uint32_t secondsLeft);
 void drawRecoveryScreen(lgfx::LGFX_Sprite& ui, uint32_t msUntilReset);
 void drawResettingScreen(lgfx::LGFX_Sprite& ui);

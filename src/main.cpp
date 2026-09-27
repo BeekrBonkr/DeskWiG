@@ -13,13 +13,14 @@
 
 #include "web/Settings.h"
 #include "web/WebServer.h"
+#include "web/Auth.h"
 #include "net/WifiManager.h"
 #include "net/TimeService.h"
 #include "net/DataSource.h"
 #include "layout/FontService.h"
 #include "layout/ImageService.h"
 
-// How long the connection-info screen (IP + API token) stays up after WiFi connects.
+// How long the connection-info screen (IP + API key) stays up after WiFi connects.
 constexpr uint32_t INFO_SCREEN_MS = 30000;
 
 static uint32_t infoScreenUntil = 0;
@@ -121,6 +122,7 @@ void setup() {
   bool forceAp = checkRecoveryJumper();
 
   loadSettings();
+  authBegin();
   fontsBegin();
   imagesBegin();
   ledApplySettings();
@@ -176,7 +178,9 @@ void loop() {
   ledLoop();
 
   // Screen
-  if (wifiState == WifiState::CONNECTED && (int32_t)(infoScreenUntil - now) > 0) {
+  if (authKeyScreenActive()) {
+    drawKeyScreen(ui, authKeyScreenSecondsLeft());
+  } else if (wifiState == WifiState::CONNECTED && (int32_t)(infoScreenUntil - now) > 0) {
     drawInfoScreen(ui, (infoScreenUntil - now) / 1000);
   } else if (wifiApActive()) {
     drawApScreen(ui, apReason, wifiState == WifiState::CONNECTING ? settings.wifiSSID : nullptr);

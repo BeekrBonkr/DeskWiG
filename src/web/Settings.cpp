@@ -64,16 +64,26 @@ static TargetType typeFromName(const char* s) {
 // =====================
 // NVS: credentials + API token
 // =====================
+// Lowercase letters and digits that can't be confused with each other
+// when read off the screen (no 0/o, 1/l/i).
 static void generateToken() {
-  static const char hex[] = "0123456789abcdef";
-  for (uint8_t i = 0; i < API_TOKEN_LEN; i += 8) {
-    uint32_t r = esp_random();
-    for (uint8_t j = 0; j < 8; j++) {
-      settings.apiToken[i + j] = hex[r & 0xF];
-      r >>= 4;
-    }
+  static const char alphabet[] = "abcdefghjkmnpqrstuvwxyz23456789";
+  const uint32_t n = sizeof(alphabet) - 1;
+  for (uint8_t i = 0; i < API_TOKEN_LEN; i++) {
+    uint32_t r;
+    do { r = esp_random(); } while (r >= (0xFFFFFFFFu / n) * n);  // no modulo bias
+    settings.apiToken[i] = alphabet[r % n];
   }
   settings.apiToken[API_TOKEN_LEN] = '\0';
+}
+
+void regenerateApiToken() {
+  generateToken();
+  Preferences prefs;
+  prefs.begin(NVS_NS, false);
+  prefs.putString("token", settings.apiToken);
+  prefs.end();
+  Serial.println("[CFG] Generated new API key");
 }
 
 static void loadNvs() {
@@ -84,13 +94,8 @@ static void loadNvs() {
   prefs.getString("token", settings.apiToken, sizeof(settings.apiToken));
   prefs.end();
 
-  if (strlen(settings.apiToken) != API_TOKEN_LEN) {
-    generateToken();
-    prefs.begin(NVS_NS, false);
-    prefs.putString("token", settings.apiToken);
-    prefs.end();
-    Serial.println("[CFG] Generated new API token");
-  }
+  // Also replaces the 32-character token from older firmware.
+  if (strlen(settings.apiToken) != API_TOKEN_LEN) regenerateApiToken();
 }
 
 void saveCredentials() {
@@ -337,6 +342,9 @@ void factoryReset() {
 
   Preferences prefs;
   prefs.begin(NVS_NS, false);
+  prefs.clear();
+  prefs.end();
+  prefs.begin("auth", false);
   prefs.clear();
   prefs.end();
 }

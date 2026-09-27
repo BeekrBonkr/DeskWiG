@@ -18,7 +18,9 @@
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
 #include "Settings.h"
+#include "Auth.h"
 #include "Pages.h"
+#include "LoginPage.h"
 #include "EditorPage.h"
 #include "DesignerPage.h"
 
@@ -29,7 +31,7 @@ static AsyncWebServer server(80);
 // Routes use exact matching: the library default also matches any
 // sub-path, so "/api/layouts" would swallow "/api/layouts/data".
 
-static const char* FW_VERSION = "0.7.0";
+static const char* FW_VERSION = "0.8.0";
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
@@ -65,19 +67,53 @@ static bool viaHotspot(AsyncWebServerRequest* req) {
   return req->client()->localIP() == WiFi.softAPIP();
 }
 
+// Session cookie set by the login page.
+static bool sessionAuthed(AsyncWebServerRequest* req) {
+  auto* c = req->getHeader("Cookie");
+  if (!c) return false;
+  char sid[AUTH_SID_LEN + 1];
+  return authSidFromCookie(c->value(), sid, sizeof(sid)) && authSessionValid(sid);
+}
+
+// API key as a bearer token, for scripts and curl.
+static bool bearerAuthed(AsyncWebServerRequest* req) {
+  auto* h = req->getHeader("Authorization");
+  if (!h) return false;
+  const String& v = h->value();
+  return v.startsWith("Bearer ") && authCheckKey(v.c_str() + 7);
+}
+
+// Hotspot requests are always trusted. Otherwise nothing is allowed until
+// a username and password exist; after that a session or the key will do.
+static bool isAuthed(AsyncWebServerRequest* req) {
+  if (viaHotspot(req)) return true;
+  if (!authConfigured()) return false;
+  return sessionAuthed(req) || bearerAuthed(req);
+}
+
 // Returns true if the request is authorised. On failure it has already
 // sent a 401, so callers just return.
 static bool requireAuth(AsyncWebServerRequest* req) {
-  if (viaHotspot(req)) return true;
-
-  auto* h = req->getHeader("Authorization");
-  if (h) {
-    const String& v = h->value();
-    if (v.startsWith("Bearer ") && v.substring(7) == settings.apiToken) return true;
-  }
-  sendError(req, 401, "unauthorized");
+  if (isAuthed(req)) return true;
+  sendError(req, 401, authConfigured() ? "unauthorized" : "create a username and password first");
   return false;
 }
+
+static void sendJsonWithCookie(AsyncWebServerRequest* req, int code, const JsonDocument& doc, const String& cookie) {
+  String out;
+  serializeJson(doc, out);
+  AsyncWebServerResponse* r = req->beginResponse(code, "application/json", out);
+  r->addHeader("Set-Cookie", cookie);
+  req->send(r);
+}
+
+static String sessionCookie(const char* sid) {
+  // A week of idle time, matching the session table. HttpOnly keeps it
+  // away from page scripts; SameSite=Strict keeps other sites from riding it.
+  return String("sid=") + sid + "; Path=/; Max-Age=604800; HttpOnly; SameSite=Strict";
+}
+
+static const char* CLEAR_COOKIE = "sid=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict";
 
 static void fillWidgetList(JsonDocument& doc) {
   doc["active"] = screens.getActive();
@@ -188,9 +224,131 @@ static void registerPages() {
     req->send(req->beginResponse(200, "text/html", (const uint8_t*)EDITOR_HTML, strlen(EDITOR_HTML)));
   });
 
+  server.on(AsyncURIMatcher::exact("/login"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    req->send(req->beginResponse(200, "text/html", (const uint8_t*)LOGIN_HTML, strlen(LOGIN_HTML)));
+  });
+
   server.on(AsyncURIMatcher::exact("/"), HTTP_GET, [](AsyncWebServerRequest* req) {
     req->redirect(viaHotspot(req) ? "/setup" : "/widgets");
   });
+}
+
+// =====================
+// AUTH
+// =====================
+static void fillAuthState(AsyncWebServerRequest* req, JsonDocument& doc) {
+  doc["configured"] = authConfigured();
+  doc["loggedIn"]   = isAuthed(req);
+  doc["hotspot"]    = viaHotspot(req);
+  doc["user"]       = authConfigured() ? authUsername() : "";
+  doc["lockedFor"]  = authLockedFor();
+}
+
+static void registerAuth() {
+  // GET /api/auth -> whether an account exists and whether this browser is logged in.
+  server.on(AsyncURIMatcher::exact("/api/auth"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillAuthState(req, doc);
+    sendJson(req, 200, doc);
+  });
+
+  // POST /api/auth/login {"user","pass"} -> session cookie.
+  auto* login = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/auth/login"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!authConfigured()) { sendError(req, 409, "no account yet: create one with the API key"); return; }
+    uint32_t wait = authLockedFor();
+    if (wait) { sendError(req, 429, "too many attempts, try again in a minute"); return; }
+    const char* user = json["user"] | "";
+    const char* pass = json["pass"] | "";
+    if (!authCheckPassword(user, pass)) {
+      authNoteFailure();
+      sendError(req, 401, "wrong username or password");
+      return;
+    }
+    authNoteSuccess();
+    JsonDocument doc;
+    doc["ok"] = true;
+    doc["user"] = authUsername();
+    sendJsonWithCookie(req, 200, doc, sessionCookie(authSessionCreate()));
+  });
+  login->setMethod(HTTP_POST);
+  server.addHandler(login);
+
+  // POST /api/auth/logout -> drops this browser's session.
+  server.on(AsyncURIMatcher::exact("/api/auth/logout"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    auto* c = req->getHeader("Cookie");
+    char sid[AUTH_SID_LEN + 1];
+    if (c && authSidFromCookie(c->value(), sid, sizeof(sid))) authSessionDrop(sid);
+    JsonDocument doc;
+    doc["ok"] = true;
+    sendJsonWithCookie(req, 200, doc, CLEAR_COOKIE);
+  });
+
+  // POST /api/auth/setup {"key","user","pass"} -> creates the account, or
+  // replaces it when one exists (forgot password). The key on the device
+  // screen is the proof. A reset also rotates the key and logs everyone out.
+  auto* setup = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/auth/setup"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    uint32_t wait = authLockedFor();
+    if (wait) { sendError(req, 429, "too many attempts, try again in a minute"); return; }
+    const char* key = json["key"] | "";
+    if (!viaHotspot(req) && !authCheckKey(key)) {
+      authNoteFailure();
+      sendError(req, 401, "wrong API key");
+      return;
+    }
+    authNoteSuccess();
+    bool reset = authConfigured();
+    char err[96];
+    if (!authSetAccount(json["user"] | "", json["pass"] | "", err, sizeof(err))) { sendError(req, 400, err); return; }
+    if (reset) regenerateApiToken();
+    authRevealKey(0);
+    JsonDocument doc;
+    doc["ok"] = true;
+    doc["user"] = authUsername();
+    doc["keyChanged"] = reset;
+    sendJsonWithCookie(req, 200, doc, sessionCookie(authSessionCreate()));
+  });
+  setup->setMethod(HTTP_POST);
+  server.addHandler(setup);
+
+  // POST /api/auth/reveal -> shows the API key on the device screen for a
+  // minute. Deliberately open: it only helps someone who can see the screen.
+  server.on(AsyncURIMatcher::exact("/api/auth/reveal"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    authRevealKey(60000);
+    JsonDocument doc;
+    doc["ok"] = true;
+    doc["seconds"] = 60;
+    sendJson(req, 200, doc);
+  });
+
+  // GET /api/auth/key -> the API key, for scripts. Needs a login.
+  server.on(AsyncURIMatcher::exact("/api/auth/key"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    JsonDocument doc;
+    doc["key"] = settings.apiToken;
+    sendJson(req, 200, doc);
+  });
+
+  // PUT /api/auth/password {"current","pass"} -> change the password while logged in.
+  auto* pw = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/auth/password"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    uint32_t wait = authLockedFor();
+    if (wait) { sendError(req, 429, "too many attempts, try again in a minute"); return; }
+    if (!viaHotspot(req) && !authCheckPassword(authUsername(), json["current"] | "")) {
+      authNoteFailure();
+      sendError(req, 401, "current password is wrong");
+      return;
+    }
+    authNoteSuccess();
+    const char* user = json["user"].isNull() ? authUsername() : json["user"].as<const char*>();
+    char err[96];
+    if (!authSetAccount(user, json["pass"] | "", err, sizeof(err))) { sendError(req, 400, err); return; }
+    JsonDocument doc;
+    doc["ok"] = true;
+    doc["user"] = authUsername();
+    sendJsonWithCookie(req, 200, doc, sessionCookie(authSessionCreate()));
+  });
+  pw->setMethod(HTTP_PUT);
+  server.addHandler(pw);
 }
 
 static void registerStatus() {
@@ -688,11 +846,7 @@ static void fontUploadFail(FontUpload* u, const char* msg) {
   if (u->tmp.length()) { LittleFS.remove(u->tmp); u->tmp = ""; }
 }
 
-static bool uploadAuthed(AsyncWebServerRequest* req) {
-  if (!req->hasHeader("Authorization")) return false;
-  String v = req->getHeader("Authorization")->value();
-  return v.startsWith("Bearer ") && v.substring(7) == settings.apiToken;
-}
+static bool uploadAuthed(AsyncWebServerRequest* req) { return isAuthed(req); }
 
 static void registerFonts() {
   server.on(AsyncURIMatcher::exact("/api/fonts"), HTTP_GET, [](AsyncWebServerRequest* req) {
@@ -744,12 +898,7 @@ static void registerFonts() {
 
         // Auth is checked here rather than with requireAuth() because a
         // response cannot be sent mid-upload; the final handler reports it.
-        bool authed = false;
-        if (req->hasHeader("Authorization")) {
-          String v = req->getHeader("Authorization")->value();
-          authed = v.startsWith("Bearer ") && v.substring(7) == settings.apiToken;
-        }
-        if (!authed) { fontUploadFail(u, "unauthorized"); return; }
+        if (!uploadAuthed(req)) { fontUploadFail(u, "unauthorized"); return; }
 
         String name = req->hasParam("name") ? req->getParam("name")->value() : filename;
         if (name.endsWith(".ttf")) name = name.substring(0, name.length() - 4);
@@ -1081,6 +1230,7 @@ void startWebServer() {
   started = true;
 
   registerPages();
+  registerAuth();
   registerStatus();
   registerWidgets();
   registerLayouts();

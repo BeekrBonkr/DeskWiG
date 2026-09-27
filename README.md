@@ -47,7 +47,7 @@ Once the device is on your network you can update it without a cable: build with
 
 ```bash
 curl -X POST http://deskwig.local/api/system/update \
-  -H "Authorization: Bearer <token>" \
+  -H "Authorization: Bearer <key>" \
   -F "file=@.pio/build/esp32-s3-devkitc-1/firmware.bin"
 ```
 
@@ -57,7 +57,7 @@ Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32A
 
 ## First boot and WiFi setup
 
-WiFi credentials and the API token are stored in the ESP32's NVS flash, not in the source. On first boot there are none, so the device starts a setup hotspot and shows the details on screen:
+WiFi credentials, the API key and the login account are stored in the ESP32's NVS flash, not in the source. On first boot there are none, so the device starts a setup hotspot and shows the details on screen:
 
 |          |                      |
 | -------- | -------------------- |
@@ -68,11 +68,12 @@ WiFi credentials and the API token are stored in the ESP32's NVS flash, not in t
 1. Join the hotspot from a phone or laptop. A setup page should open automatically (captive portal). If it doesn't, browse to the URL above.
 2. Tap **Scan for networks**, pick yours, enter the password, and tap **Join**.
 3. The page reports when the device has connected and shows its new address. The hotspot stays up for 20 seconds after connecting so you can read it, then turns off.
-4. The device screen shows the address and the API token for 30 seconds, then switches to the active widget.
+4. The device screen shows the address and an 8-character API key for 30 seconds, then switches to the active widget.
+5. Open the address in a browser. The login page asks for that key once, then for a username and password of your choice. Nothing on the device can be changed until the account exists.
 
 The device is reachable at `http://deskwig.local` (mDNS) or its IP. The name is changeable on the setup page.
 
-If the saved network can't be reached within 15 seconds the hotspot comes back, and the device keeps retrying the saved network once a minute so it recovers by itself after a router reboot. Requests made over the hotspot don't need the API token, since anyone standing next to the device with the hotspot password is already trusted for setup.
+If the saved network can't be reached within 15 seconds the hotspot comes back, and the device keeps retrying the saved network once a minute so it recovers by itself after a router reboot. Requests made over the hotspot don't need a login, since anyone standing next to the device with the hotspot password is already trusted for setup.
 
 ### Status LED
 
@@ -91,7 +92,7 @@ Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
 Bridge GPIO 4 to GND and press reset:
 
 - **Release within 8 seconds:** the device skips the saved network and starts the setup hotspot. Use this if you moved it to a new network or mistyped a password.
-- **Keep it bridged for 8 seconds:** the screen counts down, then the device erases all settings (LittleFS and NVS) and restarts into setup mode. A new API token is generated.
+- **Keep it bridged for 8 seconds:** the screen counts down, then the device erases all settings (LittleFS and NVS) and restarts into setup mode. A new API key is generated and the login account is gone.
 
 A tactile switch or two exposed pads on the enclosure work equally well.
 
@@ -101,9 +102,17 @@ Once on your network, the device serves:
 
 | Route                           | Auth | Purpose                                                        |
 | ------------------------------- | ---- | -------------------------------------------------------------- |
-| `/setup`                        | no   | WiFi scan/join, device name, clock, data sources               |
+| `/login`                        | no   | Create the account, log in, or reset a forgotten password      |
+| `/setup`                        | no   | WiFi scan/join, device name, clock, data sources, account      |
 | `/widgets`                      | no   | Page with a button per widget to switch the active screen      |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
+| `GET /api/auth`                 | no   | Whether an account exists and whether this browser is logged in |
+| `POST /api/auth/setup`          | key  | JSON `{"key","user","pass"}`. Creates the account, or replaces it and rotates the key |
+| `POST /api/auth/login`          | no   | JSON `{"user","pass"}`. Sets the session cookie                |
+| `POST /api/auth/logout`         | no   | Drops the session                                              |
+| `POST /api/auth/reveal`         | no   | Shows the API key on the device screen for 60 s                |
+| `GET /api/auth/key`             | yes  | The API key, for scripts                                       |
+| `PUT /api/auth/password`        | yes  | JSON `{"current","pass"}`. Changes the password               |
 | `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget, clock sync  |
 | `GET /api/wifi`                 | no   | Connection state, SSID, IP, hostname, hotspot state            |
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
@@ -137,11 +146,13 @@ Once on your network, the device serves:
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
-Authenticated routes need an `Authorization: Bearer <token>` header, except when the request comes in over the setup hotspot. Every page has a field for the token and remembers it in the browser.
+Authenticated routes accept either the session cookie the login page sets or an `Authorization: Bearer <key>` header, except when the request comes in over the setup hotspot. Neither works until a username and password have been created. The key is 8 characters from the device screen; the setup page shows it again to a logged-in user. Five wrong passwords or keys in a row lock logins for a minute.
+
+Forgot the password? The **Forgot your password?** link on the login page puts the key on the device screen for a minute. Enter it with a new username and password; the key is replaced afterwards, so update any scripts that use it.
 
 ```bash
 curl -X POST http://<device-ip>/api/widgets \
-  -H "Authorization: Bearer <token>" \
+  -H "Authorization: Bearer <key>" \
   -d index=1
 ```
 
@@ -157,7 +168,7 @@ setTarget(2, "Router",     "192.168.88.1", 0,   TargetType::SERVER);
 
 Each target has a display name (15 chars max), host or IP, port, and a group. Port `0` falls back to 22 (SSH), which is a convenient liveness check for most Linux boxes. Up to 12 targets are supported. After three consecutive failures a target is marked down (blinking red) and paused for 60 seconds before retrying.
 
-Everything except WiFi credentials and the token lives in `/config.json` on the LittleFS partition and looks like this:
+Everything except WiFi credentials, the key and the account lives in `/config.json` on the LittleFS partition and looks like this:
 
 ```json
 {
@@ -209,7 +220,7 @@ Changes apply immediately, no reboot needed, and the setup page shows the device
 
 ```bash
 curl -X PUT http://<device-ip>/api/config \
-  -H "Authorization: Bearer <token>" \
+  -H "Authorization: Bearer <key>" \
   -H "Content-Type: application/json" \
   -d '{"clock":{"tz":"EST5EDT,M3.2.0,M11.1.0","ntpSource":"router"}}'
 ```
@@ -220,7 +231,7 @@ A data source is a URL the device polls and picks values out of. Each value beco
 
 ```bash
 curl -X PUT "http://<device-ip>/api/sources?id=weather" \
-  -H "Authorization: Bearer <token>" \
+  -H "Authorization: Bearer <key>" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
@@ -460,7 +471,7 @@ The code side is a real code editor: JSON highlighting, bracket matching and aut
 
 ```bash
 curl -X PUT "http://<device-ip>/api/layouts?id=clock" \
-  -H "Authorization: Bearer <token>" \
+  -H "Authorization: Bearer <key>" \
   -H "Content-Type: application/json" \
   --data @clock.json
 ```

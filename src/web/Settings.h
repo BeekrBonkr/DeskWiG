@@ -4,7 +4,9 @@
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
 
-constexpr uint8_t API_TOKEN_LEN = 32;
+// Short enough to type from the device screen; brute force is blunted by
+// the login lockout in Auth.cpp.
+constexpr uint8_t API_TOKEN_LEN = 8;
 constexpr uint8_t HOSTNAME_MAX  = 32;
 constexpr uint8_t TZ_MAX        = 63;
 constexpr uint8_t NTP_HOST_MAX  = 63;
@@ -49,6 +51,9 @@ bool saveSettings();
 
 // Writes WiFi credentials to NVS.
 void saveCredentials();
+
+// Replaces the API key with a fresh random one and stores it in NVS.
+void regenerateApiToken();
 
 // Validates and stores a hostname (lowercase letters, digits, dashes).
 // Returns false and leaves the setting untouched if invalid.
