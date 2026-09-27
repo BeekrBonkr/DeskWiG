@@ -14,16 +14,44 @@ static const char EDITOR_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 <script src="/cm.js"></script>
 <style>
-body{max-width:960px}
-#cm .cm-editor{min-height:380px;max-height:72vh;margin:8px 0}
-.cvwrap{position:relative;width:340px;max-width:100%}
+body{max-width:1260px}
+h2{margin:6px 0 10px}
+/* Toolbar: what you are editing and what to do with it, always in one place. */
+.top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
+.top select,.top input{width:auto;margin:0;padding:8px 10px;font-size:14px}
+.top #which{min-width:180px;max-width:280px}
+.top #id{width:220px}
+.top #tpl{max-width:200px}
+.top button{width:auto;margin:0;padding:8px 12px;font-size:14px;white-space:nowrap}
+.top .sep{flex:1 0 4px}
+.top label.inline{margin:0;font-size:13px;color:#bbb}
+#msg{margin:0 0 6px;min-height:1.4em}
+/* Two columns: code on the left, preview and Design on the right. The right
+   column sticks to the viewport so the preview stays in view while the
+   code scrolls; it scrolls on its own when the inspector gets long. */
+.cols{display:flex;gap:20px;align-items:flex-start}
+.col.code{flex:1 1 460px;min-width:0}
+.col.side{flex:0 0 400px;max-width:100%;position:sticky;top:8px;max-height:calc(100vh - 16px);overflow:auto;padding-right:4px}
+.col.side>h3:first-child{margin-top:4px}
+.preview{position:sticky;top:0;z-index:2;background:#111;padding-bottom:6px}
+.preview .led{display:flex;align-items:center;gap:8px;font-size:13px;color:#999;margin:6px 0 0}
+#ledDot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#000;border:1px solid #444}
+/* The code editor fills a good share of the screen and has a drag handle
+   at its bottom-right corner; the height is remembered per browser. */
+#cm{resize:vertical;overflow:hidden;height:62vh;min-height:160px;margin:8px 0}
+#cm .cm-editor{height:100%}
+#cm .cm-scroller{overflow:auto}
+/* The preview is sized by the window height so the Design panel below it
+   still gets room on a laptop screen; 170:320 is the panel's aspect. */
+.cvwrap{position:relative;width:clamp(170px,calc((100vh - 330px) * 0.53125),340px);max-width:100%}
 .cvwrap canvas{display:block;width:100%}
 #ov{position:absolute;left:0;top:0;pointer-events:none;background:transparent;border-color:transparent}
 #cv{touch-action:none;cursor:crosshair}
-.dtools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.dtools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:8px 0}
 .dtools select{width:auto;margin:0;padding:6px 8px;font-size:14px}
 .dtools button{width:auto;margin:0;padding:6px 10px;font-size:14px}
-.tree{background:#151515;border:1px solid #444;border-radius:6px;max-height:240px;overflow:auto;font:13px ui-monospace,monospace;user-select:none}
+.dtools .gap{flex:1 0 4px}
+.tree{background:#151515;border:1px solid #444;border-radius:6px;max-height:220px;overflow:auto;font:13px ui-monospace,monospace;user-select:none}
 .trow{padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid #222;cursor:pointer}
 .trow.root{color:#9cf;border-top:none}
 .trow.sel{background:#1e3a52;color:#fff}
@@ -45,74 +73,65 @@ body{max-width:960px}
 .lrule{border-top:1px solid #333;padding-top:4px;margin-top:6px}
 .lrule button{margin:6px 0 0;width:auto;padding:6px 10px;font-size:13px}
 .insp>button{width:auto;padding:8px 12px;font-size:14px;margin:6px 6px 0 0;display:inline-block}
-#cm .cm-scroller{overflow:auto}
-.cols{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start}
-.col{flex:1 1 320px;min-width:0}
-.row{display:flex;gap:8px}
-.row>*{flex:1;min-width:0}
 select{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box}
 textarea{display:block;width:100%;min-height:380px;margin:8px 0;padding:10px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box;tab-size:2;white-space:pre;overflow-x:auto}
 canvas{display:block;width:340px;max-width:100%;image-rendering:pixelated;image-rendering:crisp-edges;border:1px solid #333;border-radius:4px;background:#000}
 .keys{display:flex;flex-wrap:wrap;gap:6px}
 .keys button{display:inline-block;width:auto;margin:0;padding:4px 8px;font:12px ui-monospace,monospace;text-align:left}
 .keys button span{color:#999;margin-left:6px}
-.err{color:#f66;min-height:1.4em;font:13px ui-monospace,monospace;white-space:pre-wrap}
-label.inline{display:flex;align-items:center;gap:10px;font-size:15px;margin:8px 0}
+.err{color:#f66;min-height:1.4em;font:13px ui-monospace,monospace;white-space:pre-wrap;margin:0 0 8px}
+label.inline{display:flex;align-items:center;gap:8px;font-size:15px;margin:8px 0}
 label.inline input{width:auto;display:inline;margin:0}
-pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px;overflow-x:auto}
-.actions{display:flex;gap:8px}
-.actions button{margin:8px 0}
+pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px;overflow-x:auto;margin:6px 0}
+/* Keys and Reference fold away under the code so they are there when needed. */
+details{margin:10px 0;border-top:1px solid #333;padding-top:6px}
+summary{cursor:pointer;font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.08em;padding:4px 0;user-select:none;list-style:none}
+summary::before{content:"\25B8";display:inline-block;width:14px;color:#666}
+details[open]>summary::before{content:"\25BE"}
+details>.hint{margin-top:0}
+@media (max-width:900px){
+  .cols{flex-wrap:wrap}
+  .col.side{position:static;max-height:none;overflow:visible;flex:1 1 320px}
+  .preview{position:static}
+  .cvwrap{width:min(340px,100%)}
+  #cm{height:50vh}
+}
 </style>
 </head>
 <body>
 <nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Widget Editor</h2>
 
+<div class="top">
+  <select id="which" title="Which widget to edit"></select>
+  <input id="id" placeholder="id (lowercase letters, digits, dashes)" autocapitalize="off" autocorrect="off" maxlength="24" title="Widget id: used in the file name and the widget list">
+  <select id="tpl" title="Replace the code with a built-in template"><option value="">Insert template&hellip;</option></select>
+  <span class="sep"></span>
+  <button id="run" type="button" title="Show this layout on the device for 60 seconds without saving">Show on device</button>
+  <button id="fmt" type="button" title="Reformat the JSON">Format</button>
+  <button id="save" type="button" class="primary" title="Ctrl+S">Save</button>
+  <button id="del" type="button" class="danger" title="Delete this widget from the device">Delete</button>
+</div>
+<div class="top">
+  <label class="inline"><input type="checkbox" id="live"> Live preview on the device while typing</label>
+  <span class="sep"></span>
+  <span class="hint">Undo and redo work anywhere on the page: Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z. Need a starting point? The <a href="https://github.com/BeekrBonkr/DeskWiG/tree/main/examples/widgets" target="_blank" rel="noopener">example widgets on GitHub</a> paste straight in.</span>
+</div>
+<p id="msg"></p>
+
 <div class="cols">
-<div class="col">
-  <h3>Widget</h3>
-  <div class="row">
-    <select id="which"></select>
-    <select id="tpl"><option value="">Insert template&hellip;</option></select>
-  </div>
-  <p class="hint">More to start from: the <a href="https://github.com/BeekrBonkr/DeskWiG/tree/main/examples/widgets" target="_blank" rel="noopener">example widgets on GitHub</a>. Open one, copy its JSON and paste it here.</p>
-  <input id="id" placeholder="id (lowercase letters, digits, dashes)" autocapitalize="off" autocorrect="off" maxlength="24">
+<div class="col code">
   <div id="cm"></div>
   <textarea id="src" spellcheck="false"></textarea>
   <p id="err" class="err"></p>
-  <label class="inline"><input type="checkbox" id="live"> Live preview on the device while typing</label>
-  <div class="actions">
-    <button id="run">Show on device</button>
-    <button id="save" class="primary" title="Ctrl+S">Save</button>
-    <button id="fmt" title="Reformat the JSON">Format</button>
-    <button id="del" class="danger">Delete</button>
-  </div>
-  <p id="msg"></p>
-</div>
 
-<div class="col">
-  <h3>Preview</h3>
-  <p class="hint"><span id="ledDot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#000;border:1px solid #444;vertical-align:middle;margin-right:6px"></span><span id="ledText">LED: off</span></p>
-  <div class="cvwrap"><canvas id="cv" width="340" height="640"><canvas id="ov" width="340" height="640"></canvas></div></canvas>
-  <p class="hint">Rendered in the browser with live values from the device. "Show on device" puts it on the real screen for 60 seconds.</p>
-  <h3>Design</h3>
-  <p class="hint">Click an element in the preview or the tree to edit it. Drag elements with a fixed position on the preview; drag rows in the tree to reorder or drop into a box. Every change is written to the code, so undo covers it.</p>
-  <div class="dtools">
-    <select id="addType"><option value="">Add element…</option><option>text</option><option>box</option><option>line</option><option>rect</option><option>bar</option><option>circle</option><option>ellipse</option><option>arc</option><option>triangle</option><option>polygon</option><option>image</option></select>
-    <button id="elDup" type="button">Duplicate</button>
-    <button id="elUp" type="button">&uarr;</button>
-    <button id="elDown" type="button">&darr;</button>
-    <button id="elDel" type="button" class="danger">Delete</button>
-    <button id="undo" type="button">Undo</button>
-    <button id="redo" type="button">Redo</button>
-  </div>
-  <div class="tree" id="tree"></div>
-  <div class="insp" id="insp"></div>
-
-  <h3>Keys</h3>
-  <p class="hint">Tap to insert at the cursor. <code>ping.N</code> also accepts the target name, e.g. <code>{ping.router.ms}</code>. <code>api.*</code> keys come from the data sources on the <a href="/setup">setup page</a>.</p>
-  <div class="keys" id="keys"></div>
-  <h3>Reference</h3>
+  <details id="keysBox">
+    <summary>Keys</summary>
+    <p class="hint">Tap to insert at the cursor. <code>ping.N</code> also accepts the target name, e.g. <code>{ping.router.ms}</code>. <code>api.*</code> keys come from the data sources on the <a href="/setup">setup page</a>.</p>
+    <div class="keys" id="keys"></div>
+  </details>
+  <details id="refBox">
+    <summary>Reference</summary>
 <pre>screen 170 x 320, black background
 size 1 = 6x8 px per char (28 cols)
 size 2 = 14 cols, size 4 = 7 cols
@@ -168,6 +187,27 @@ math in braces, keys as variables:
    {"key":"ping.0.status","is":"down",
     "color":"bad"}]}
 no "led" = LED off for this widget</pre>
+  </details>
+</div>
+
+<div class="col side">
+  <div class="preview">
+    <div class="cvwrap"><canvas id="cv" width="340" height="640"></canvas><canvas id="ov" width="340" height="640"></canvas></div>
+    <p class="led"><span id="ledDot"></span><span id="ledText">LED: off</span><span class="sep"></span><span>Click an element to edit it; drag positioned ones.</span></p>
+  </div>
+  <h3>Design</h3>
+  <div class="dtools">
+    <select id="addType" title="Add an element after the selected one"><option value="">Add element…</option><option>text</option><option>box</option><option>line</option><option>rect</option><option>bar</option><option>circle</option><option>ellipse</option><option>arc</option><option>triangle</option><option>polygon</option><option>image</option></select>
+    <button id="elDup" type="button" title="Duplicate the selected element">Duplicate</button>
+    <button id="elUp" type="button" title="Move up">&uarr;</button>
+    <button id="elDown" type="button" title="Move down">&darr;</button>
+    <button id="elDel" type="button" class="danger" title="Delete the selected element">Delete</button>
+    <span class="gap"></span>
+    <button id="undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+    <button id="redo" type="button" title="Redo (Ctrl+Y)">Redo</button>
+  </div>
+  <div class="tree" id="tree" title="Drag rows to reorder or drop them into a box"></div>
+  <div class="insp" id="insp"></div>
 </div>
 </div>
 
@@ -1229,8 +1269,32 @@ $('fmt').onclick = () => {
 };
 
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); }
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+  const k = e.key.toLowerCase();
+  if (k === 's') { e.preventDefault(); save(); return; }
+  // Undo and redo anywhere on the page. The Design panel writes every
+  // change into the code, so the editor's history is the one history.
+  // Inside the editor itself CodeMirror already handles these keys.
+  if (!editor || e.altKey) return;
+  const inEditor = e.target && e.target.closest && e.target.closest('#cm');
+  if (inEditor) return;
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); if (window.designerFlush) designerFlush(); editor.undo(); }
+  else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); if (window.designerFlush) designerFlush(); editor.redo(); }
 });
+
+// Per-browser conveniences: editor height and which panels are open.
+(() => {
+  const cm = $('cm');
+  try {
+    const h = parseInt(localStorage.getItem('editorHeight'), 10);
+    if (h >= 160) cm.style.height = h + 'px';
+    for (const id of ['keysBox', 'refBox']) if (localStorage.getItem(id) === 'open') $(id).open = true;
+  } catch (e) {}
+  let t = 0;
+  new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => { try { localStorage.setItem('editorHeight', String(cm.offsetHeight)); } catch (e) {} }, 300); }).observe(cm);
+  for (const id of ['keysBox', 'refBox']) $(id).addEventListener('toggle', () => { try { localStorage.setItem(id, $(id).open ? 'open' : 'closed'); } catch (e) {} });
+})();
 
 $('which').addEventListener('change', () => open($('which').value));
 
