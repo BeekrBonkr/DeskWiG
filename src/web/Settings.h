@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include "../net/PingTarget.h"
 #include "../net/TimeService.h"
+#include "../net/DataSource.h"
 
 constexpr uint8_t API_TOKEN_LEN = 32;
 constexpr uint8_t HOSTNAME_MAX  = 32;
@@ -31,6 +32,9 @@ struct Settings {
 
   uint8_t targetCount = 0;
   PingTarget targets[MAX_PING_TARGETS];
+
+  uint8_t sourceCount = 0;
+  DataSource sources[MAX_SOURCES];
 };
 
 extern Settings settings;

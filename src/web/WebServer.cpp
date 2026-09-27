@@ -13,6 +13,7 @@
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
 #include "../net/TimeService.h"
+#include "../net/DataSource.h"
 #include "Settings.h"
 #include "Pages.h"
 #include "EditorPage.h"
@@ -21,7 +22,7 @@ extern ScreenManager screens;
 
 static AsyncWebServer server(80);
 
-static const char* FW_VERSION = "0.5.0";
+static const char* FW_VERSION = "0.6.0";
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
@@ -472,6 +473,139 @@ static void registerConfig() {
   server.addHandler(put);
 }
 
+// =====================
+// DATA SOURCES
+// =====================
+static void fillSourceList(JsonDocument& doc) {
+  JsonArray arr = doc["sources"].to<JsonArray>();
+  sourcesLock();
+  for (uint8_t i = 0; i < settings.sourceCount; i++) {
+    JsonObject o = arr.add<JsonObject>();
+    sourceToJson(settings.sources[i], o, false);
+    sourceStatusToJson(settings.sources[i], o);
+  }
+  sourcesUnlock();
+  doc["free"] = MAX_SOURCES - settings.sourceCount;
+  doc["max"]  = MAX_SOURCES;
+}
+
+static void registerSources() {
+  // GET /api/sources -> every source with its config (header value
+  // redacted), fetch state and current values.
+  server.on("/api/sources", HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillSourceList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // PUT /api/sources?id=<id> -> create or replace one source. An omitted
+  // or empty header value keeps the stored one, so the UI can re-save a
+  // source without knowing the secret.
+  auto* put = new AsyncCallbackJsonWebHandler("/api/sources", [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("id")) {
+      sendError(req, 400, "missing id");
+      return;
+    }
+    String id = req->getParam("id")->value();
+    json["id"] = id;
+
+    static DataSource parsed;
+    char err[96];
+    sourcesLock();
+    bool ok = sourceFromJson(parsed, json.as<JsonVariantConst>(), err, sizeof(err));
+    if (ok) {
+      DataSource* existing = sourceFind(parsed.id);
+      if (existing) {
+        if (parsed.headerName[0] && !parsed.headerValue[0] && !strcmp(existing->headerName, parsed.headerName)) {
+          strlcpy(parsed.headerValue, existing->headerValue, sizeof(parsed.headerValue));
+        }
+        *existing = parsed;
+        sourceFetchNow(*existing);
+      } else if (settings.sourceCount < MAX_SOURCES) {
+        settings.sources[settings.sourceCount] = parsed;
+        sourceFetchNow(settings.sources[settings.sourceCount]);
+        settings.sourceCount++;
+      } else {
+        snprintf(err, sizeof(err), "no free slots (max %u sources)", MAX_SOURCES);
+        ok = false;
+      }
+    }
+    sourcesUnlock();
+
+    if (!ok) {
+      sendError(req, 400, err);
+      return;
+    }
+    if (!saveSettings()) {
+      sendError(req, 500, "failed to save settings");
+      return;
+    }
+    JsonDocument doc;
+    fillSourceList(doc);
+    doc["saved"] = id;
+    sendJson(req, 200, doc);
+  });
+  put->setMethod(HTTP_PUT);
+  put->setMaxContentLength(4096);
+  server.addHandler(put);
+
+  server.on("/api/sources", HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("id")) {
+      sendError(req, 400, "missing id");
+      return;
+    }
+    String id = req->getParam("id")->value();
+    sourcesLock();
+    DataSource* s = sourceFind(id.c_str());
+    if (s) {
+      uint8_t idx = s - settings.sources;
+      for (uint8_t i = idx; i + 1 < settings.sourceCount; i++) settings.sources[i] = settings.sources[i + 1];
+      settings.sourceCount--;
+    }
+    sourcesUnlock();
+    if (!s) {
+      sendError(req, 404, "no such source");
+      return;
+    }
+    if (!saveSettings()) {
+      sendError(req, 500, "failed to save settings");
+      return;
+    }
+    JsonDocument doc;
+    fillSourceList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // POST /api/sources/test?id=<id> -> fetch now. The result shows up in
+  // GET /api/sources a moment later.
+  server.on("/api/sources/test", HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("id")) {
+      sendError(req, 400, "missing id");
+      return;
+    }
+    String id = req->getParam("id")->value();
+    sourcesLock();
+    DataSource* s = sourceFind(id.c_str());
+    if (s) sourceFetchNow(*s);
+    sourcesUnlock();
+    if (!s) {
+      sendError(req, 404, "no such source");
+      return;
+    }
+    if (wifiState != WifiState::CONNECTED) {
+      sendError(req, 409, "not connected to WiFi");
+      return;
+    }
+    JsonDocument doc;
+    doc["ok"] = true;
+    doc["queued"] = id;
+    sendJson(req, 202, doc);
+  });
+}
+
 static void registerSystem() {
   server.on("/api/system/reboot", HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
@@ -500,6 +634,7 @@ void startWebServer() {
   registerLayouts();
   registerWifi();
   registerConfig();
+  registerSources();
   registerSystem();
 
   // Captive portal: any unknown URL requested over the hotspot lands on /setup.

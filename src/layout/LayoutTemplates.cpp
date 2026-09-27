@@ -230,6 +230,29 @@ static const char NETWORK[] = R"json({
   ]
 })json";
 
+// Needs a data source called "weather" with fields temp, humidity and
+// wind, e.g. Open-Meteo (see README, "Data sources"). Not preloaded
+// because it shows "--" until that source exists.
+static const char WEATHER[] = R"json({
+  "name": "Weather",
+  "elements": [
+    {"type":"text","x":6,"y":8,"size":1,"color":"dim","text":"WEATHER"},
+    {"type":"text","x":164,"y":8,"size":1,"align":"right","color":"{api.weather.color}","text":"{api.weather.age}"},
+    {"type":"text","x":85,"y":56,"size":6,"align":"center","color":"text","text":"{api.weather.temp}"},
+    {"type":"text","x":85,"y":112,"size":2,"align":"center","color":"dim","text":"deg C"},
+    {"type":"line","x":6,"y":150,"x2":164,"y2":150,"color":"dim"},
+    {"type":"text","x":6,"y":162,"size":1,"color":"dim","text":"HUMIDITY"},
+    {"type":"text","x":164,"y":162,"size":1,"align":"right","color":"text","text":"{api.weather.humidity} %"},
+    {"type":"text","x":6,"y":178,"size":1,"color":"dim","text":"WIND"},
+    {"type":"text","x":164,"y":178,"size":1,"align":"right","color":"text","text":"{api.weather.wind} km/h"},
+    {"type":"text","x":6,"y":194,"size":1,"color":"dim","text":"UPDATED"},
+    {"type":"text","x":164,"y":194,"size":1,"align":"right","color":"text","text":"{api.weather.updated}"},
+    {"type":"line","x":6,"y":222,"x2":164,"y2":222,"color":"dim"},
+    {"type":"text","x":85,"y":246,"size":3,"align":"center","color":"text","text":"{time}"},
+    {"type":"text","x":85,"y":304,"size":1,"align":"center","color":"dim","text":"{date.day} {date.md}"}
+  ]
+})json";
+
 const LayoutTemplate LAYOUT_TEMPLATES[] = {
   { "blank",          "Blank",          false, BLANK },
   { "big-clock",      "Big Clock",      true,  BIG_CLOCK },
@@ -244,6 +267,7 @@ const LayoutTemplate LAYOUT_TEMPLATES[] = {
   { "dashboard",      "Dashboard",      true,  DASHBOARD },
   { "signal-meter",   "Signal Meter",   false, SIGNAL_METER },
   { "network",        "Network",        true,  NETWORK },
+  { "weather",        "Weather",        false, WEATHER },
 };
 
 const uint8_t LAYOUT_TEMPLATE_COUNT = sizeof(LAYOUT_TEMPLATES) / sizeof(LAYOUT_TEMPLATES[0]);

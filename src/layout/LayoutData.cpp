@@ -6,6 +6,7 @@
 #include "../web/Settings.h"
 #include "../net/PingService.h"
 #include "../net/WifiManager.h"
+#include "../net/DataSource.h"
 
 static const char* DAY_SHORT[]   = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 static const char* DAY_LONG[]    = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
@@ -242,6 +243,7 @@ bool layoutResolveKey(const char* key, char* out, size_t n) {
   if (!strncmp(key, "date", 4) && (key[4] == '\0' || key[4] == '.')) return resolveDate(key[4] ? key + 5 : "", out, n);
   if (!strncmp(key, "wifi.", 5)) return resolveWifi(key + 5, out, n);
   if (!strncmp(key, "ping.", 5)) return resolvePing(key + 5, out, n);
+  if (!strncmp(key, "api.", 4))  return sourceResolveKey(key + 4, out, n);
 
   if (!strcmp(key, "hostname")) { strlcpy(out, settings.hostname, n); return true; }
   if (!strcmp(key, "uptime"))   { resolveUptime(out, n); return true; }
@@ -288,6 +290,20 @@ void layoutFillData(JsonObject obj) {
     for (const char* f : PING_FIELDS) {
       char key[32];
       snprintf(key, sizeof(key), "ping.%u.%s", i, f);
+      if (layoutResolveKey(key, val, sizeof(val))) obj[key] = val;
+    }
+  }
+
+  static const char* SOURCE_FIELDS[] = { "status", "color", "age", "updated" };
+  for (uint8_t i = 0; i < settings.sourceCount; i++) {
+    const DataSource& s = settings.sources[i];
+    char key[48];
+    for (uint8_t f = 0; f < s.fieldCount; f++) {
+      snprintf(key, sizeof(key), "api.%s.%s", s.id, s.fields[f].name);
+      if (layoutResolveKey(key, val, sizeof(val))) obj[key] = val;
+    }
+    for (const char* f : SOURCE_FIELDS) {
+      snprintf(key, sizeof(key), "api.%s.%s", s.id, f);
       if (layoutResolveKey(key, val, sizeof(val))) obj[key] = val;
     }
   }

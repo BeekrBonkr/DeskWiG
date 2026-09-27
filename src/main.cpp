@@ -15,6 +15,7 @@
 #include "web/WebServer.h"
 #include "net/WifiManager.h"
 #include "net/TimeService.h"
+#include "net/DataSource.h"
 
 // How long the connection-info screen (IP + API token) stays up after WiFi connects.
 constexpr uint32_t INFO_SCREEN_MS = 30000;
@@ -118,6 +119,7 @@ void setup() {
   ledApplySettings();
   wifiBegin(forceAp);
   timeBegin();
+  sourcesBegin();
 
   screens.add(&pingWidget);
   screens.add(&clockWidget);
