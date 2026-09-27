@@ -539,9 +539,11 @@ static int16_t textH(const LayoutStyle& st) {
 }
 
 // Bitmap-font text with TrueType fallback for characters it lacks.
-static void drawBitmapText(lgfx::LGFX_Sprite& ui, const char* s, int16_t x, int16_t y, uint8_t size, uint16_t color, uint16_t bg) {
+// Drawn with a transparent background so text sits on box backgrounds
+// and images; an element's own background is filled by the caller.
+static void drawBitmapText(lgfx::LGFX_Sprite& ui, const char* s, int16_t x, int16_t y, uint8_t size, uint16_t color) {
   ui.setTextSize(size);
-  ui.setTextColor(color, bg);
+  ui.setTextColor(color);
   ui.setTextDatum(top_left);
   char run[TEXT_RUN];
   size_t rl = 0;
@@ -805,7 +807,7 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       }
       if (hasBg && w > 0 && h > 0) ui.fillRect(x, y, w, h, bg);
       if (e.st.font[0]) fontDrawText(ui, e.st.font, s, e.st.size, tx, y, color);
-      else drawBitmapText(ui, s, tx, y, e.st.size, color, hasBg ? bg : COLOR_BG);
+      else drawBitmapText(ui, s, tx, y, e.st.size, color);
       break;
     }
     case ElType::LINE: {
