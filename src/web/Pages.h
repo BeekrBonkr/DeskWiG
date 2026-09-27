@@ -119,6 +119,14 @@ static const char SETUP_HTML[] = R"html(
 <input id="token" placeholder="Shown on the device screen after it connects" autocapitalize="off" autocorrect="off">
 <p class="hint">Not needed while you're connected through the setup hotspot.</p>
 
+<h3>Firmware</h3>
+<div class="card" id="fwInfo">Loading&hellip;</div>
+<div class="row">
+  <input type="file" id="fwFile" accept=".bin" class="p">
+  <button id="fwUpload" type="button">Update</button>
+</div>
+<p class="hint">Upload <code>firmware.bin</code> from a PlatformIO build (<code>.pio/build/esp32-s3-devkitc-1/firmware.bin</code>). The device writes it to its spare app slot and reboots; settings, layouts, fonts and images are kept.</p>
+
 <script>
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -329,6 +337,39 @@ async function saveClock() {
 $('saveClock').onclick = saveClock;
 setInterval(async () => { try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
 loadClock();
+
+// ---------- firmware ----------
+async function loadFw() {
+  try { const st = await api('/api/status'); $('fwInfo').innerHTML = 'Running firmware <b>' + esc(st.firmware) + '</b> &middot; up ' + Math.round(st.uptimeMs / 60000) + ' min'; }
+  catch (e) { $('fwInfo').textContent = e.message; }
+}
+function uploadFw() {
+  const f = $('fwFile').files[0];
+  if (!f) { msg('Choose firmware.bin first.'); return; }
+  if (!/\.bin$/i.test(f.name)) { msg('That is not a .bin file.'); return; }
+  const fd = new FormData();
+  fd.append('file', f, f.name);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/system/update');
+  xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+  $('fwUpload').disabled = true;
+  xhr.upload.onprogress = e => { if (e.lengthComputable) msg('Uploading firmware\u2026 ' + Math.round(100 * e.loaded / e.total) + '%'); };
+  xhr.onerror = () => { msg('Upload failed (connection lost).'); $('fwUpload').disabled = false; };
+  xhr.onload = async () => {
+    let j = {}; try { j = JSON.parse(xhr.responseText); } catch (e) {}
+    if (xhr.status !== 200) { msg(j.error || ('HTTP ' + xhr.status)); $('fwUpload').disabled = false; return; }
+    msg('Firmware written. Rebooting\u2026');
+    // Wait for the device to come back on the new firmware.
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      try { const st = await api('/api/status'); if (st.uptimeMs < 60000) { msg('Back on firmware ' + st.firmware + '.'); loadFw(); break; } } catch (e) {}
+    }
+    $('fwUpload').disabled = false;
+  };
+  xhr.send(fd);
+}
+$('fwUpload').onclick = uploadFw;
+loadFw();
 
 // ---------- fonts ----------
 let fontDelPending = null;

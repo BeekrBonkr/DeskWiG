@@ -5,6 +5,7 @@
 #include <AsyncJson.h>
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <Update.h>
 
 #include "../app/ScreenManager.h"
 #include "../layout/LayoutStore.h"
@@ -1085,6 +1086,7 @@ void startWebServer() {
   registerFonts();
   registerImages();
   registerScreenshot();
+  registerUpdate();
   registerSystem();
 
   // Captive portal: any unknown URL requested over the hotspot lands on /setup.
