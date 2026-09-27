@@ -568,7 +568,10 @@ void LayoutWidget::updateLed() {
   const char* name = color;
   if (strchr(color, '{')) { layoutExpand(color, buf, sizeof(buf)); name = buf; }
   uint8_t r, g, bl;
-  if (!name[0] || !roleRgb(name, r, g, bl)) { r = g = bl = 0; mode = LedMode::OFF; }
+  if (!name[0] || !roleRgb(name, r, g, bl)) {
+    r = g = bl = 0;
+    if (mode != LedMode::RAINBOW) mode = LedMode::OFF;   // rainbow needs no colour
+  }
   _ledSpec.mode = mode;
   _ledSpec.r = r;
   _ledSpec.g = g;

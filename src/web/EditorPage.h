@@ -656,6 +656,7 @@ function ledState(cfg) {
   const speed = pick && pick.speed ? pick.speed : b.speed;
   let n = color.includes('{') ? expand(color) : color;
   let rgb = LED_RGB[n] || (/^#[0-9a-f]{6}$/i.test(n) ? n : null);
+  if (mode === 'rainbow') return { rgb: '#ff40ff', mode, speed };
   return { rgb: rgb || '#000000', mode: rgb ? mode : 'off', speed };
 }
 
