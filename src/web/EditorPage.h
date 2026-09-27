@@ -75,6 +75,7 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
     <select id="which"></select>
     <select id="tpl"><option value="">Insert template&hellip;</option></select>
   </div>
+  <p class="hint">More to start from: the <a href="https://github.com/BeekrBonkr/DeskWiG/tree/main/examples/widgets" target="_blank" rel="noopener">example widgets on GitHub</a>. Open one, copy its JSON and paste it here.</p>
   <input id="id" placeholder="id (lowercase letters, digits, dashes)" autocapitalize="off" autocorrect="off" maxlength="24">
   <div id="cm"></div>
   <textarea id="src" spellcheck="false"></textarea>
