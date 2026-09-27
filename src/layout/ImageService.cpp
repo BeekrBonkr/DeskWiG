@@ -258,14 +258,21 @@ struct Decoded {
   int16_t drawX, drawY, drawW, drawH;   // where the scaled canvas lands inside the sprite
   int16_t prevX, prevY, prevW, prevH;   // last frame rect, for disposal
   uint8_t prevDisposal;
+  int16_t* xmap;                        // for each output column, the source column
+  uint32_t lastUs, avgUs;               // decode time of the last frame and a running average
 };
 static Decoded decoded[IMAGE_DECODED];
 
 static void decodedFree(Decoded& d) {
   if (d.gif) { d.gif->close(); delete d.gif; }
   if (d.sprite) { d.sprite->deleteSprite(); delete d.sprite; }
+  free(d.xmap);
   memset(&d, 0, sizeof(d));
 }
+
+// Sprites store 16-bit pixels byte-swapped (big-endian), so the GIF palette
+// is requested in that order and lines are written straight into the buffer.
+static const uint16_t TRANSP_SWAPPED = (uint16_t)((TRANSP << 8) | (TRANSP >> 8));
 
 static void fitRect(ImgFit fit, int16_t iw, int16_t ih, int16_t w, int16_t h,
                     int16_t& dx, int16_t& dy, int16_t& dw, int16_t& dh) {
@@ -280,35 +287,44 @@ static void fitRect(ImgFit fit, int16_t iw, int16_t ih, int16_t w, int16_t h,
   dy = (h - dh) / 2;
 }
 
-// GIF line callback: scales the frame line into the decoded sprite.
+// GIF line callback: scales the frame line and writes it into the sprite
+// buffer directly. Canvas pixels map to output columns through xmap.
 static void gifDraw(GIFDRAW* p) {
   Decoded* d = (Decoded*)p->pUser;
-  if (!d || !d->sprite || !d->gif) return;
-  int cw = d->gif->getCanvasWidth(), chh = d->gif->getCanvasHeight();
-  if (cw <= 0 || chh <= 0) return;
-  float sx = (float)d->drawW / cw, sy = (float)d->drawH / chh;
+  if (!d || !d->sprite || !d->gif || !d->xmap) return;
+  int chh = d->gif->getCanvasHeight();
+  if (chh <= 0) return;
 
   int srcY = p->iY + p->y;
-  int y0 = d->drawY + (int)floorf(srcY * sy);
-  int y1 = d->drawY + (int)floorf((srcY + 1) * sy);
+  int y0 = d->drawY + (int)((int32_t)srcY * d->drawH / chh);
+  int y1 = d->drawY + (int)((int32_t)(srcY + 1) * d->drawH / chh);
+  if (y0 < 0) y0 = 0;
+  if (y1 > d->h) y1 = d->h;
   if (y1 <= y0) return;
 
-  static uint16_t line[480];
-  int outX0 = d->drawX + (int)floorf(p->iX * sx);
-  int outX1 = d->drawX + (int)floorf((p->iX + p->iWidth) * sx);
-  if (outX1 <= outX0) return;
-  int n = outX1 - outX0;
-  if (n > 480) n = 480;
-  for (int ox = 0; ox < n; ox++) {
-    int srcX = (int)floorf((outX0 + ox - d->drawX) / sx) - p->iX;
-    if (srcX < 0) srcX = 0;
-    if (srcX >= p->iWidth) srcX = p->iWidth - 1;
-    uint8_t idx = p->pPixels[srcX];
-    uint16_t c = (p->ucHasTransparency && idx == p->ucTransparent) ? TRANSP : p->pPalette[idx];
-    if (c == TRANSP && !(p->ucHasTransparency && idx == p->ucTransparent)) c = 0x0800;
-    line[ox] = c;
+  uint16_t* buf = (uint16_t*)d->sprite->getBuffer();
+  const int16_t* xmap = d->xmap;
+  const uint16_t* pal = p->pPalette;
+  const uint8_t* px = p->pPixels;
+  int fx0 = p->iX, fx1 = p->iX + p->iWidth;
+
+  // Output columns whose source column falls inside this frame.
+  int ox0 = d->drawX, ox1 = d->drawX + d->drawW;
+  if (ox0 < 0) ox0 = 0;
+  if (ox1 > d->w) ox1 = d->w;
+
+  uint16_t* row = buf + (size_t)y0 * d->w;
+  for (int ox = ox0; ox < ox1; ox++) {
+    int sx = xmap[ox - d->drawX];
+    if (sx < fx0 || sx >= fx1) continue;
+    uint8_t idx = px[sx - fx0];
+    if (p->ucHasTransparency && idx == p->ucTransparent) continue;
+    uint16_t c = pal[idx];
+    if (c == TRANSP_SWAPPED) c ^= 0x0100;   // keep the key colour for "nothing drawn"
+    row[ox] = c;
   }
-  for (int y = y0; y < y1; y++) d->sprite->pushImage(outX0, y, n, 1, line, TRANSP);
+  // Rows sharing this source line are copies of the first.
+  for (int y = y0 + 1; y < y1; y++) memcpy(buf + (size_t)y * d->w + ox0, row + ox0, (ox1 - ox0) * 2);
   d->prevDisposal = p->ucDisposalMethod;
 }
 
@@ -347,8 +363,12 @@ static Decoded* decodeGet(RawImage* r, int16_t w, int16_t h, ImgFit fit, uint32_
     case ImgType::JPG: ok = d.sprite->drawJpg(r->data, r->size, d.drawX, d.drawY, 0, 0, 0, 0, sx, sy); break;
     case ImgType::GIF: {
       d.gif = new AnimatedGIF();
-      d.gif->begin(GIF_PALETTE_RGB565_LE);
+      d.gif->begin(GIF_PALETTE_RGB565_BE);
       if (!d.gif->open(r->data, r->size, gifDraw)) { ok = false; break; }
+      int cw = d.gif->getCanvasWidth();
+      d.xmap = (int16_t*)psAlloc(sizeof(int16_t) * (d.drawW > 0 ? d.drawW : 1));
+      if (!d.xmap || cw <= 0) { ok = false; break; }
+      for (int ox = 0; ox < d.drawW; ox++) d.xmap[ox] = (int16_t)((int32_t)ox * cw / d.drawW);
       d.frameDue = 0;
       break;
     }
@@ -366,7 +386,10 @@ static void gifStep(Decoded& d, uint32_t now) {
   if (!d.gif || (int32_t)(now - d.frameDue) < 0) return;
   if (d.prevDisposal == 2 && d.prevW > 0) d.sprite->fillRect(d.prevX, d.prevY, d.prevW, d.prevH, TRANSP);
   int delay = 100;
+  uint32_t t0 = micros();
   int rc = d.gif->playFrame(false, &delay, &d);
+  d.lastUs = micros() - t0;
+  d.avgUs = d.avgUs ? (d.avgUs * 7 + d.lastUs) / 8 : d.lastUs;
   if (rc < 0) { d.frameDue = now + 1000; return; }
   if (rc == 0) d.gif->reset();
   if (delay < 20) delay = 20;
@@ -409,6 +432,23 @@ void imageTouch(const char* src, uint16_t refreshS) {
     r->wanted = true;
     if (refreshS < IMAGE_MIN_REFRESH_S) refreshS = IMAGE_MIN_REFRESH_S;
     r->refreshS = refreshS;
+  }
+  give();
+}
+
+void imageDecodedToJson(JsonArray arr) {
+  take();
+  for (auto& d : decoded) {
+    if (!d.used || !d.raw) continue;
+    JsonObject o = arr.add<JsonObject>();
+    o["src"] = d.raw->src;
+    o["w"] = d.w;
+    o["h"] = d.h;
+    if (d.gif) {
+      o["gif"] = true;
+      o["frameMs"] = d.lastUs / 1000.0;
+      o["avgFrameMs"] = d.avgUs / 1000.0;
+    }
   }
   give();
 }

@@ -65,3 +65,6 @@ bool imageDraw(lgfx::LGFX_Sprite& ui, const char* src, int16_t x, int16_t y, int
 
 // Every URL source currently known, with fetch state, for the API.
 void imageRemotesToJson(JsonArray arr);
+
+// Decoded images currently cached, with GIF frame timings, for the API.
+void imageDecodedToJson(JsonArray arr);
