@@ -207,6 +207,7 @@ static void registerWidgets() {
     }
     screens.setActive(idx);
     settings.activeWidget = idx;
+    strlcpy(settings.activeWidgetName, screens.getName(idx), sizeof(settings.activeWidgetName));
     if (!saveSettings()) {
       sendError(req, 500, "failed to save settings");
       return;

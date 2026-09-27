@@ -168,6 +168,7 @@ static bool loadConfigFile() {
   settings.pingIntervalMs = doc["pingIntervalMs"] | 10000u;
   if (settings.pingIntervalMs < MIN_PING_INTERVAL_MS) settings.pingIntervalMs = MIN_PING_INTERVAL_MS;
   settings.activeWidget = doc["activeWidget"] | 0;
+  strlcpy(settings.activeWidgetName, doc["activeWidgetName"] | "", sizeof(settings.activeWidgetName));
 
   JsonVariantConst clock = doc["clock"];
   resetClockDefaults();
@@ -218,6 +219,7 @@ bool saveSettings() {
   doc["hostname"]       = settings.hostname;
   doc["pingIntervalMs"] = settings.pingIntervalMs;
   doc["activeWidget"]   = settings.activeWidget;
+  doc["activeWidgetName"] = settings.activeWidgetName;
 
   JsonObject clock = doc["clock"].to<JsonObject>();
   clock["tz"]        = settings.clockTz;

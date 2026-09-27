@@ -19,7 +19,8 @@ struct Settings {
   char hostname[HOSTNAME_MAX + 1] = "deskwig";
 
   uint32_t pingIntervalMs = 10000;
-  uint8_t activeWidget = 0;
+  uint8_t activeWidget = 0;           // index, kept for older configs
+  char activeWidgetName[33] = "";     // preferred: widget list order changes as layouts come and go
 
   // POSIX TZ string, e.g. "EST5EDT,M3.2.0,M11.1.0". "UTC0" = no offset.
   char clockTz[TZ_MAX + 1] = "UTC0";
