@@ -1,0 +1,285 @@
+{
+  "name": "Binary Clock",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "rules": [
+      {
+        "when": "time.hour >= 23 || time.hour < 7",
+        "mode": "off"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 10,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "BINARY",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "h",
+          "color": "dim",
+          "w": 12
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.hour / 16) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.hour / 8) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.hour / 4) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.hour / 2) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.hour / 1) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "gap": 4,
+            "justify": "end"
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "m",
+          "color": "dim",
+          "w": 12
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.min / 32) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.min / 16) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.min / 8) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.min / 4) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.min / 2) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            },
+            {
+              "type": "bar",
+              "w": 22,
+              "h": 22,
+              "value": "{floor(time.min / 1) % 2 * 100}",
+              "color": "accent",
+              "style": {
+                "background": "#1a1a1a",
+                "radius": 4
+              }
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "gap": 4,
+            "justify": "end"
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "",
+          "w": 12
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "32",
+              "color": "dim",
+              "w": 22,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "16",
+              "color": "dim",
+              "w": 22,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "8",
+              "color": "dim",
+              "w": 22,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "4",
+              "color": "dim",
+              "w": 22,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "2",
+              "color": "dim",
+              "w": 22,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "1",
+              "color": "dim",
+              "w": 22,
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "gap": 4,
+            "justify": "end"
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "bold",
+      "size": 36,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{date.day} {date.md}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

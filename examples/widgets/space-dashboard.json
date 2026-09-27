@@ -1,0 +1,149 @@
+{
+  "name": "Space",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "rules": [
+      {
+        "when": "abs(api.iss.lat - 38.8) < 10 && abs(api.iss.lon + 77.1) < 15",
+        "color": "ok",
+        "mode": "blink",
+        "speed": 300
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 12,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "SPACE TODAY",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "🛰",
+          "font": "emoji",
+          "size": 28
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "ISS",
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.iss.lat, 1)}, {round(api.iss.lon, 1)}",
+              "font": "bold",
+              "size": 16
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 10,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "🚀",
+          "font": "emoji",
+          "size": 28
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "in orbit",
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "{api.astros.count} people",
+              "font": "bold",
+              "size": 16
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 10,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "☄",
+          "font": "emoji",
+          "size": 28
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "near-Earth objects",
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "{api.neo.count} passing today",
+              "font": "bold",
+              "size": 16
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 10,
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{date.day} {date.md} · {time}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

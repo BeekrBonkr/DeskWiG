@@ -1,0 +1,145 @@
+{
+  "name": "Surf",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 3000,
+    "rules": [
+      {
+        "when": "api.surf.wave >= 2",
+        "color": "ok",
+        "mode": "pulse",
+        "speed": 1500
+      },
+      {
+        "when": "api.surf.wave < 0.5",
+        "color": "dim",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "🌊",
+      "font": "emoji",
+      "size": 48,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{round(api.surf.wave, 1)} m",
+      "font": "bold",
+      "size": 44,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "wave height",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "period",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.surf.period)} s",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "direction",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.surf.dir)}°",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "swell",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.surf.swell, 1)} m",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "wind",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.wind} km/h",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "Open-Meteo marine · {api.surf.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

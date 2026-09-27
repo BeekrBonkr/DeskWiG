@@ -1,0 +1,88 @@
+{
+  "name": "Downloads",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 5000
+  },
+  "style": {
+    "direction": "column",
+    "gap": 10,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "PACKAGE DOWNLOADS",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "npm · {api.npm.pkg}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.npm.downloads / 1000000, 1)}M",
+          "font": "bold",
+          "size": 36
+        },
+        {
+          "type": "text",
+          "text": "last week",
+          "color": "dim"
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 2
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "PyPI · {api.pypi.pkg}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.pypi.week / 1000)}k",
+          "font": "bold",
+          "size": 36
+        },
+        {
+          "type": "text",
+          "text": "last week · {round(api.pypi.day / 1000)}k yesterday",
+          "color": "dim"
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 2
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{api.npm.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

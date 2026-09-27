@@ -1,0 +1,181 @@
+{
+  "name": "Crypto",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 3000,
+    "rules": [
+      {
+        "when": "api.coins.btcc >= 5",
+        "color": "ok",
+        "mode": "pulse",
+        "speed": 800
+      },
+      {
+        "when": "api.coins.btcc <= -5",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 500
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "MARKETS",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "BTC",
+          "font": "bold",
+          "size": 16,
+          "w": 46
+        },
+        {
+          "type": "text",
+          "text": "${round(api.coins.btc)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.coins.btcc, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "ETH",
+          "font": "bold",
+          "size": 16,
+          "w": 46
+        },
+        {
+          "type": "text",
+          "text": "${round(api.coins.eth)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.coins.ethc, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "SOL",
+          "font": "bold",
+          "size": 16,
+          "w": 46
+        },
+        {
+          "type": "text",
+          "text": "${round(api.coins.sol, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.coins.solc, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "DOGE",
+          "font": "bold",
+          "size": 16,
+          "w": 46
+        },
+        {
+          "type": "text",
+          "text": "${round(api.coins.doge, 3)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.coins.dogec, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "24h change",
+      "color": "dim"
+    },
+    {
+      "type": "bar",
+      "h": 6,
+      "value": "{clamp(api.coins.btcc * 5 + 50, 0, 100)}",
+      "color": "warn",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "text",
+      "text": "CoinGecko · {api.coins.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

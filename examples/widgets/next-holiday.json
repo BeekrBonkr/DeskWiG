@@ -1,0 +1,99 @@
+{
+  "name": "Holidays",
+  "led": {
+    "color": "ok",
+    "mode": "breathe",
+    "speed": 5000
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "📅",
+      "font": "emoji",
+      "size": 40,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "NEXT DAY OFF",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{api.holiday.name0}",
+      "font": "bold",
+      "size": 18,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{api.holiday.date0}",
+      "font": "sans",
+      "size": 16,
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{api.holiday.name1}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.holiday.date1}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{api.holiday.name2}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.holiday.date2}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "Nager.Date · today {date}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

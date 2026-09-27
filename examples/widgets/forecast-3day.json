@@ -1,0 +1,201 @@
+{
+  "name": "Forecast",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "rules": [
+      {
+        "when": "api.fc.rain0 >= 60",
+        "color": "accent",
+        "mode": "pulse",
+        "speed": 1500
+      },
+      {
+        "when": "api.fc.hi0 >= 32",
+        "color": "warn",
+        "mode": "solid"
+      },
+      {
+        "when": "api.fc.lo0 <= 0",
+        "color": "accent",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "3-DAY FORECAST",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "Today",
+          "font": "bold",
+          "size": 16,
+          "w": 64
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{api.fc.hi0}°",
+              "font": "bold",
+              "size": 16,
+              "align": "right"
+            },
+            {
+              "type": "text",
+              "text": "{api.fc.lo0}°",
+              "color": "dim",
+              "align": "right"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 0
+          }
+        },
+        {
+          "type": "text",
+          "text": "☔ {api.fc.rain0}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "Tomorrow",
+          "font": "bold",
+          "size": 16,
+          "w": 64
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{api.fc.hi1}°",
+              "font": "bold",
+              "size": 16,
+              "align": "right"
+            },
+            {
+              "type": "text",
+              "text": "{api.fc.lo1}°",
+              "color": "dim",
+              "align": "right"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 0
+          }
+        },
+        {
+          "type": "text",
+          "text": "☔ {api.fc.rain1}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "Day after",
+          "font": "bold",
+          "size": 16,
+          "w": 64
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{api.fc.hi2}°",
+              "font": "bold",
+              "size": 16,
+              "align": "right"
+            },
+            {
+              "type": "text",
+              "text": "{api.fc.lo2}°",
+              "color": "dim",
+              "align": "right"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 0
+          }
+        },
+        {
+          "type": "text",
+          "text": "☔ {api.fc.rain2}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "now {api.weather.temp}° · feels {api.weather.feels}°",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "Open-Meteo · {api.fc.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

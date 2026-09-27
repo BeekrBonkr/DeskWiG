@@ -1,0 +1,107 @@
+{
+  "name": "Power Price",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "speed": 2000,
+    "brightness": 40,
+    "rules": [
+      {
+        "when": "api.power.price >= 150",
+        "color": "bad",
+        "mode": "pulse",
+        "speed": 1000
+      },
+      {
+        "when": "api.power.price >= 80",
+        "color": "warn",
+        "mode": "solid"
+      },
+      {
+        "when": "api.power.price <= 0",
+        "color": "accent",
+        "mode": "blink",
+        "speed": 400
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "ELECTRICITY NOW",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{round(api.power.price / 10, 1)}",
+      "font": "bold",
+      "size": 48,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "ct / kWh spot",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "bar",
+      "h": 10,
+      "value": "{clamp(api.power.price / 2, 0, 100)}",
+      "color": "warn",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "0",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "100",
+          "color": "dim",
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "200 €/MWh",
+          "color": "dim",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "next hour {round(api.power.next / 10, 1)} ct",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "aWATTar day-ahead · {api.power.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

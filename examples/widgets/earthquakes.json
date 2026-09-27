@@ -1,0 +1,102 @@
+{
+  "name": "Earthquakes",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "speed": 2000,
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.quakes.mag >= 7",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 300
+      },
+      {
+        "when": "api.quakes.mag >= 6",
+        "color": "warn",
+        "mode": "pulse",
+        "speed": 1000
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "QUAKES · LAST 24H",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{api.quakes.count}",
+      "font": "bold",
+      "size": 56,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "magnitude 4.5 and up",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "latest",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "M {round(api.quakes.mag, 1)}",
+          "font": "bold",
+          "size": 28
+        },
+        {
+          "type": "text",
+          "text": "{api.quakes.place}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 6,
+      "value": "{clamp(api.quakes.mag * 10, 0, 100)}",
+      "color": "bad",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "USGS · {api.quakes.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}
