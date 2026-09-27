@@ -406,9 +406,12 @@ function color(spec, fallback) {
   return { c: fb, present: true };
 }
 
+// Mirrors fail() on the device: element paths get an "element" prefix, styles, led and root do not.
+const at = path => (/^(style|led|root)/.test(path) ? path : 'element ' + path);
+
 function checkColor(spec, path, what) {
   const c = String(spec ?? '');
-  if (c && !c.includes('{') && !COLORS[c] && !/^#[0-9a-f]{6}$/i.test(c)) throw new Error('element ' + path + ': unknown ' + what + ' (use a role name or #rrggbb)');
+  if (c && !c.includes('{') && !COLORS[c] && !/^#[0-9a-f]{6}$/i.test(c)) throw new Error(at(path) + ': unknown ' + what + ' (use a role name or #rrggbb)');
 }
 
 function defaultStyle() {
@@ -430,16 +433,16 @@ function parseStyle(st, obj, path) {
       case 'padding': st.pad = Math.max(0, Math.min(80, v | 0)); break;
       case 'gap': st.gap = Math.max(0, Math.min(200, v | 0)); break;
       case 'thickness': case 'width': st.thick = Math.max(1, Math.min(80, v | 0)); break;
-      case 'size': if (!Number.isInteger(v) || v < 1 || v > 160) throw new Error('element ' + path + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = v; break;
-      case 'font': if (v && !fontNames.includes(v)) throw new Error('element ' + path + ': unknown font (see the setup page for the list)'); st.font = String(v ?? ''); break;
-      case 'align': if (!ALIGNS[v]) throw new Error('element ' + path + ': align must be left/start, center, right/end or stretch'); st.align = ALIGNS[v]; break;
-      case 'justify': if (!['start', 'center', 'end', 'between'].includes(v)) throw new Error('element ' + path + ': justify must be start, center, end or between'); st.justify = v; break;
-      case 'direction': if (v !== 'row' && v !== 'column') throw new Error('element ' + path + ': direction must be column or row'); st.row = v === 'row'; break;
+      case 'size': if (!Number.isInteger(v) || v < 1 || v > 160) throw new Error(at(path) + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = v; break;
+      case 'font': if (v && !fontNames.includes(v)) throw new Error(at(path) + ': unknown font (see the setup page for the list)'); st.font = String(v ?? ''); break;
+      case 'align': if (!ALIGNS[v]) throw new Error(at(path) + ': align must be left/start, center, right/end or stretch'); st.align = ALIGNS[v]; break;
+      case 'justify': if (!['start', 'center', 'end', 'between'].includes(v)) throw new Error(at(path) + ': justify must be start, center, end or between'); st.justify = v; break;
+      case 'direction': if (v !== 'row' && v !== 'column') throw new Error(at(path) + ': direction must be column or row'); st.row = v === 'row'; break;
       case 'fill': st.fill = !!v; break;
       case 'position': st.absolute = v === 'absolute'; break;
-      case 'fit': if (!['contain', 'cover', 'stretch'].includes(v)) throw new Error('element ' + path + ': fit must be contain, cover or stretch'); st.fit = v; break;
-      case 'image': if (v && !imageOk(String(v))) throw new Error('element ' + path + ': unknown image (upload it on the setup page, or use an http(s) URL)'); st.image = String(v ?? ''); break;
-      default: throw new Error('element ' + path + ': unknown style property "' + String(k).slice(0, 20) + '"');
+      case 'fit': if (!['contain', 'cover', 'stretch'].includes(v)) throw new Error(at(path) + ': fit must be contain, cover or stretch'); st.fit = v; break;
+      case 'image': if (v && !imageOk(String(v))) throw new Error(at(path) + ': unknown image (upload it on the setup page, or use an http(s) URL)'); st.image = String(v ?? ''); break;
+      default: throw new Error(at(path) + ': unknown style property "' + String(k).slice(0, 20) + '"');
     }
   }
 }
@@ -447,10 +450,10 @@ function parseStyle(st, obj, path) {
 let nodeCount = 0;
 
 function buildNode(e, path, styles, depth) {
-  if (!e || typeof e !== 'object' || Array.isArray(e)) throw new Error('element ' + path + ': must be an object');
+  if (!e || typeof e !== 'object' || Array.isArray(e)) throw new Error(at(path) + ': must be an object');
   if (++nodeCount > 63) throw new Error('too many elements (max 63 including nested)');
-  if (depth > 6) throw new Error('element ' + path + ': nested too deep');
-  if (!TYPES.includes(e.type)) throw new Error('element ' + path + ': unknown type (' + TYPES.join(', ') + ')');
+  if (depth > 6) throw new Error(at(path) + ': nested too deep');
+  if (!TYPES.includes(e.type)) throw new Error(at(path) + ': unknown type (' + TYPES.join(', ') + ')');
   const n = { type: e.type, x: AUTO, y: AUTO, w: AUTO, h: AUTO, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: false };
   const st = defaultStyle();
   const shape = ['circle', 'ellipse', 'triangle', 'polygon'].includes(e.type);
@@ -460,7 +463,7 @@ function buildNode(e, path, styles, depth) {
 
   const cls = e.class ?? (typeof e.style === 'string' ? e.style : '');
   if (cls) {
-    if (!styles[cls]) throw new Error('element ' + path + ': unknown class (define it in "styles")');
+    if (!styles[cls]) throw new Error(at(path) + ': unknown class (define it in "styles")');
     const m = Object.assign({}, styles[cls]);
     m.fill = styles[cls].fill || st.fill;
     if (e.type === 'arc' && !m.thick) m.thick = 8;
@@ -469,14 +472,14 @@ function buildNode(e, path, styles, depth) {
     Object.assign(st, m);
   }
   if (e.color !== undefined) { checkColor(e.color, path, 'color'); st.color = String(e.color); }
-  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 160) throw new Error('element ' + path + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = e.size; }
-  if (e.font !== undefined) { if (e.font && !fontNames.includes(e.font)) throw new Error('element ' + path + ': unknown font (see the setup page for the list)'); st.font = String(e.font ?? ''); }
-  if (e.align !== undefined) { if (!ALIGNS[e.align]) throw new Error('element ' + path + ': align must be left, center or right'); st.align = ALIGNS[e.align]; }
+  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 160) throw new Error(at(path) + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = e.size; }
+  if (e.font !== undefined) { if (e.font && !fontNames.includes(e.font)) throw new Error(at(path) + ': unknown font (see the setup page for the list)'); st.font = String(e.font ?? ''); }
+  if (e.align !== undefined) { if (!ALIGNS[e.align]) throw new Error(at(path) + ': align must be left, center or right'); st.align = ALIGNS[e.align]; }
   if (e.fill !== undefined) st.fill = !!e.fill;
   if (e.style && typeof e.style === 'object') parseStyle(st, e.style, path);
   if (e.type === 'text') {
-    if (!st.font && st.size > 8) throw new Error('element ' + path + ': size must be 1-8 with the bitmap font; set "font" for pixel sizes');
-    if (st.font && st.size < 6) throw new Error('element ' + path + ': size must be at least 6 with a TrueType font');
+    if (!st.font && st.size > 8) throw new Error(at(path) + ': size must be 1-8 with the bitmap font; set "font" for pixel sizes');
+    if (st.font && st.size < 6) throw new Error(at(path) + ': size must be at least 6 with a TrueType font');
   }
   n.st = st;
 
@@ -491,31 +494,31 @@ function buildNode(e, path, styles, depth) {
   if (n.hasXY) { if (n.x === AUTO) n.x = 0; if (n.y === AUTO) n.y = 0; }
   if (e.type === 'arc') { n.a0 = e.start ?? 0; n.a1 = e.end ?? 360; }
   if (e.type === 'triangle' || e.type === 'polygon') {
-    if (!Array.isArray(e.points)) throw new Error('element ' + path + ': "points" must be an array of [x,y] pairs');
-    if (e.points.length > 8) throw new Error('element ' + path + ': too many points (max 8)');
+    if (!Array.isArray(e.points)) throw new Error(at(path) + ': "points" must be an array of [x,y] pairs');
+    if (e.points.length > 8) throw new Error(at(path) + ': too many points (max 8)');
     for (const p of e.points) {
-      if (!Array.isArray(p) || p.length !== 2) throw new Error('element ' + path + ': each point must be [x,y]');
+      if (!Array.isArray(p) || p.length !== 2) throw new Error(at(path) + ': each point must be [x,y]');
       n.pts.push([p[0] | 0, p[1] | 0]);
     }
-    if (e.type === 'triangle' && n.pts.length !== 3) throw new Error('element ' + path + ': triangle needs exactly 3 points');
-    if (n.pts.length < 3) throw new Error('element ' + path + ': polygon needs at least 3 points');
+    if (e.type === 'triangle' && n.pts.length !== 3) throw new Error(at(path) + ': triangle needs exactly 3 points');
+    if (n.pts.length < 3) throw new Error(at(path) + ': polygon needs at least 3 points');
   }
   if (e.type === 'image') {
     const src = String(e.src ?? '');
-    if (!src) throw new Error('element ' + path + ': image needs "src": an uploaded image name or an http(s) URL');
-    if (src.length > 159) throw new Error('element ' + path + ': image source too long');
-    if (!imageOk(src)) throw new Error('element ' + path + ': unknown image (upload it on the setup page, or use an http(s) URL)');
+    if (!src) throw new Error(at(path) + ': image needs "src": an uploaded image name or an http(s) URL');
+    if (src.length > 159) throw new Error(at(path) + ': image source too long');
+    if (!imageOk(src)) throw new Error(at(path) + ': unknown image (upload it on the setup page, or use an http(s) URL)');
     n.src = src;
   }
   let text = '';
   if (e.type === 'bar' || e.type === 'arc') text = String(e.value ?? '0');
   else if (e.type === 'text') text = String(e.text ?? '');
-  if (text.length > 63) throw new Error('element ' + path + ': text longer than 63 characters');
+  if (text.length > 63) throw new Error(at(path) + ': text longer than 63 characters');
   n.text = text;
 
   if (e.children !== undefined) {
-    if (e.type !== 'box') throw new Error('element ' + path + ': only a box can have children');
-    if (!Array.isArray(e.children)) throw new Error('element ' + path + ': "children" must be an array');
+    if (e.type !== 'box') throw new Error(at(path) + ': only a box can have children');
+    if (!Array.isArray(e.children)) throw new Error(at(path) + ': "children" must be an array');
     e.children.forEach((c, i) => n.children.push(buildNode(c, path + '.' + i, styles, depth + 1)));
   }
   return n;
