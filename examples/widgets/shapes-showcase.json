@@ -1,5 +1,10 @@
 {
   "name": "Shapes",
+  "led": {
+    "mode": "rainbow",
+    "speed": 6000,
+    "brightness": 40
+  },
   "style": {
     "direction": "column",
     "gap": 10,

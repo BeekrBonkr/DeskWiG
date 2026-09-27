@@ -1,5 +1,16 @@
 {
   "name": "World Clock",
+  "led": {
+    "color": "#ffffff",
+    "mode": "solid",
+    "brightness": 15,
+    "rules": [
+      {
+        "when": "time.hour >= 22 || time.hour < 7",
+        "mode": "off"
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 6,

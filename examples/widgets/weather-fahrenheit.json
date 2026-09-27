@@ -1,5 +1,24 @@
 {
   "name": "Weather (F)",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.weather.temp * 9/5 + 32 >= 90",
+        "color": "bad",
+        "mode": "breathe",
+        "speed": 2000
+      },
+      {
+        "when": "api.weather.temp * 9/5 + 32 <= 32",
+        "color": "#40a0ff",
+        "mode": "breathe",
+        "speed": 2000
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 8,

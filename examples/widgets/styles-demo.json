@@ -1,5 +1,11 @@
 {
   "name": "Styles Demo",
+  "led": {
+    "color": "#7fa7c8",
+    "mode": "breathe",
+    "speed": 3000,
+    "brightness": 35
+  },
   "style": {
     "direction": "column",
     "gap": 8,

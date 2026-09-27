@@ -1,5 +1,16 @@
 {
   "name": "Calendar",
+  "led": {
+    "color": "bad",
+    "mode": "solid",
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "time.hour >= 21",
+        "mode": "off"
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "padding": 8,

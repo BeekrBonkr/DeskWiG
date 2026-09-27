@@ -1,5 +1,11 @@
 {
   "name": "Big Clock",
+  "led": {
+    "color": "{wifi.color}",
+    "mode": "breathe",
+    "speed": 4000,
+    "brightness": 30
+  },
   "style": {
     "direction": "column",
     "justify": "center",

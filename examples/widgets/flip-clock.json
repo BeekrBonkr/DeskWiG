@@ -1,5 +1,11 @@
 {
   "name": "Flip Clock",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 5000,
+    "brightness": 25
+  },
   "style": {
     "direction": "column",
     "justify": "center",

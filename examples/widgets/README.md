@@ -118,6 +118,10 @@ fields:   state = state
           name = attributes.friendly_name
 ```
 
+## LED behaviour
+
+Every example carries a `led` block, so the RGB LED does something sensible while it is on screen: clocks breathe softly and go dark at night, the ping and network layouts show the worst target's colour and blink red when something is down, weather layouts warn on heat, frost, wind or bad air, the crypto ticker flashes green or red on big moves, and the showcase layouts cycle through a rainbow. Delete the block to keep the LED off, or edit the `rules` to taste.
+
 ## Notes
 
 - The screen is 170 × 320. Text longer than the width is clipped by its box, so keep labels short or drop the font size.

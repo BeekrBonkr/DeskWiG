@@ -13,6 +13,7 @@ static const char BLANK[] = R"json({
 
 static const char BIG_CLOCK[] = R"json({
   "name": "Big Clock",
+  "led": {"color":"{wifi.color}","mode":"breathe","speed":4000,"brightness":30},
   "elements": [
     {"type":"text","x":85,"y":96,"size":4,"align":"center","color":"text","text":"{time}"},
     {"type":"text","x":85,"y":134,"size":2,"align":"center","color":"dim","text":"{time.ampm}"},
@@ -25,6 +26,7 @@ static const char BIG_CLOCK[] = R"json({
 
 static const char STACKED_CLOCK[] = R"json({
   "name": "Stacked Clock",
+  "led": {"color":"accent","mode":"breathe","speed":5000,"brightness":25},
   "elements": [
     {"type":"text","x":85,"y":52,"size":8,"align":"center","color":"text","text":"{time.hour}"},
     {"type":"text","x":85,"y":132,"size":8,"align":"center","color":"accent","text":"{time.min}"},
@@ -36,6 +38,7 @@ static const char STACKED_CLOCK[] = R"json({
 
 static const char NIGHT_CLOCK[] = R"json({
   "name": "Night Clock",
+  "led": {"mode":"off"},
   "elements": [
     {"type":"text","x":85,"y":130,"size":4,"align":"center","color":"dim","text":"{time}"},
     {"type":"text","x":85,"y":170,"size":1,"align":"center","color":"dim","text":"{date.day} {date.md}"}
@@ -44,6 +47,7 @@ static const char NIGHT_CLOCK[] = R"json({
 
 static const char DATE_CARD[] = R"json({
   "name": "Date Card",
+  "led": {"color":"#ff7800","mode":"solid","brightness":20},
   "elements": [
     {"type":"text","x":85,"y":70,"size":2,"align":"center","color":"dim","text":"{date.dow}"},
     {"type":"text","x":85,"y":110,"size":4,"align":"center","color":"text","text":"{date.md}"},
@@ -56,6 +60,7 @@ static const char DATE_CARD[] = R"json({
 
 static const char PING_BOARD[] = R"json({
   "name": "Ping Board",
+  "led": {"color":"{ping.0.color}","mode":"solid","rules":[{"key":"ping.0.status","is":"down","mode":"blink","speed":400},{"key":"ping.1.status","is":"down","color":"bad","mode":"blink","speed":400},{"key":"ping.2.status","is":"down","color":"bad","mode":"blink","speed":400}]},
   "elements": [
     {"type":"text","x":6,"y":12,"size":1,"color":"text","text":"{wifi.ssid}"},
     {"type":"text","x":164,"y":12,"size":1,"align":"right","color":"{wifi.color}","text":"{wifi.bars}"},
@@ -80,6 +85,7 @@ static const char PING_BOARD[] = R"json({
 
 static const char LATENCY_HERO[] = R"json({
   "name": "Latency",
+  "led": {"color":"{ping.0.color}","mode":"solid","rules":[{"key":"ping.0.status","is":"down","mode":"blink","speed":300},{"when":"ping.0.ms > 100","mode":"pulse","speed":1000}]},
   "elements": [
     {"type":"text","x":85,"y":40,"size":2,"align":"center","color":"dim","text":"{ping.0.name}"},
     {"type":"text","x":85,"y":80,"size":4,"align":"center","color":"{ping.0.color}","text":"{ping.0.ms}"},
@@ -95,6 +101,7 @@ static const char LATENCY_HERO[] = R"json({
 
 static const char STATUS_LIGHTS[] = R"json({
   "name": "Status Lights",
+  "led": {"color":"ok","mode":"solid","rules":[{"key":"ping.0.status","is":"down","color":"bad","mode":"blink","speed":500},{"key":"ping.1.status","is":"down","color":"bad","mode":"blink","speed":500},{"key":"ping.2.status","is":"down","color":"bad","mode":"blink","speed":500},{"when":"ping.0.ms > 100 || ping.1.ms > 100 || ping.2.ms > 100","color":"warn"}]},
   "elements": [
     {"type":"text","x":6,"y":12,"size":1,"color":"dim","text":"STATUS"},
     {"type":"text","x":164,"y":12,"size":1,"align":"right","color":"dim","text":"{time}"},
@@ -120,6 +127,7 @@ static const char STATUS_LIGHTS[] = R"json({
 
 static const char LATENCY_METERS[] = R"json({
   "name": "Latency Meters",
+  "led": {"color":"{ping.0.color}","mode":"breathe","speed":3000,"rules":[{"when":"ping.0.ms > 100 || ping.1.ms > 100 || ping.2.ms > 100","color":"warn","mode":"solid"}]},
   "elements": [
     {"type":"text","x":6,"y":12,"size":1,"color":"dim","text":"LATENCY  0-100 ms"},
     {"type":"line","x":6,"y":26,"x2":164,"y2":26,"color":"dim"},
@@ -142,6 +150,7 @@ static const char LATENCY_METERS[] = R"json({
 
 static const char SERVER_RACK[] = R"json({
   "name": "Server Rack",
+  "led": {"color":"ok","mode":"solid","brightness":40,"rules":[{"key":"ping.0.status","is":"down","color":"bad","mode":"blink","speed":300},{"key":"ping.1.status","is":"down","color":"bad","mode":"blink","speed":300},{"key":"ping.2.status","is":"down","color":"bad","mode":"blink","speed":300}]},
   "elements": [
     {"type":"text","x":6,"y":12,"size":1,"color":"text","text":"{wifi.ssid}"},
     {"type":"text","x":164,"y":12,"size":1,"align":"right","color":"{wifi.color}","text":"{wifi.bars}"},
@@ -167,6 +176,7 @@ static const char SERVER_RACK[] = R"json({
 
 static const char DASHBOARD[] = R"json({
   "name": "Dashboard",
+  "led": {"color":"{ping.0.color}","mode":"solid","rules":[{"when":"wifi.rssi < -80","color":"warn","mode":"blink","speed":1000},{"key":"ping.0.status","is":"down","mode":"blink","speed":400}]},
   "elements": [
     {"type":"text","x":6,"y":12,"size":2,"color":"text","text":"{time}"},
     {"type":"text","x":164,"y":16,"size":1,"align":"right","color":"dim","text":"{date.day} {date.md}"},
@@ -194,6 +204,7 @@ static const char DASHBOARD[] = R"json({
 
 static const char SIGNAL_METER[] = R"json({
   "name": "Signal Meter",
+  "led": {"color":"{wifi.color}","mode":"solid","rules":[{"when":"wifi.rssi < -85","mode":"blink","speed":500}]},
   "elements": [
     {"type":"text","x":85,"y":30,"size":1,"align":"center","color":"dim","text":"WIFI SIGNAL"},
     {"type":"text","x":85,"y":60,"size":4,"align":"center","color":"{wifi.color}","text":"{wifi.rssi}"},
@@ -210,6 +221,7 @@ static const char SIGNAL_METER[] = R"json({
 
 static const char NETWORK[] = R"json({
   "name": "Network",
+  "led": {"color":"{wifi.color}","mode":"breathe","speed":3000,"rules":[{"when":"wifi.rssi < -85","color":"bad","mode":"blink","speed":500}]},
   "elements": [
     {"type":"text","x":6,"y":12,"size":1,"color":"dim","text":"HOSTNAME"},
     {"type":"text","x":6,"y":24,"size":2,"color":"text","text":"{hostname}"},
@@ -235,6 +247,7 @@ static const char NETWORK[] = R"json({
 // because it shows "--" until that source exists.
 static const char WEATHER[] = R"json({
   "name": "Weather",
+  "led": {"color":"{api.weather.color}","mode":"solid","brightness":40,"rules":[{"key":"api.weather.status","is":"error","mode":"blink","speed":800},{"when":"api.weather.temp >= 30","color":"#ff4000","mode":"breathe","speed":2500},{"when":"api.weather.temp <= 0","color":"#40a0ff","mode":"breathe","speed":2500}]},
   "elements": [
     {"type":"text","x":6,"y":8,"size":1,"color":"dim","text":"WEATHER"},
     {"type":"text","x":164,"y":8,"size":1,"align":"right","color":"{api.weather.color}","text":"{api.weather.age}"},
@@ -257,6 +270,7 @@ static const char WEATHER[] = R"json({
 // named styles, a ring gauge, status dots and a rounded card.
 static const char CARDS[] = R"json({
   "name": "Cards",
+  "led": {"color":"{ping.0.color}","mode":"breathe","speed":3000,"rules":[{"key":"ping.0.status","is":"down","color":"bad","mode":"blink","speed":400},{"key":"ping.1.status","is":"down","color":"bad","mode":"blink","speed":400},{"key":"ping.2.status","is":"down","color":"bad","mode":"blink","speed":400}]},
   "style": {"direction":"column","gap":8,"padding":6},
   "styles": {
     "label": {"color":"dim"},

@@ -1,5 +1,29 @@
 {
   "name": "Bitcoin",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "brightness": 40,
+    "rules": [
+      {
+        "when": "api.btc.change >= 5",
+        "color": "ok",
+        "mode": "pulse",
+        "speed": 800
+      },
+      {
+        "when": "api.btc.change <= -5",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 500
+      },
+      {
+        "when": "api.btc.change < 0",
+        "color": "bad",
+        "mode": "solid"
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "justify": "center",

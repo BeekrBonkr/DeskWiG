@@ -1,5 +1,8 @@
 {
   "name": "Night Clock",
+  "led": {
+    "mode": "off"
+  },
   "style": {
     "direction": "column",
     "justify": "center",

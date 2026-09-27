@@ -1,5 +1,23 @@
 {
   "name": "Air Quality",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "brightness": 40,
+    "rules": [
+      {
+        "when": "api.aqi.aqi > 80",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 700
+      },
+      {
+        "when": "api.aqi.aqi > 40",
+        "color": "warn",
+        "mode": "solid"
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "justify": "center",

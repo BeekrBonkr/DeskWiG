@@ -1,5 +1,18 @@
 {
   "name": "System",
+  "led": {
+    "color": "{wifi.color}",
+    "mode": "solid",
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "heap < 40",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 500
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 8,
