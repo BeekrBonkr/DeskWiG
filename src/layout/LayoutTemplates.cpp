@@ -253,6 +253,56 @@ static const char WEATHER[] = R"json({
   ]
 })json";
 
+// Flow layout: no x/y, elements stack top to bottom inside boxes, with
+// named styles, a ring gauge, status dots and a rounded card.
+static const char CARDS[] = R"json({
+  "name": "Cards",
+  "style": {"direction":"column","gap":8,"padding":6},
+  "styles": {
+    "label": {"color":"dim"},
+    "card":  {"background":"#101820","border":"#2a3a4a","radius":8,"padding":8,"gap":4},
+    "big":   {"size":4,"align":"center"}
+  },
+  "elements": [
+    {"type":"box","class":"card","children":[
+      {"type":"text","class":"label","text":"TIME"},
+      {"type":"text","class":"big","text":"{time}"},
+      {"type":"text","text":"{date.day} {date.md}","style":{"align":"center","color":"dim"}}
+    ]},
+    {"type":"box","class":"card","style":{"direction":"row","align":"center","gap":10},"children":[
+      {"type":"arc","w":56,"value":"{wifi.pct}","color":"{wifi.color}","style":{"thickness":7}},
+      {"type":"box","style":{"gap":2},"children":[
+        {"type":"text","class":"label","text":"WIFI"},
+        {"type":"text","text":"{wifi.rssi} dBm","size":2},
+        {"type":"text","text":"{wifi.ssid}","color":"dim"}
+      ]}
+    ]},
+    {"type":"box","class":"card","children":[
+      {"type":"text","class":"label","text":"SERVERS"},
+      {"type":"box","style":{"direction":"row","align":"center","gap":6},"children":[
+        {"type":"circle","w":10,"color":"{ping.0.color}"},
+        {"type":"text","text":"{ping.0.name}"},
+        {"type":"text","text":"{ping.0.ms} ms","style":{"align":"right"}}
+      ]},
+      {"type":"box","style":{"direction":"row","align":"center","gap":6},"children":[
+        {"type":"circle","w":10,"color":"{ping.1.color}"},
+        {"type":"text","text":"{ping.1.name}"},
+        {"type":"text","text":"{ping.1.ms} ms","style":{"align":"right"}}
+      ]},
+      {"type":"box","style":{"direction":"row","align":"center","gap":6},"children":[
+        {"type":"circle","w":10,"color":"{ping.2.color}"},
+        {"type":"text","text":"{ping.2.name}"},
+        {"type":"text","text":"{ping.2.ms} ms","style":{"align":"right"}}
+      ]}
+    ]},
+    {"type":"box","style":{"direction":"row","justify":"between","align":"center"},"children":[
+      {"type":"triangle","points":[[0,8],[5,0],[10,8]],"color":"accent"},
+      {"type":"text","text":"up {uptime}","color":"dim"},
+      {"type":"polygon","points":[[4,0],[8,3],[6,8],[2,8],[0,3]],"color":"ok"}
+    ]}
+  ]
+})json";
+
 const LayoutTemplate LAYOUT_TEMPLATES[] = {
   { "blank",          "Blank",          false, BLANK },
   { "big-clock",      "Big Clock",      true,  BIG_CLOCK },
@@ -268,6 +318,7 @@ const LayoutTemplate LAYOUT_TEMPLATES[] = {
   { "signal-meter",   "Signal Meter",   false, SIGNAL_METER },
   { "network",        "Network",        true,  NETWORK },
   { "weather",        "Weather",        false, WEATHER },
+  { "cards",          "Cards",          false, CARDS },
 };
 
 const uint8_t LAYOUT_TEMPLATE_COUNT = sizeof(LAYOUT_TEMPLATES) / sizeof(LAYOUT_TEMPLATES[0]);

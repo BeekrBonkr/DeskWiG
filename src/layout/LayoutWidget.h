@@ -3,42 +3,92 @@
 #include <ArduinoJson.h>
 #include "../app/Widget.h"
 
-// A widget described by a JSON document instead of C++:
+// A widget described by a JSON document instead of C++.
 //
 // {
-//   "name": "Big Clock",
+//   "name": "Weather",
+//   "styles": { "label": { "color": "dim" } },
+//   "style": { "direction": "column", "gap": 8, "padding": 6 },
 //   "elements": [
-//     {"type":"text","x":85,"y":110,"size":4,"align":"center","color":"text","text":"{time}"},
-//     {"type":"line","x":6,"y":296,"x2":164,"y2":296,"color":"dim"},
-//     {"type":"rect","x":0,"y":0,"w":170,"h":28,"color":"dim","fill":false},
-//     {"type":"bar","x":6,"y":230,"w":158,"h":8,"color":"ok","value":"{wifi.pct}"}
+//     {"type":"text","class":"label","text":"WEATHER"},
+//     {"type":"text","text":"{api.weather.temp}","style":{"size":6,"align":"center"}},
+//     {"type":"box","style":{"direction":"row","gap":6,"align":"center"},
+//      "children":[
+//        {"type":"circle","w":10,"color":"{ping.0.color}"},
+//        {"type":"text","text":"{ping.0.name}"}
+//      ]},
+//     {"type":"arc","w":80,"value":"{wifi.pct}","style":{"thickness":8}},
+//     {"type":"text","x":6,"y":304,"text":"absolute"}
 //   ]
 // }
 //
+// Elements are laid out like a column of HTML blocks: a box stacks its
+// children along its direction with a gap, and the cross axis defaults to
+// stretch. An element with both x and y is positioned absolutely inside
+// its parent's content box instead, which is how pre-existing layouts
+// (every element with x/y at the top level) keep rendering unchanged.
+//
+// Style properties can be given as flat fields on the element (color,
+// size, align, fill), in a "style" object, or in a named entry of the
+// top-level "styles" map referenced with "class". Later ones win:
+// class, then flat fields, then the style object.
+//
+// Types: text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon.
 // Colours are role names (bg, text, dim, ok, warn, bad, accent), "#rrggbb",
 // or a template that resolves to a role name, e.g. "{ping.0.color}".
-// Text and value fields are templates; see LayoutData.h for the keys.
 
-enum class ElType : uint8_t { TEXT, LINE, RECT, BAR };
-enum class ElAlign : uint8_t { LEFT, CENTER, RIGHT };
+enum class ElType : uint8_t { TEXT, LINE, RECT, BAR, BOX, CIRCLE, ELLIPSE, ARC, TRIANGLE, POLYGON };
+enum class ElAlign : uint8_t { START, CENTER, END, STRETCH };
+enum class ElJustify : uint8_t { START, CENTER, END, BETWEEN };
 
-struct LayoutElement {
+constexpr int16_t EL_AUTO = INT16_MIN;
+
+struct LayoutStyle {
+  char color[24];      // text colour, fill colour (fill=true) or outline colour
+  char bg[24];         // background (box, rect, shapes) or arc track; "" = none
+  char border[24];     // border colour; "" = none
+  uint8_t size;        // text scale 1-8
+  uint8_t borderW;     // border width in px
+  uint8_t radius;      // corner radius (box, rect)
+  uint8_t pad;         // box padding
+  uint8_t gap;         // box gap between children
+  uint8_t thick;       // arc ring thickness, line width
+  ElAlign align;       // text alignment, or cross-axis alignment of a box's children
+  ElJustify justify;   // main-axis distribution of a box's children
+  bool row;            // box direction: row instead of column
+  bool fill;           // shapes: fill with colour instead of outline
+  bool absolute;       // forced absolute positioning
+};
+
+struct LayoutNode {
   ElType type;
-  ElAlign align;
-  uint8_t size;
-  bool fill;
-  int16_t x, y;
-  int16_t x2, y2;     // line end point
-  int16_t w, h;       // rect / bar size
-  char color[24];
-  char text[64];      // text template, or bar value template
+  int16_t x, y, w, h;          // EL_AUTO when not given
+  int16_t x2, y2;              // line end (absolute lines)
+  int16_t a0, a1;              // arc start/end angles, 0 = top, clockwise
+  uint8_t npts;                // triangle / polygon
+  int16_t pts[16];
+  LayoutStyle st;
+  char text[64];               // text template, or bar/arc value template
+  uint8_t firstChild;          // 0xFF = none
+  uint8_t nextSibling;         // 0xFF = none
+  bool hasXY;
+
+  // computed each render
+  int16_t lx, ly, lw, lh;
 };
 
 class LayoutWidget : public Widget {
 public:
-  static constexpr uint8_t MAX_ELEMENTS = 32;
+  static constexpr uint8_t MAX_NODES = 64;     // including the implicit root
+  static constexpr uint8_t MAX_DEPTH = 6;
+  static constexpr uint8_t MAX_STYLES = 8;
   static constexpr uint8_t ID_LEN = 24;
   static constexpr uint8_t NAME_LEN = 32;
+  static constexpr uint8_t NONE = 0xFF;
+  static constexpr size_t TEXT_BUF = 96;
+
+  LayoutWidget();
+  ~LayoutWidget();
 
   // Parses a layout document. On failure the widget is left empty and
   // err holds a short reason.
@@ -57,8 +107,18 @@ public:
   const char* name() const override { return _name; }
 
 private:
-  uint16_t resolveColor(const char* spec, uint16_t fallback);
+  struct NamedStyle;
+  bool alloc();
+  bool parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, const char* path,
+                 const NamedStyle* styles, uint8_t styleCount, char* err, size_t errLen);
+  bool parseStyle(LayoutStyle& st, JsonObjectConst obj, const char* path, char* err, size_t errLen);
   void touchSources();
+
+  void expandAll();
+  void measure(uint8_t i);
+  void place(uint8_t i, int16_t x, int16_t y, int16_t w, int16_t h);
+  void draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy, int16_t cw, int16_t ch);
+  uint16_t resolveColor(const char* spec, uint16_t fallback, bool* present = nullptr);
 
   char _id[ID_LEN + 1] = "";
   char _name[NAME_LEN + 1] = "";
@@ -67,5 +127,6 @@ private:
   bool _usesApi = false;
   uint32_t _lastTouch = 0;
   uint8_t _count = 0;
-  LayoutElement _el[MAX_ELEMENTS];
+  LayoutNode* _n = nullptr;            // MAX_NODES, in PSRAM when available
+  char (*_txt)[TEXT_BUF] = nullptr;    // expanded text per node
 };
