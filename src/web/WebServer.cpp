@@ -162,17 +162,19 @@ static void registerPages() {
   });
 
   server.on(AsyncURIMatcher::exact("/style.css"), HTTP_GET, [](AsyncWebServerRequest* req) {
-    AsyncWebServerResponse* r = req->beginResponse(200, "text/css", STYLE_CSS);
+    AsyncWebServerResponse* r = req->beginResponse(200, "text/css", (const uint8_t*)STYLE_CSS, strlen(STYLE_CSS));
     r->addHeader("Cache-Control", "max-age=3600");
     req->send(r);
   });
 
   server.on(AsyncURIMatcher::exact("/setup"), HTTP_GET, [](AsyncWebServerRequest* req) {
-    req->send(200, "text/html", SETUP_HTML);
+    // From flash, no copy: the pages are far larger than the free heap allows to duplicate.
+    req->send(req->beginResponse(200, "text/html", (const uint8_t*)SETUP_HTML, strlen(SETUP_HTML)));
   });
 
   server.on(AsyncURIMatcher::exact("/widgets"), HTTP_GET, [](AsyncWebServerRequest* req) {
-    req->send(200, "text/html", WIDGETS_HTML);
+    // From flash, no copy: the pages are far larger than the free heap allows to duplicate.
+    req->send(req->beginResponse(200, "text/html", (const uint8_t*)WIDGETS_HTML, strlen(WIDGETS_HTML)));
   });
 
   server.on(AsyncURIMatcher::exact("/designer.js"), HTTP_GET, [](AsyncWebServerRequest* req) {
@@ -182,7 +184,8 @@ static void registerPages() {
   });
 
   server.on(AsyncURIMatcher::exact("/editor"), HTTP_GET, [](AsyncWebServerRequest* req) {
-    req->send(200, "text/html", EDITOR_HTML);
+    // From flash, no copy: the pages are far larger than the free heap allows to duplicate.
+    req->send(req->beginResponse(200, "text/html", (const uint8_t*)EDITOR_HTML, strlen(EDITOR_HTML)));
   });
 
   server.on(AsyncURIMatcher::exact("/"), HTTP_GET, [](AsyncWebServerRequest* req) {
@@ -819,6 +822,7 @@ static void registerFonts() {
 static void fillImageList(JsonDocument& doc) {
   imagesToJson(doc["images"].to<JsonArray>());
   imageRemotesToJson(doc["remote"].to<JsonArray>());
+  imageDecodedToJson(doc["decoded"].to<JsonArray>());
   doc["max"] = MAX_IMAGE_FILES;
   doc["fsFree"] = LittleFS.totalBytes() - LittleFS.usedBytes();
   doc["fsTotal"] = LittleFS.totalBytes();
