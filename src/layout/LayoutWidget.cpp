@@ -2,6 +2,7 @@
 
 #include <esp_heap_caps.h>
 #include "LayoutData.h"
+#include "LayoutExpr.h"
 #include "FontService.h"
 #include "../net/PingService.h"
 #include "../net/DataSource.h"
@@ -61,17 +62,20 @@ LayoutWidget::LayoutWidget() {}
 LayoutWidget::~LayoutWidget() {
   free(_n);
   free(_txt);
+  free(_led);
 }
 
 bool LayoutWidget::alloc() {
-  if (_n && _txt) return true;
+  if (!_led) _led = (LedConfig*)heap_caps_malloc(sizeof(LedConfig), MALLOC_CAP_SPIRAM);
+  if (!_led) _led = (LedConfig*)malloc(sizeof(LedConfig));
+  if (_n && _txt && _led) return true;
   size_t nBytes = sizeof(LayoutNode) * MAX_NODES;
   size_t tBytes = TEXT_BUF * MAX_NODES;
   if (!_n)   _n   = (LayoutNode*)heap_caps_malloc(nBytes, MALLOC_CAP_SPIRAM);
   if (!_n)   _n   = (LayoutNode*)malloc(nBytes);
   if (!_txt) _txt = (char (*)[TEXT_BUF])heap_caps_malloc(tBytes, MALLOC_CAP_SPIRAM);
   if (!_txt) _txt = (char (*)[TEXT_BUF])malloc(tBytes);
-  return _n && _txt;
+  return _n && _txt && _led;
 }
 
 void LayoutWidget::clear() {
@@ -79,6 +83,8 @@ void LayoutWidget::clear() {
   _usesPing = false;
   _usesApi = false;
   _usesImages = false;
+  _hasLed = false;
+  _ledSpec = LedSpec();
   _count = 0;
   _name[0] = '\0';
 }
@@ -438,8 +444,143 @@ bool LayoutWidget::load(JsonVariantConst doc, char* err, size_t errLen) {
   }
   free(styles);
 
+  if (!doc["led"].isNull() && !parseLed(doc["led"], err, errLen)) { clear(); return false; }
+
   _loaded = true;
   return true;
+}
+
+// =====================
+// LED
+// =====================
+static bool roleRgb(const char* name, uint8_t& r, uint8_t& g, uint8_t& b) {
+  if (!strcmp(name, "ok"))     { r = 0;   g = 255; b = 0;   return true; }
+  if (!strcmp(name, "warn"))   { r = 255; g = 120; b = 0;   return true; }
+  if (!strcmp(name, "bad"))    { r = 255; g = 0;   b = 0;   return true; }
+  if (!strcmp(name, "accent")) { r = 0;   g = 120; b = 255; return true; }
+  if (!strcmp(name, "text"))   { r = 255; g = 255; b = 255; return true; }
+  if (!strcmp(name, "dim"))    { r = 40;  g = 40;  b = 40;  return true; }
+  if (!strcmp(name, "bg"))     { r = 0;   g = 0;   b = 0;   return true; }
+  if (name[0] == '#' && strlen(name) == 7) {
+    char* end;
+    long v = strtol(name + 1, &end, 16);
+    if (*end == '\0') { r = (v >> 16) & 0xFF; g = (v >> 8) & 0xFF; b = v & 0xFF; return true; }
+  }
+  return false;
+}
+
+bool LayoutWidget::parseLedRule(LedRule& r, JsonObjectConst obj, const char* path, char* err, size_t errLen) {
+  memset(&r, 0, sizeof(r));
+  r.brightness = -1;
+  for (JsonPairConst kv : obj) {
+    const char* k = kv.key().c_str();
+    JsonVariantConst v = kv.value();
+    if (!strcmp(k, "when")) {
+      const char* w = v | "";
+      if (strlen(w) >= sizeof(r.when)) return fail(err, errLen, path, "\"when\" too long");
+      strlcpy(r.when, w, sizeof(r.when));
+    } else if (!strcmp(k, "key")) {
+      const char* w = v | "";
+      if (strlen(w) >= sizeof(r.key)) return fail(err, errLen, path, "\"key\" too long");
+      strlcpy(r.key, w, sizeof(r.key));
+    } else if (!strcmp(k, "is")) {
+      const char* w = v | "";
+      if (strlen(w) >= sizeof(r.is)) return fail(err, errLen, path, "\"is\" too long");
+      strlcpy(r.is, w, sizeof(r.is));
+    } else if (!strcmp(k, "color")) {
+      if (!copyColor(r.color, sizeof(r.color), v | "", path, "color", err, errLen)) return false;
+      r.hasColor = true;
+    } else if (!strcmp(k, "mode")) {
+      if (!ledModeFromName(v | "", r.mode)) return fail(err, errLen, path, "mode must be off, solid, breathe, blink, pulse or rainbow");
+      r.hasMode = true;
+    } else if (!strcmp(k, "speed")) {
+      int sp = v | 2000;
+      if (sp < 100) sp = 100;
+      if (sp > 60000) sp = 60000;
+      r.speed = sp;
+      r.hasSpeed = true;
+    } else if (!strcmp(k, "brightness")) {
+      int b = v | 100;
+      if (b < 0) b = 0;
+      if (b > 100) b = 100;
+      r.brightness = b;
+      r.hasBrightness = true;
+    } else if (!strcmp(k, "rules")) {
+      // handled by parseLed
+    } else {
+      char m[64];
+      snprintf(m, sizeof(m), "unknown led property \"%.20s\"", k);
+      return fail(err, errLen, path, m);
+    }
+  }
+  if (r.key[0] && !r.is[0]) return fail(err, errLen, path, "\"key\" needs \"is\"");
+  return true;
+}
+
+bool LayoutWidget::parseLed(JsonVariantConst v, char* err, size_t errLen) {
+  if (!v.is<JsonObjectConst>()) return fail(err, errLen, "", "\"led\" must be an object");
+  memset(_led, 0, sizeof(*_led));
+  if (!parseLedRule(_led->base, v.as<JsonObjectConst>(), "led", err, errLen)) return false;
+  if (!_led->base.hasMode) { _led->base.mode = LedMode::SOLID; _led->base.hasMode = true; }
+  if (!_led->base.hasSpeed) { _led->base.speed = 2000; _led->base.hasSpeed = true; }
+  JsonVariantConst rules = v["rules"];
+  if (!rules.isNull()) {
+    if (!rules.is<JsonArrayConst>()) return fail(err, errLen, "led", "\"rules\" must be an array");
+    int i = 0;
+    for (JsonVariantConst rv : rules.as<JsonArrayConst>()) {
+      if (_led->ruleCount >= 6) return fail(err, errLen, "led", "too many rules (max 6)");
+      char path[24];
+      snprintf(path, sizeof(path), "led rule %d", i);
+      if (!rv.is<JsonObjectConst>()) return fail(err, errLen, path, "must be an object");
+      LedRule& r = _led->rules[_led->ruleCount];
+      if (!parseLedRule(r, rv.as<JsonObjectConst>(), path, err, errLen)) return false;
+      if (!r.when[0] && !r.key[0]) return fail(err, errLen, path, "needs \"when\" or \"key\"/\"is\"");
+      if (!r.hasColor && !r.hasMode && !r.hasSpeed && !r.hasBrightness) return fail(err, errLen, path, "sets nothing");
+      _led->ruleCount++;
+      i++;
+    }
+  }
+  _hasLed = true;
+  return true;
+}
+
+void LayoutWidget::updateLed() {
+  const LedRule* pick = nullptr;
+  for (uint8_t i = 0; i < _led->ruleCount && !pick; i++) {
+    const LedRule& r = _led->rules[i];
+    bool match = false;
+    if (r.key[0]) {
+      char val[48];
+      match = layoutResolveKey(r.key, val, sizeof(val)) && strcasecmp(val, r.is) == 0;
+    } else {
+      double d;
+      match = layoutEvalNumber(r.when, d) && d != 0;
+    }
+    if (match) pick = &r;
+  }
+  const LedRule& b = _led->base;
+  const char* color = (pick && pick->hasColor) ? pick->color : b.color;
+  LedMode mode = (pick && pick->hasMode) ? pick->mode : b.mode;
+  uint16_t speed = (pick && pick->hasSpeed) ? pick->speed : b.speed;
+  int16_t bright = (pick && pick->hasBrightness) ? pick->brightness : b.brightness;
+
+  char buf[24];
+  const char* name = color;
+  if (strchr(color, '{')) { layoutExpand(color, buf, sizeof(buf)); name = buf; }
+  uint8_t r, g, bl;
+  if (!name[0] || !roleRgb(name, r, g, bl)) { r = g = bl = 0; mode = LedMode::OFF; }
+  _ledSpec.mode = mode;
+  _ledSpec.r = r;
+  _ledSpec.g = g;
+  _ledSpec.b = bl;
+  _ledSpec.speedMs = speed;
+  _ledSpec.brightness = bright;
+}
+
+bool LayoutWidget::ledSpec(LedSpec& out) {
+  if (!_loaded || !_hasLed) return false;
+  out = _ledSpec;
+  return out.mode != LedMode::OFF;
 }
 
 // =====================
@@ -478,6 +619,7 @@ void LayoutWidget::touchSources() {
 void LayoutWidget::update(uint32_t now) {
   if (_usesPing) pingLoop(now);
   if (_usesApi) touchSources();
+  if (_hasLed && (now - _lastLedEval >= 250 || _lastLedEval == 0)) { _lastLedEval = now; updateLed(); }
   if (_usesImages && now - _lastImageTouch >= 1000) {
     _lastImageTouch = now;
     for (uint8_t i = 1; i < _count; i++) {

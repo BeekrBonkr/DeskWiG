@@ -170,6 +170,19 @@ static void registerStatus() {
     doc["widgetCount"]  = screens.getCount();
     fillWifiStatus(doc["wifi"].to<JsonObject>());
     fillTimeStatus(doc["time"].to<JsonObject>());
+    JsonObject led = doc["led"].to<JsonObject>();
+    led["enabled"] = settings.ledEnabled;
+    const LedSpec* ls = ledPattern() == LedPattern::NORMAL ? ledWidgetSpec() : nullptr;
+    if (ls) {
+      led["mode"] = ledModeName(ls->mode);
+      char c[8];
+      snprintf(c, sizeof(c), "#%02x%02x%02x", ls->r, ls->g, ls->b);
+      led["color"] = c;
+      led["speedMs"] = ls->speedMs;
+      led["brightness"] = ls->brightness;
+    } else {
+      led["mode"] = ledPattern() == LedPattern::NORMAL ? "off" : "system";
+    }
     sendJson(req, 200, doc);
   });
 }

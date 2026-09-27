@@ -185,3 +185,17 @@ void PingWidget::drawIPAddress(lgfx::LGFX_Sprite& ui) {
   ui.setCursor(MARGIN_L, ui.height() - LINE_H - 2);
   ui.printf("IP: %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 }
+
+bool PingWidget::ledSpec(LedSpec& out) {
+  bool bad = false, warn = false;
+  for (uint8_t i = 0; i < settings.targetCount; i++) {
+    const PingTarget& t = settings.targets[i];
+    if (t.latency < 0) { if (t.failCount >= PING_MAX_FAILS) bad = true; else warn = true; }
+    else if (t.latency >= 50) warn = true;
+  }
+  out.mode = LedMode::SOLID;
+  if (bad)       { out.r = 255; out.g = 0;   out.b = 0; }
+  else if (warn) { out.r = 255; out.g = 120; out.b = 0; }
+  else           { out.r = 0;   out.g = 255; out.b = 0; }
+  return true;
+}

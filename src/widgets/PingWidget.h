@@ -11,6 +11,10 @@ public:
   void render(lgfx::LGFX_Sprite& ui) override;
   const char* name() const override { return "Ping"; }
 
+  // Solid LED in the colour of the worst target: red if any is down,
+  // amber if any is waiting or slow, green otherwise.
+  bool ledSpec(LedSpec& out) override;
+
 private:
   void drawRow(lgfx::LGFX_Sprite& ui, int y, PingTarget& t);
   void drawSparkline(lgfx::LGFX_Sprite& ui, int x, int y, const PingTarget& t);

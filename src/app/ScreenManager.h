@@ -27,8 +27,10 @@ public:
   void clearOverride();
   Widget* getOverride() const;
 
-private:
+  // The widget on screen: the override if set, else the active one.
   Widget* current() const;
+
+private:
 
   Widget* widgets[MAX_WIDGETS];
   Widget* overrideWidget = nullptr;
