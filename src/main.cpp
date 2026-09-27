@@ -152,10 +152,17 @@ void loop() {
   }
   lastState = wifiState;
 
-  // LED
-  if (wifiState == WifiState::CONNECTED)      ledSet(LedPattern::NORMAL);
-  else if (wifiApActive())                    ledSet(LedPattern::AP_MODE);
-  else                                        ledSet(LedPattern::CONNECTING);
+  // LED: system states first, otherwise whatever the widget on screen asks for.
+  if (wifiState == WifiState::CONNECTED) {
+    LedSpec spec;
+    Widget* w = screens.current();
+    ledSetWidget(w && w->ledSpec(spec) ? &spec : nullptr);
+    ledSet(LedPattern::NORMAL);
+  } else if (wifiApActive()) {
+    ledSet(LedPattern::AP_MODE);
+  } else {
+    ledSet(LedPattern::CONNECTING);
+  }
   ledLoop();
 
   // Screen

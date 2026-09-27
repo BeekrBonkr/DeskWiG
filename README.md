@@ -351,6 +351,31 @@ An image element sizes itself to the picture, or keeps the aspect ratio when onl
 
 Images are decoded once per size into sprites cached in PSRAM, so drawing them each frame is cheap; a full-screen background costs about 108 KB of PSRAM. The editor's preview loads stored images from the device and URLs directly (a GIF shows its first frame there).
 
+### Status LED
+
+Each layout controls the RGB status LED while it is on screen through a top-level `led` object. A layout without one leaves the LED off. System states (setup hotspot, connecting, resetting) still take over, and the device-wide LED enable and brightness on the setup page still apply on top.
+
+```json
+"led": {
+  "color": "{ping.0.color}", "mode": "breathe", "speed": 3000, "brightness": 50,
+  "rules": [
+    {"when": "ping.0.ms > 100", "color": "warn", "mode": "blink", "speed": 500},
+    {"key": "ping.0.status", "is": "down", "color": "bad", "mode": "blink", "speed": 200},
+    {"when": "time.hour >= 22 || time.hour < 7", "mode": "off"}
+  ]
+}
+```
+
+| Field        | Meaning                                                                                       |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| `color`      | A role name, `#rrggbb`, or a template such as `{api.weather.color}`                            |
+| `mode`       | `solid` (default), `breathe`, `blink`, `pulse`, `rainbow` or `off`                             |
+| `speed`      | Milliseconds per cycle of the animation (100–60000, default 2000)                             |
+| `brightness` | 0–100 for this widget, scaled by the device brightness setting                                |
+| `rules`      | Up to 6 situations, checked in order; the first that matches overrides only the fields it sets |
+
+A rule matches with `when`, an expression that counts as true when non-zero (any key, comparisons, `&&`, `\|\|`), or with `key` and `is`, which compares a key's text case-insensitively, which is how string states like `down`, `stale` or `error` are tested. Rules are re-evaluated four times a second.
+
 ### Styles
 
 Style properties can be flat fields on the element (`color`, `size`, `align`, `fill`), a `style` object, or a named entry in the top-level `styles` map applied with `class`. Later ones win: class, then flat fields, then the `style` object.

@@ -59,6 +59,7 @@ pre{font:12px/1.5 ui-monospace,monospace;color:#bbb;background:#1a1a1a;border:1p
 
 <div class="col">
   <h3>Preview</h3>
+  <p class="hint"><span id="ledDot" style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#000;border:1px solid #444;vertical-align:middle;margin-right:6px"></span><span id="ledText">LED: off</span></p>
   <canvas id="cv" width="340" height="640"></canvas>
   <p class="hint">Rendered in the browser with live values from the device. "Show on device" puts it on the real screen for 60 seconds.</p>
   <h3>Keys</h3>
@@ -110,7 +111,16 @@ math in braces, keys as variables:
   {min(ping.0.ms / 2, 100)}
   + - * / % ^ ( )  round(x,n) abs
   min max floor ceil sqrt clamp(x,lo,hi)
-  &lt; &gt; &lt;= &gt;= == != &amp;&amp; || !  if(c,a,b)</pre>
+  &lt; &gt; &lt;= &gt;= == != &amp;&amp; || !  if(c,a,b)
+
+"led": {"color":"{ping.0.color}",
+  "mode":"solid|breathe|blink|pulse|
+          rainbow|off", "speed":ms,
+  "brightness":0-100, "rules":[
+   {"when":"ping.0.ms > 100","mode":"blink"},
+   {"key":"ping.0.status","is":"down",
+    "color":"bad"}]}
+no "led" = LED off for this widget</pre>
 </div>
 </div>
 
@@ -527,6 +537,7 @@ function parse() {
       styles[name] = st;
     }
   }
+  if (j.led !== undefined) parseLed(j.led);
   nodeCount = 0;
   const root = { type: 'box', x: 0, y: 0, w: 170, h: 320, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: true, st: defaultStyle() };
   if (j.style && typeof j.style === 'object') parseStyle(root.st, j.style, 'root');
@@ -588,6 +599,64 @@ function monoEmoji(s) {
 function ttfWidth(name, s, px) {
   mctx.font = canvasFont(name, px).font;
   return Math.round(mctx.measureText(monoEmoji(s)).width);
+}
+
+// ---------- led (mirrors LayoutWidget::parseLed) ----------
+const LED_MODES = ['off', 'solid', 'breathe', 'blink', 'pulse', 'rainbow'];
+const LED_RGB = { ok: '#00ff00', warn: '#ff7800', bad: '#ff0000', accent: '#0078ff', text: '#ffffff', dim: '#282828', bg: '#000000' };
+function parseLedRule(o, path) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error(path + ': must be an object');
+  const r = {};
+  for (const k of Object.keys(o)) {
+    const v = o[k];
+    switch (k) {
+      case 'when': if (String(v).length > 63) throw new Error(path + ': "when" too long'); r.when = String(v); break;
+      case 'key': if (String(v).length > 39) throw new Error(path + ': "key" too long'); r.key = String(v); break;
+      case 'is': if (String(v).length > 23) throw new Error(path + ': "is" too long'); r.is = String(v); break;
+      case 'color': checkColor(v, path, 'color'); r.color = String(v ?? ''); break;
+      case 'mode': if (!LED_MODES.includes(v)) throw new Error(path + ': mode must be off, solid, breathe, blink, pulse or rainbow'); r.mode = v; break;
+      case 'speed': r.speed = Math.max(100, Math.min(60000, v | 0)); break;
+      case 'brightness': r.brightness = Math.max(0, Math.min(100, v | 0)); break;
+      case 'rules': break;
+      default: throw new Error(path + ': unknown led property "' + String(k).slice(0, 20) + '"');
+    }
+  }
+  if (r.key && !r.is) throw new Error(path + ': "key" needs "is"');
+  return r;
+}
+function parseLed(led) {
+  if (!led || typeof led !== 'object' || Array.isArray(led)) throw new Error('"led" must be an object');
+  const base = parseLedRule(led, 'led');
+  if (!base.mode) base.mode = 'solid';
+  if (!base.speed) base.speed = 2000;
+  const rules = [];
+  if (led.rules !== undefined) {
+    if (!Array.isArray(led.rules)) throw new Error('led: "rules" must be an array');
+    if (led.rules.length > 6) throw new Error('led: too many rules (max 6)');
+    led.rules.forEach((rv, i) => {
+      const r = parseLedRule(rv, 'led rule ' + i);
+      if (!r.when && !r.key) throw new Error('led rule ' + i + ': needs "when" or "key"/"is"');
+      if (r.color === undefined && !r.mode && !r.speed && r.brightness === undefined) throw new Error('led rule ' + i + ': sets nothing');
+      rules.push(r);
+    });
+  }
+  return { base, rules };
+}
+function ledState(cfg) {
+  let pick = null;
+  for (const r of cfg.rules) {
+    let m = false;
+    if (r.key) { const v = lookup(r.key, true); m = v !== undefined && String(v).toLowerCase() === r.is.toLowerCase(); }
+    else { const v = evalNumber(r.when); m = v !== null && v !== 0; }
+    if (m) { pick = r; break; }
+  }
+  const b = cfg.base;
+  const color = pick && pick.color !== undefined ? pick.color : (b.color ?? '');
+  const mode = pick && pick.mode ? pick.mode : b.mode;
+  const speed = pick && pick.speed ? pick.speed : b.speed;
+  let n = color.includes('{') ? expand(color) : color;
+  let rgb = LED_RGB[n] || (/^#[0-9a-f]{6}$/i.test(n) ? n : null);
+  return { rgb: rgb || '#000000', mode: rgb ? mode : 'off', speed };
 }
 
 // ---------- layout (mirrors LayoutWidget.cpp) ----------
@@ -896,6 +965,12 @@ function render() {
   drawNode(root);
   ctx.restore();
   delete j._root;
+  try {
+    const st = j.led !== undefined ? ledState(parseLed(j.led)) : { rgb: '#000000', mode: 'off', speed: 0 };
+    $('ledDot').style.background = st.mode === 'off' ? '#000' : st.rgb;
+    $('ledDot').style.boxShadow = st.mode === 'off' ? 'none' : '0 0 8px ' + st.rgb;
+    $('ledText').textContent = 'LED: ' + st.mode + (st.mode === 'off' ? '' : ' ' + st.rgb + (st.mode === 'solid' ? '' : ' ' + st.speed + ' ms'));
+  } catch (e) {}
   return j;
 }
 

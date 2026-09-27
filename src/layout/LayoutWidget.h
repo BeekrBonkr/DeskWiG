@@ -91,6 +91,37 @@ struct LayoutNode {
   int16_t lx, ly, lw, lh;
 };
 
+// Status LED control, from the layout's top-level "led" object:
+//
+//   "led": {
+//     "color": "{ping.0.color}", "mode": "breathe", "speed": 3000, "brightness": 50,
+//     "rules": [
+//       {"when": "ping.0.ms > 100", "color": "warn", "mode": "blink", "speed": 500},
+//       {"key": "ping.0.status", "is": "down", "color": "bad", "mode": "blink", "speed": 200}
+//     ]
+//   }
+//
+// The first matching rule wins ("when" is an expression that is true when
+// non-zero, "key"/"is" compares a key's text); otherwise the top-level
+// colour and mode apply. A rule only overrides the fields it sets. Colour
+// is a role name, #rrggbb or a template. No "led" means the LED stays off.
+struct LedRule {
+  char when[64];
+  char key[40];
+  char is[24];
+  char color[24];
+  LedMode mode;
+  uint16_t speed;
+  int16_t brightness;
+  bool hasColor, hasMode, hasSpeed, hasBrightness;
+};
+
+struct LedConfig {
+  LedRule base;
+  LedRule rules[6];
+  uint8_t ruleCount;
+};
+
 class LayoutWidget : public Widget {
 public:
   static constexpr uint8_t MAX_NODES = 64;     // including the implicit root
@@ -119,9 +150,13 @@ public:
   void update(uint32_t now) override;
   void render(lgfx::LGFX_Sprite& ui) override;
   const char* name() const override { return _name; }
+  bool ledSpec(LedSpec& out) override;
 
 private:
   struct NamedStyle;
+  bool parseLed(JsonVariantConst v, char* err, size_t errLen);
+  bool parseLedRule(LedRule& r, JsonObjectConst obj, const char* path, char* err, size_t errLen);
+  void updateLed();
   bool alloc();
   bool parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, const char* path,
                  const NamedStyle* styles, uint8_t styleCount, char* err, size_t errLen);
@@ -145,4 +180,8 @@ private:
   uint8_t _count = 0;
   LayoutNode* _n = nullptr;            // MAX_NODES, in PSRAM when available
   char (*_txt)[TEXT_BUF] = nullptr;    // expanded text per node
+  LedConfig* _led = nullptr;           // in PSRAM; nullptr = LED off
+  bool _hasLed = false;
+  LedSpec _ledSpec;
+  uint32_t _lastLedEval = 0;
 };
