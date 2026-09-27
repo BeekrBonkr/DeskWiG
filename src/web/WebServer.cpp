@@ -789,6 +789,40 @@ static void registerSources() {
     sendJson(req, 200, doc);
   });
 
+  // POST /api/sources/discover {"url","header":{"name","value"},"id"} ->
+  // fetch the URL once and list its JSON paths. With an id and no header
+  // value, the stored header of that source is used. Poll the GET for the result.
+  auto* discover = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/sources/discover"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    if (wifiState != WifiState::CONNECTED) { sendError(req, 409, "not connected to WiFi"); return; }
+    const char* url = json["url"] | "";
+    const char* hName = json["header"]["name"] | "";
+    const char* hValue = json["header"]["value"] | "";
+    char storedValue[SOURCE_HDR_VALUE_LEN + 1] = "";
+    if (hName[0] && !hValue[0] && !json["id"].isNull()) {
+      sourcesLock();
+      DataSource* s = sourceFind(json["id"] | "");
+      if (s && !strcmp(s->headerName, hName)) strlcpy(storedValue, s->headerValue, sizeof(storedValue));
+      sourcesUnlock();
+      hValue = storedValue;
+    }
+    char err[96];
+    if (!sourceDiscoverStart(url, hName, hValue, err, sizeof(err))) { sendError(req, 400, err); return; }
+    JsonDocument doc;
+    doc["ok"] = true;
+    sendJson(req, 202, doc);
+  });
+  discover->setMethod(HTTP_POST);
+  server.addHandler(discover);
+
+  // GET /api/sources/discover -> state and, once done, the keys.
+  server.on(AsyncURIMatcher::exact("/api/sources/discover"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    JsonDocument doc;
+    sourceDiscoverToJson(doc.to<JsonObject>());
+    sendJson(req, 200, doc);
+  });
+
   // POST /api/sources/test?id=<id> -> fetch now. The result shows up in
   // GET /api/sources a moment later.
   server.on(AsyncURIMatcher::exact("/api/sources/test"), HTTP_POST, [](AsyncWebServerRequest* req) {

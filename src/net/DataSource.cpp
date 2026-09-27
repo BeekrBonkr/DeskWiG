@@ -4,6 +4,7 @@
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <time.h>
+#include <esp_heap_caps.h>
 
 #include "WifiManager.h"
 #include "../web/Settings.h"
@@ -394,6 +395,7 @@ private:
 // A snapshot of the config the task works from, so the lock is not held
 // during the network round trip.
 struct FetchJob {
+  bool discover;                    // list keys instead of extracting fields
   char id[SOURCE_ID_LEN + 1];
   char url[SOURCE_URL_LEN + 1];
   char headerName[SOURCE_HDR_NAME_LEN + 1];
@@ -433,6 +435,115 @@ static void extract(const FetchJob& job, const uint8_t* body, size_t len, FetchR
     else formatValue(navigate(doc.as<JsonVariantConst>(), job.fields[i].path), job.fields[i].decimals, r.values[i], sizeof(r.values[i]));
   }
   r.ok = true;
+}
+
+// =====================
+// KEY DISCOVERY
+// =====================
+// Large replies are parsed whole, so the document lives in PSRAM.
+struct PsramAllocator : ArduinoJson::Allocator {
+  void* allocate(size_t n) override { return heap_caps_malloc(n, MALLOC_CAP_SPIRAM); }
+  void deallocate(void* p) override { heap_caps_free(p); }
+  void* reallocate(void* p, size_t n) override { return heap_caps_realloc(p, n, MALLOC_CAP_SPIRAM); }
+};
+static PsramAllocator psramAlloc;
+
+static struct {
+  bool pending;
+  SourceState state = SourceState::IDLE;
+  char url[SOURCE_URL_LEN + 1];
+  char headerName[SOURCE_HDR_NAME_LEN + 1];
+  char headerValue[SOURCE_HDR_VALUE_LEN + 1];
+  char error[SOURCE_ERROR_LEN + 1];
+  bool isJson;
+  bool truncated;
+  String keys;            // serialised [{path, value}, ...]
+} disc;
+static String discScratch;  // built on the fetch task, swapped in under the lock
+
+// Walks the document depth first. Arrays contribute only their first
+// element: the path uses [0], which is what a field would be written as.
+static void flattenInto(JsonVariantConst v, char* path, size_t pathLen, JsonArray out, uint16_t& count, bool& truncated) {
+  if (count >= DISCOVER_MAX_KEYS) { truncated = true; return; }
+  size_t used = strlen(path);
+  if (v.is<JsonObjectConst>()) {
+    for (JsonPairConst kv : v.as<JsonObjectConst>()) {
+      const char* k = kv.key().c_str();
+      if (used + strlen(k) + 2 > pathLen) continue;
+      snprintf(path + used, pathLen - used, "%s%s", used ? "." : "", k);
+      flattenInto(kv.value(), path, pathLen, out, count, truncated);
+      path[used] = '\0';
+      if (count >= DISCOVER_MAX_KEYS) return;
+    }
+  } else if (v.is<JsonArrayConst>()) {
+    JsonArrayConst arr = v.as<JsonArrayConst>();
+    if (arr.size() == 0 || used + 4 > pathLen) return;
+    snprintf(path + used, pathLen - used, "[0]");
+    flattenInto(arr[0], path, pathLen, out, count, truncated);
+    path[used] = '\0';
+  } else {
+    if (!used) return;  // a bare scalar body has no path; the whole-body field covers it
+    JsonObject o = out.add<JsonObject>();
+    o["path"] = path;
+    char val[SOURCE_VALUE_LEN + 1];
+    formatValue(v, -1, val, sizeof(val));
+    o["value"] = val;
+    count++;
+  }
+}
+
+static void discoverFrom(const uint8_t* body, size_t len, FetchResult& r) {
+  JsonDocument doc(&psramAlloc);
+  DeserializationError err = deserializeJson(doc, (const char*)body, len, DeserializationOption::NestingLimit(20));
+  JsonDocument out(&psramAlloc);
+  out["json"] = !err;
+  bool truncated = false;
+  if (err) {
+    char sample[SOURCE_VALUE_LEN + 1];
+    trimCopy((const char*)body, len, sample, sizeof(sample));
+    out["text"] = sample;
+  } else {
+    JsonArray keys = out["keys"].to<JsonArray>();
+    char path[SOURCE_PATH_LEN + 1] = "";
+    uint16_t count = 0;
+    flattenInto(doc.as<JsonVariantConst>(), path, sizeof(path), keys, count, truncated);
+  }
+  out["truncated"] = truncated;
+  discScratch = "";
+  serializeJson(out, discScratch);
+  r.ok = true;
+}
+
+bool sourceDiscoverStart(const char* url, const char* headerName, const char* headerValue, char* err, size_t errLen) {
+  if (!validUrl(url)) { strlcpy(err, "invalid url: must start with http:// or https:// (max 191 chars)", errLen); return false; }
+  if (!validHeaderName(headerName) || !validHeaderValue(headerValue)) { strlcpy(err, "invalid header", errLen); return false; }
+  sourcesLock();
+  if (disc.state == SourceState::FETCHING || disc.pending) {
+    sourcesUnlock();
+    strlcpy(err, "a discovery is already running", errLen);
+    return false;
+  }
+  strlcpy(disc.url, url, sizeof(disc.url));
+  strlcpy(disc.headerName, headerName, sizeof(disc.headerName));
+  strlcpy(disc.headerValue, headerValue, sizeof(disc.headerValue));
+  disc.error[0] = '\0';
+  disc.keys = "";
+  disc.pending = true;
+  disc.state = SourceState::FETCHING;
+  sourcesUnlock();
+  return true;
+}
+
+void sourceDiscoverToJson(JsonObject obj) {
+  sourcesLock();
+  obj["state"] = sourceStateName(disc.state);
+  obj["url"] = disc.url;
+  if (disc.state == SourceState::ERROR) obj["error"] = disc.error;
+  if (disc.state == SourceState::OK && disc.keys.length()) {
+    // Already serialised; splice it in as raw JSON.
+    obj["result"] = serialized(disc.keys);  // String overload copies, so the lock can go
+  }
+  sourcesUnlock();
 }
 
 static void doFetch(const FetchJob& job, FetchResult& r) {
@@ -494,6 +605,8 @@ static void doFetch(const FetchJob& job, FetchResult& r) {
     snprintf(r.error, sizeof(r.error), "response too large (max %uK)", (unsigned)(cap / 1024));
   } else if (written < 0 && bs.length() == 0) {
     snprintf(r.error, sizeof(r.error), "read failed: %s", HTTPClient::errorToString(written).c_str());
+  } else if (job.discover) {
+    discoverFrom(buf, bs.length(), r);
   } else {
     extract(job, buf, bs.length(), r);
   }
@@ -504,6 +617,16 @@ static void doFetch(const FetchJob& job, FetchResult& r) {
 static bool nextJob(FetchJob& job, uint32_t now) {
   bool found = false;
   sourcesLock();
+  if (disc.pending) {
+    memset(&job, 0, sizeof(job));
+    job.discover = true;
+    strlcpy(job.url, disc.url, sizeof(job.url));
+    strlcpy(job.headerName, disc.headerName, sizeof(job.headerName));
+    strlcpy(job.headerValue, disc.headerValue, sizeof(job.headerValue));
+    disc.pending = false;
+    sourcesUnlock();
+    return true;
+  }
   for (uint8_t i = 0; i < settings.sourceCount && !found; i++) {
     DataSource& s = settings.sources[i];
     if (s.state == SourceState::FETCHING) continue;
@@ -541,6 +664,15 @@ static bool nextJob(FetchJob& job, uint32_t now) {
 }
 
 static void applyResult(const FetchJob& job, const FetchResult& r) {
+  if (job.discover) {
+    sourcesLock();
+    if (r.ok) { disc.state = SourceState::OK; disc.keys = discScratch; }
+    else { disc.state = SourceState::ERROR; strlcpy(disc.error, r.error, sizeof(disc.error)); }
+    sourcesUnlock();
+    discScratch = "";
+    Serial.printf("[SRC] discover: %s%s%s\n", r.ok ? "ok" : "error", r.ok ? "" : " - ", r.ok ? "" : r.error);
+    return;
+  }
   sourcesLock();
   DataSource* s = sourceFind(job.id);
   if (s && s->state == SourceState::FETCHING) {

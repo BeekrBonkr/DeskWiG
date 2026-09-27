@@ -37,6 +37,10 @@ label.inline input{width:auto;display:inline;margin:0}
 .thumb{display:flex;align-items:center;gap:10px}
 .thumb img{width:48px;height:48px;object-fit:contain;background:#000;border:1px solid #333;border-radius:4px}
 .thumb .btns{margin-left:auto}
+.dkeys{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.dkeys button{display:inline-block;width:auto;margin:0;padding:4px 8px;font:12px ui-monospace,monospace;text-align:left}
+.dkeys button span{color:#999;margin-left:6px}
+.dkeys button.added{border-color:#3c3}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -108,6 +112,8 @@ static const char SETUP_HTML[] = R"html(
     <input id="srcHdrName" class="n" placeholder="Header (optional)" autocapitalize="off" autocorrect="off" maxlength="31">
     <input id="srcHdrValue" class="p" placeholder="Header value, e.g. Bearer abc123" autocapitalize="off" autocorrect="off" maxlength="127">
   </div>
+  <button id="srcDiscover" type="button">Discover keys from this URL</button>
+  <div id="srcKeys"></div>
   <p class="hint">Fields: a name for the layout key and the JSON path to read, e.g. <code>current.temperature_2m</code> or <code>items[0].price</code>. Leave the path empty to use the whole response as text. Decimals rounds numbers.</p>
   <div id="srcFields"></div>
   <button id="srcFieldAdd">Add field</button>
@@ -564,12 +570,18 @@ function openForm(src) {
   const box = $('srcFields');
   box.innerHTML = '';
   (src ? src.fields : [{ name: '', path: '' }]).forEach(f => box.appendChild(fieldRow(f)));
+  clearTimeout(discTimer);
+  $('srcKeys').innerHTML = '';
+  $('srcKeys').className = '';
   $('srcForm').style.display = '';
   $('srcAdd').style.display = 'none';
   $('srcForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function closeForm() {
+  clearTimeout(discTimer);
+  $('srcKeys').innerHTML = '';
+  $('srcKeys').className = '';
   $('srcForm').style.display = 'none';
   $('srcAdd').style.display = '';
   editingId = null;
@@ -678,6 +690,74 @@ $('srcAdd').onclick = () => openForm(null);
 $('srcCancel').onclick = closeForm;
 $('srcSave').onclick = saveSource;
 $('srcFieldAdd').onclick = () => $('srcFields').appendChild(fieldRow(null));
+
+// ---------- key discovery ----------
+// The device fetches the URL (with the header, so private APIs work too)
+// and lists every JSON path with a sample value. Tap a path to add it.
+let discTimer = 0;
+function fieldNameFor(path) {
+  const seg = path.replace(/\[\d+\]/g, '').split('.').filter(Boolean).pop() || 'value';
+  let name = seg.replace(/[^A-Za-z0-9_]/g, '').slice(0, 16) || 'value';
+  if (/^\d/.test(name)) name = 'v' + name.slice(0, 15);
+  if (['status', 'color', 'age', 'updated', 'error'].includes(name)) name += '2';
+  const taken = [...$('srcFields').querySelectorAll('input.n')].map(i => i.value);
+  let out = name, n = 2;
+  while (taken.includes(out)) out = (name.slice(0, 14) + n++);
+  return out;
+}
+function addDiscoveredField(path, btn) {
+  const rows = [...$('srcFields').children];
+  const empty = rows.find(r => !r.children[0].value && !r.children[1].value);
+  const row = empty || fieldRow(null);
+  row.children[0].value = fieldNameFor(path);
+  row.children[1].value = path;
+  if (!empty) $('srcFields').appendChild(row);
+  btn.classList.add('added');
+}
+function renderDiscovery(d) {
+  const box = $('srcKeys');
+  box.className = 'dkeys';
+  box.innerHTML = '';
+  if (d.state === 'fetching') { box.className = 'dim'; box.textContent = 'Fetching ' + d.url + '…'; return; }
+  if (d.state === 'error') { box.className = 'bad'; box.textContent = 'Could not read ' + d.url + ': ' + (d.error || 'unknown error'); return; }
+  const r = d.result || {};
+  if (!r.json) {
+    box.className = 'dim';
+    box.textContent = 'The reply is not JSON. Leave the path empty to use the whole text: ' + JSON.stringify(r.text || '');
+    return;
+  }
+  if (!(r.keys || []).length) { box.className = 'dim'; box.textContent = 'No values found in the reply.'; return; }
+  const present = [...$('srcFields').querySelectorAll('input.p')].map(i => i.value);
+  for (const k of r.keys) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = esc(k.path) + '<span>' + esc(k.value) + '</span>';
+    if (present.includes(k.path)) b.classList.add('added');
+    b.onclick = () => addDiscoveredField(k.path, b);
+    box.appendChild(b);
+  }
+  if (r.truncated) { const h = document.createElement('div'); h.className = 'hint'; h.textContent = 'Showing the first 200 values.'; box.appendChild(h); }
+}
+async function pollDiscovery(tries) {
+  try {
+    const d = await api('/api/sources/discover');
+    renderDiscovery(d);
+    if (d.state === 'fetching' && tries > 0) discTimer = setTimeout(() => pollDiscovery(tries - 1), 1000);
+    else if (d.state === 'fetching') { $('srcKeys').className = 'bad'; $('srcKeys').textContent = 'Timed out waiting for the reply.'; }
+  } catch (e) { $('srcKeys').className = 'bad'; $('srcKeys').textContent = e.message; }
+}
+$('srcDiscover').onclick = async () => {
+  const url = $('srcUrl').value.trim();
+  if (!url) { msg('Enter the URL first.'); return; }
+  clearTimeout(discTimer);
+  const body = { url, header: { name: $('srcHdrName').value.trim(), value: $('srcHdrValue').value } };
+  if (editingId) body.id = editingId;
+  try {
+    await api('/api/sources/discover', 'POST', body);
+    renderDiscovery({ state: 'fetching', url });
+    discTimer = setTimeout(() => pollDiscovery(30), 800);
+  } catch (e) { msg(e.message); }
+};
 setInterval(() => { if (!editingId && $('srcForm').style.display === 'none') loadSources(); }, 10000);
 loadSources();
 

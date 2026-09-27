@@ -99,6 +99,14 @@ uint32_t sourceAgeS(const DataSource& s);
 // Returns false if the source or field is unknown.
 bool sourceResolveKey(const char* rest, char* out, size_t outLen);
 
+// Key discovery: fetch a URL once and list every JSON path in the reply
+// with a sample value, so the setup page can offer them as fields. One
+// discovery at a time; it runs on the fetch task like a normal fetch.
+constexpr uint16_t DISCOVER_MAX_KEYS = 200;
+bool sourceDiscoverStart(const char* url, const char* headerName, const char* headerValue, char* err, size_t errLen);
+// state (idle|fetching|ok|error), url, error, json (bool), keys [{path, value}], truncated.
+void sourceDiscoverToJson(JsonObject obj);
+
 // Serialises settings.sources access. Anything that mutates settings.sources
 // or reads runtime values from another task must hold this.
 void sourcesLock();
