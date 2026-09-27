@@ -852,6 +852,84 @@ void LayoutWidget::place(uint8_t i, int16_t x, int16_t y, int16_t w, int16_t h) 
 }
 
 // =====================
+// ANTIALIASING
+// =====================
+// The library draws smooth filled circles, rounded rectangles and wide
+// lines natively. Everything else with a curve or a slope (arcs,
+// ellipses, triangles, polygons, hollow rounded shapes) is drawn at 2x
+// into a scratch sprite and downsampled with coverage as alpha.
+static const uint16_t SS_KEY = 0x0821;     // "nothing drawn" in the scratch sprite
+static lgfx::LGFX_Sprite* ssSprite = nullptr;
+static int16_t ssW = 0, ssH = 0;           // scratch size in 1x pixels
+static uint8_t* ssArgb = nullptr;
+static size_t ssArgbSize = 0;
+
+static lgfx::LGFX_Sprite* ssBegin(int16_t w, int16_t h) {
+  if (w <= 0 || h <= 0 || w > SCREEN_W || h > SCREEN_H) return nullptr;
+  if (!ssSprite || ssW < w || ssH < h) {
+    int16_t nw = ssW > w ? ssW : w, nh = ssH > h ? ssH : h;
+    if (ssSprite) { ssSprite->deleteSprite(); delete ssSprite; ssSprite = nullptr; }
+    ssSprite = new lgfx::LGFX_Sprite();
+    ssSprite->setPsram(true);
+    ssSprite->setColorDepth(16);
+    if (!ssSprite->createSprite(nw * 2, nh * 2)) { delete ssSprite; ssSprite = nullptr; ssW = ssH = 0; return nullptr; }
+    ssW = nw;
+    ssH = nh;
+  }
+  ssSprite->setClipRect(0, 0, w * 2, h * 2);
+  ssSprite->fillRect(0, 0, w * 2, h * 2, SS_KEY);
+  return ssSprite;
+}
+
+// Downsamples the 2x scratch into ui at (x, y): each output pixel gets the
+// average colour of its drawn samples and their count as alpha.
+static void ssEnd(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_t h) {
+  if (!ssSprite) return;
+  size_t need = (size_t)w * h * 4;
+  if (need > ssArgbSize) {
+    free(ssArgb);
+    ssArgb = (uint8_t*)heap_caps_malloc(need, MALLOC_CAP_SPIRAM);
+    if (!ssArgb) ssArgb = (uint8_t*)malloc(need);
+    ssArgbSize = ssArgb ? need : 0;
+    if (!ssArgb) return;
+  }
+  static uint16_t row0[SCREEN_W * 2], row1[SCREEN_W * 2];
+  lgfx::argb8888_t* out = (lgfx::argb8888_t*)ssArgb;
+  for (int16_t oy = 0; oy < h; oy++) {
+    ssSprite->readRect(0, oy * 2, w * 2, 1, row0);
+    ssSprite->readRect(0, oy * 2 + 1, w * 2, 1, row1);
+    for (int16_t ox = 0; ox < w; ox++) {
+      uint16_t s[4] = { row0[ox * 2], row0[ox * 2 + 1], row1[ox * 2], row1[ox * 2 + 1] };
+      uint16_t r = 0, g = 0, b = 0;
+      uint8_t n = 0;
+      for (uint8_t k = 0; k < 4; k++) {
+        if (s[k] == SS_KEY) continue;
+        r += (s[k] >> 11) & 0x1F;
+        g += (s[k] >> 5) & 0x3F;
+        b += s[k] & 0x1F;
+        n++;
+      }
+      if (n == 0) { out[oy * w + ox] = lgfx::argb8888_t(0, 0, 0, 0); continue; }
+      uint8_t r8 = (r / n) * 255 / 31, g8 = (g / n) * 255 / 63, b8 = (b / n) * 255 / 31;
+      out[oy * w + ox] = lgfx::argb8888_t(n * 64 - (n == 4 ? 1 : 0), r8, g8, b8);
+    }
+  }
+  ui.pushAlphaImage(x, y, w, h, out);
+}
+
+// Hollow rounded rectangle with a smooth edge, via the supersampler.
+static void smoothRoundRectOutline(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_t h, int16_t r, uint8_t bw, uint16_t color) {
+  lgfx::LGFX_Sprite* sp = ssBegin(w, h);
+  if (!sp) { ui.drawRoundRect(x, y, w, h, r, color); return; }
+  sp->fillSmoothRoundRect(0, 0, w * 2, h * 2, r * 2, color);
+  if (w > 2 * bw && h > 2 * bw) {
+    int16_t ir = r > bw ? (r - bw) * 2 : 0;
+    sp->fillSmoothRoundRect(bw * 2, bw * 2, (w - 2 * bw) * 2, (h - 2 * bw) * 2, ir, SS_KEY);
+  }
+  ssEnd(ui, x, y, w, h);
+}
+
+// =====================
 // DRAWING
 // =====================
 static void fillPolygon(lgfx::LGFX_Sprite& ui, const int16_t* px, const int16_t* py, uint8_t n, uint16_t color) {
@@ -909,15 +987,26 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       bool outline = bw > 0 || (e.type == ElType::RECT && !e.st.fill && !hasBg);
       uint16_t outlineColor = bw > 0 ? border : color;
       uint8_t ow = bw > 0 ? bw : 1;
-      if (fillIt && w > 0 && h > 0) {
-        if (e.st.radius) ui.fillRoundRect(x, y, w, h, e.st.radius, fillColor);
-        else             ui.fillRect(x, y, w, h, fillColor);
-      }
-      if (outline) {
-        for (uint8_t k = 0; k < ow && k * 2 < w && k * 2 < h; k++) {
-          int16_t r = e.st.radius > k ? e.st.radius - k : 0;
-          if (r) ui.drawRoundRect(x + k, y + k, w - 2 * k, h - 2 * k, r, outlineColor);
-          else   ui.drawRect(x + k, y + k, w - 2 * k, h - 2 * k, outlineColor);
+      if (w > 0 && h > 0) {
+        if (e.st.radius) {
+          // Rounded: smooth fill; a border is a smooth outer fill with the
+          // inner area refilled, or a supersampled hollow ring.
+          if (outline && fillIt) {
+            ui.fillSmoothRoundRect(x, y, w, h, e.st.radius, outlineColor);
+            if (w > 2 * ow && h > 2 * ow) {
+              int16_t ir = e.st.radius > ow ? e.st.radius - ow : 0;
+              ui.fillSmoothRoundRect(x + ow, y + ow, w - 2 * ow, h - 2 * ow, ir, fillColor);
+            }
+          } else if (fillIt) {
+            ui.fillSmoothRoundRect(x, y, w, h, e.st.radius, fillColor);
+          } else if (outline) {
+            smoothRoundRectOutline(ui, x, y, w, h, e.st.radius, ow, outlineColor);
+          }
+        } else {
+          if (fillIt) ui.fillRect(x, y, w, h, fillColor);
+          if (outline) {
+            for (uint8_t k = 0; k < ow && k * 2 < w && k * 2 < h; k++) ui.drawRect(x + k, y + k, w - 2 * k, h - 2 * k, outlineColor);
+          }
         }
       }
       if (e.type == ElType::BOX) {
@@ -963,8 +1052,9 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
         y1 = y + (h > 0 ? h - 1 : 0);
         if (h <= e.st.thick) y1 = y;   // a flow "rule": horizontal
       }
-      if (e.st.thick > 1) ui.drawWideLine(x, y, x1, y1, e.st.thick / 2.0f, color);
-      else ui.drawLine(x, y, x1, y1, color);
+      // Axis-aligned 1 px lines stay crisp; anything else is a smooth wide line.
+      if (e.st.thick <= 1 && (x == x1 || y == y1)) ui.drawLine(x, y, x1, y1, color);
+      else ui.drawWideLine(x, y, x1, y1, e.st.thick / 2.0f, color);
       break;
     }
     case ElType::BAR: {
@@ -973,12 +1063,12 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       if (v > 100) v = 100;
       uint16_t track = hasBg ? bg : COLOR_DIM;
       if (w <= 0 || h <= 0) break;
-      if (e.st.radius) ui.drawRoundRect(x, y, w, h, e.st.radius, track);
+      if (e.st.radius) smoothRoundRectOutline(ui, x, y, w, h, e.st.radius, 1, track);
       else             ui.drawRect(x, y, w, h, track);
       int inner = w > 2 ? w - 2 : 0;
       int fillW = inner * v / 100;
       if (fillW > 0 && h > 2) {
-        if (e.st.radius) ui.fillRoundRect(x + 1, y + 1, fillW, h - 2, e.st.radius > 1 ? e.st.radius - 1 : 0, color);
+        if (e.st.radius) ui.fillSmoothRoundRect(x + 1, y + 1, fillW, h - 2, e.st.radius > 1 ? e.st.radius - 1 : 0, color);
         else             ui.fillRect(x + 1, y + 1, fillW, h - 2, color);
       }
       break;
@@ -991,11 +1081,28 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       if (rx <= 0 || ry <= 0) break;
       bool fillIt = e.st.fill || hasBg;
       uint16_t fillColor = hasBg ? bg : color;
-      if (fillIt) ui.fillEllipse(mx, my, rx, ry, fillColor);
-      if (bw > 0 || !fillIt) {
-        uint16_t oc = bw > 0 ? border : color;
-        uint8_t ow = bw > 0 ? bw : 1;
-        for (uint8_t k = 0; k < ow && k < rx && k < ry; k++) ui.drawEllipse(mx, my, rx - k, ry - k, oc);
+      uint16_t oc = bw > 0 ? border : color;
+      uint8_t ow = bw > 0 ? bw : 1;
+      bool hollow = bw > 0 || !fillIt;
+      if (e.type == ElType::CIRCLE && fillIt && (!hollow || rx > ow)) {
+        // Native smooth circle; a border is an outer disc with the inner disc refilled.
+        if (hollow) { ui.fillSmoothCircle(mx, my, rx, oc); ui.fillSmoothCircle(mx, my, rx - ow, fillColor); }
+        else ui.fillSmoothCircle(mx, my, rx, fillColor);
+      } else {
+        int16_t bx = mx - rx, by = my - ry, bwid = rx * 2 + 1, bhgt = ry * 2 + 1;
+        lgfx::LGFX_Sprite* sp = ssBegin(bwid, bhgt);
+        if (!sp) {
+          if (fillIt) ui.fillEllipse(mx, my, rx, ry, fillColor);
+          if (hollow) for (uint8_t k = 0; k < ow && k < rx && k < ry; k++) ui.drawEllipse(mx, my, rx - k, ry - k, oc);
+          break;
+        }
+        int16_t cx2 = rx * 2 + 1, cy2 = ry * 2 + 1;
+        if (fillIt && !hollow) sp->fillEllipse(cx2, cy2, rx * 2 + 1, ry * 2 + 1, fillColor);
+        else {
+          sp->fillEllipse(cx2, cy2, rx * 2 + 1, ry * 2 + 1, oc);
+          if (rx > ow && ry > ow) sp->fillEllipse(cx2, cy2, (rx - ow) * 2 + 1, (ry - ow) * 2 + 1, fillIt ? fillColor : SS_KEY);
+        }
+        ssEnd(ui, bx, by, bwid, bhgt);
       }
       break;
     }
@@ -1010,27 +1117,41 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       if (v > 100) v = 100;
       // Our 0 degrees is the top, clockwise; the library's is 3 o'clock.
       float a0 = e.a0 - 90.0f, a1 = e.a1 - 90.0f;
-      if (hasBg) ui.fillArc(mx, my, r0, r, a0, a1, bg);
       float av = a0 + (a1 - a0) * v / 100.0f;
-      if (v > 0) ui.fillArc(mx, my, r0, r, a0, av, color);
+      int16_t bx = mx - r, by = my - r, side = r * 2 + 1;
+      lgfx::LGFX_Sprite* sp = ssBegin(side, side);
+      if (!sp) {
+        if (hasBg) ui.fillArc(mx, my, r0, r, a0, a1, bg);
+        if (v > 0) ui.fillArc(mx, my, r0, r, a0, av, color);
+        break;
+      }
+      int16_t c2 = r * 2 + 1;
+      if (hasBg) sp->fillArc(c2, c2, r0 * 2, r * 2 + 1, a0, a1, bg);
+      if (v > 0) sp->fillArc(c2, c2, r0 * 2, r * 2 + 1, a0, av, color);
+      ssEnd(ui, bx, by, side, side);
       break;
     }
     case ElType::TRIANGLE:
     case ElType::POLYGON: {
-      int16_t px[8], py[8];
-      for (uint8_t k = 0; k < e.npts; k++) { px[k] = x + e.pts[k * 2]; py[k] = y + e.pts[k * 2 + 1]; }
       bool fillIt = e.st.fill || hasBg;
       uint16_t fillColor = hasBg ? bg : color;
+      uint16_t oc = bw > 0 ? border : color;
+      // Filled at 2x in the scratch sprite for smooth edges; outlines are wide lines.
+      int16_t px[8], py[8];
+      lgfx::LGFX_Sprite* sp = fillIt ? ssBegin(w, h) : nullptr;
       if (fillIt) {
-        if (e.npts == 3) ui.fillTriangle(px[0], py[0], px[1], py[1], px[2], py[2], fillColor);
-        else fillPolygon(ui, px, py, e.npts, fillColor);
+        for (uint8_t k = 0; k < e.npts; k++) { px[k] = e.pts[k * 2] * 2; py[k] = e.pts[k * 2 + 1] * 2; }
+        lgfx::LGFX_Sprite& t = sp ? *sp : ui;
+        int16_t ox = sp ? 0 : x, oy = sp ? 0 : y;
+        if (!sp) for (uint8_t k = 0; k < e.npts; k++) { px[k] = px[k] / 2 + ox; py[k] = py[k] / 2 + oy; }
+        if (e.npts == 3) t.fillTriangle(px[0], py[0], px[1], py[1], px[2], py[2], fillColor);
+        else fillPolygon(t, px, py, e.npts, fillColor);
+        if (sp) ssEnd(ui, x, y, w, h);
       }
       if (bw > 0 || !fillIt) {
-        uint16_t oc = bw > 0 ? border : color;
         for (uint8_t k = 0; k < e.npts; k++) {
           uint8_t j = (k + 1) % e.npts;
-          if (bw > 1) ui.drawWideLine(px[k], py[k], px[j], py[j], bw / 2.0f, oc);
-          else ui.drawLine(px[k], py[k], px[j], py[j], oc);
+          ui.drawWideLine(x + e.pts[k * 2], y + e.pts[k * 2 + 1], x + e.pts[j * 2], y + e.pts[j * 2 + 1], (bw > 1 ? bw : 1) / 2.0f, oc);
         }
       }
       break;
