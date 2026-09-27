@@ -1,0 +1,55 @@
+{
+  "name": "Flip Clock",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "align": "center",
+    "gap": 10,
+    "padding": 8
+  },
+  "styles": {
+    "tile": {
+      "background": "#161616",
+      "border": "#333333",
+      "radius": 12,
+      "padding": 6,
+      "align": "center"
+    }
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{time.hour}",
+          "font": "bold",
+          "size": 104,
+          "align": "center"
+        }
+      ],
+      "class": "tile"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{time.min}",
+          "font": "bold",
+          "size": 104,
+          "align": "center",
+          "color": "accent"
+        }
+      ],
+      "class": "tile"
+    },
+    {
+      "type": "text",
+      "text": "{time.ampm}  {date.day} {date.md}",
+      "font": "sans",
+      "size": 16,
+      "color": "dim"
+    }
+  ]
+}

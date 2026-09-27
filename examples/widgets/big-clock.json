@@ -1,0 +1,63 @@
+{
+  "name": "Big Clock",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "align": "center",
+    "gap": 6,
+    "padding": 6
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "bold",
+      "size": 52
+    },
+    {
+      "type": "text",
+      "text": "{time.ampm}",
+      "font": "sans",
+      "size": 18,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{date.dow}",
+      "font": "sans",
+      "size": 20
+    },
+    {
+      "type": "text",
+      "text": "{date.md} {date.year}",
+      "font": "sans",
+      "size": 16,
+      "color": "dim"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{wifi.ssid}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{wifi.bars}",
+          "color": "{wifi.color}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    }
+  ]
+}

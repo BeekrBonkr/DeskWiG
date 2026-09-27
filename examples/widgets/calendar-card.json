@@ -1,0 +1,68 @@
+{
+  "name": "Calendar",
+  "style": {
+    "direction": "column",
+    "padding": 8,
+    "gap": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{date.dow}",
+          "font": "bold",
+          "size": 22,
+          "align": "center",
+          "color": "text"
+        }
+      ],
+      "style": {
+        "background": "bad",
+        "radius": 10,
+        "padding": 8
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{date.md}",
+          "font": "bold",
+          "size": 40,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "{date.year}",
+          "font": "sans",
+          "size": 18,
+          "align": "center",
+          "color": "dim"
+        }
+      ],
+      "style": {
+        "background": "#181818",
+        "border": "#333333",
+        "radius": 10,
+        "padding": 12,
+        "gap": 4
+      }
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "sans",
+      "size": 28,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{date}",
+      "align": "center",
+      "color": "dim"
+    }
+  ]
+}

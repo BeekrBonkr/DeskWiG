@@ -1,0 +1,25 @@
+{
+  "name": "Night Clock",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "align": "center",
+    "gap": 8
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "sans",
+      "size": 48,
+      "color": "#5a3a10"
+    },
+    {
+      "type": "text",
+      "text": "{date.day} {date.md}",
+      "font": "sans",
+      "size": 14,
+      "color": "#3a2a10"
+    }
+  ]
+}

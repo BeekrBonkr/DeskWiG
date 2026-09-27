@@ -1,0 +1,143 @@
+{
+  "name": "System",
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8
+  },
+  "styles": {
+    "card": {
+      "background": "#101010",
+      "border": "#2a2a2a",
+      "radius": 6,
+      "padding": 6,
+      "gap": 2
+    }
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "DESKWIG SYSTEM",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "HEAP",
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "{heap}",
+              "font": "bold",
+              "size": 22
+            }
+          ],
+          "class": "card"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "UPTIME",
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "{uptime}",
+              "font": "bold",
+              "size": 22
+            }
+          ],
+          "class": "card"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "TARGETS",
+          "color": "dim"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.count} configured"
+            },
+            {
+              "type": "text",
+              "text": "{ping.0.status}/{ping.1.status}/{ping.2.status}",
+              "align": "right",
+              "color": "dim"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          }
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "CLOCK",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{time.sec}",
+          "font": "bold",
+          "size": 30,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "{date} · {date.dow}",
+          "color": "dim",
+          "align": "center"
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "WIFI",
+          "color": "dim"
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{wifi.pct}",
+          "color": "{wifi.color}"
+        },
+        {
+          "type": "text",
+          "text": "{wifi.ssid} {wifi.rssi} dBm",
+          "color": "dim"
+        }
+      ],
+      "class": "card"
+    }
+  ]
+}

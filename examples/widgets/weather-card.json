@@ -1,0 +1,122 @@
+{
+  "name": "Weather",
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "WEATHER",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.age}",
+          "color": "{api.weather.color}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "☀",
+          "font": "emoji",
+          "size": 56
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.temp}°",
+          "font": "bold",
+          "size": 56
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "center",
+        "gap": 6,
+        "justify": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "feels like {api.weather.feels}°",
+      "font": "sans",
+      "size": 16,
+      "align": "center",
+      "color": "dim"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "💧 humidity",
+          "font": "sans",
+          "size": 16
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.humidity}%",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "💨 wind",
+          "font": "sans",
+          "size": 16
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.wind} km/h",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 8,
+      "value": "{api.weather.humidity}",
+      "color": "accent"
+    },
+    {
+      "type": "text",
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
+    }
+  ]
+}

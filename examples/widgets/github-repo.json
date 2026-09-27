@@ -1,0 +1,133 @@
+{
+  "name": "GitHub",
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8
+  },
+  "styles": {
+    "stat": {
+      "font": "bold",
+      "size": 30,
+      "align": "right"
+    }
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "GITHUB",
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{api.repo.name}",
+      "font": "bold",
+      "size": 22
+    },
+    {
+      "type": "text",
+      "text": "{api.repo.desc}",
+      "font": "sans",
+      "size": 12,
+      "color": "dim"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "⭐",
+          "font": "emoji",
+          "size": 26
+        },
+        {
+          "type": "text",
+          "text": "stars",
+          "font": "sans",
+          "size": 14,
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.repo.stars}",
+          "class": "stat"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "center",
+        "gap": 6,
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "🍴",
+          "font": "emoji",
+          "size": 26
+        },
+        {
+          "type": "text",
+          "text": "forks",
+          "font": "sans",
+          "size": 14,
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.repo.forks}",
+          "class": "stat"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "center",
+        "gap": 6,
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "⚠",
+          "font": "emoji",
+          "size": 26
+        },
+        {
+          "type": "text",
+          "text": "issues",
+          "font": "sans",
+          "size": 14,
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.repo.issues}",
+          "class": "stat"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "center",
+        "gap": 6,
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.repo.status} {api.repo.age}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

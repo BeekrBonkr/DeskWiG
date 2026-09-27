@@ -1,0 +1,176 @@
+{
+  "name": "Network",
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8
+  },
+  "styles": {
+    "k": {
+      "color": "dim"
+    },
+    "v": {
+      "align": "right"
+    }
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "NETWORK",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "arc",
+              "x": 0,
+              "y": 0,
+              "w": 70,
+              "value": "{wifi.pct}",
+              "color": "{wifi.color}",
+              "style": {
+                "thickness": 9
+              }
+            },
+            {
+              "type": "text",
+              "text": "{wifi.pct}%",
+              "x": 35,
+              "y": 27,
+              "align": "center",
+              "font": "bold",
+              "size": 16
+            }
+          ],
+          "w": 70,
+          "h": 70
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{wifi.ssid}",
+              "font": "bold",
+              "size": 18
+            },
+            {
+              "type": "text",
+              "text": "{wifi.rssi} dBm",
+              "font": "sans",
+              "size": 14,
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "{wifi.bars}",
+              "color": "{wifi.color}"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 3
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "center",
+        "gap": 10
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "IP",
+          "class": "k"
+        },
+        {
+          "type": "text",
+          "text": "{wifi.ip}",
+          "class": "v"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "host",
+          "class": "k"
+        },
+        {
+          "type": "text",
+          "text": "{hostname}.local",
+          "class": "v"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "gateway ping",
+          "class": "k"
+        },
+        {
+          "type": "text",
+          "text": "{ping.router.ms} ms",
+          "class": "v",
+          "color": "{ping.router.color}"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "uptime",
+          "class": "k"
+        },
+        {
+          "type": "text",
+          "text": "{uptime}",
+          "class": "v"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "bold",
+      "size": 28,
+      "align": "center"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "name": "Bitcoin",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "gap": 8,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "BTC / USD",
+          "font": "sans",
+          "size": 16,
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.btc.age}",
+          "color": "{api.btc.color}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "${api.btc.usd}",
+      "font": "bold",
+      "size": 40,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "{round(api.btc.change, 2)}% 24h",
+      "font": "sans",
+      "size": 20,
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "ETH",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "${api.btc.eth}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "market cap",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "${round(api.btc.cap / 1000000000)} B",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

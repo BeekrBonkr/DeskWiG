@@ -1,0 +1,121 @@
+{
+  "name": "Air Quality",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "gap": 10,
+    "padding": 10
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "AIR QUALITY",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{api.aqi.aqi}",
+          "font": "bold",
+          "size": 72
+        },
+        {
+          "type": "text",
+          "text": "EU AQI",
+          "font": "sans",
+          "size": 14,
+          "color": "dim"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "end",
+        "gap": 8
+      }
+    },
+    {
+      "type": "bar",
+      "h": 12,
+      "value": "{min(api.aqi.aqi, 100)}",
+      "color": "{api.aqi.color}",
+      "style": {
+        "radius": 4
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "good",
+          "color": "ok"
+        },
+        {
+          "type": "text",
+          "text": "fair",
+          "color": "warn"
+        },
+        {
+          "type": "text",
+          "text": "poor",
+          "color": "bad"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "PM2.5",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.aqi.pm25, 1)} µg/m³",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "PM10",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.aqi.pm10, 1)} µg/m³",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.aqi.status} · {api.aqi.age} ago",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

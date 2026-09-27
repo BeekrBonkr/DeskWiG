@@ -1,0 +1,76 @@
+{
+  "name": "Day Progress",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "gap": 10,
+    "padding": 10
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "TODAY",
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "bold",
+      "size": 44
+    },
+    {
+      "type": "bar",
+      "h": 14,
+      "value": "{(time.hour * 60 + time.min) / 14.4}",
+      "color": "accent",
+      "style": {
+        "radius": 4
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{round((time.hour * 60 + time.min) / 14.4)}% of the day",
+          "font": "sans",
+          "size": 14
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "start"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{1440 - (time.hour * 60 + time.min)} min left",
+      "font": "sans",
+      "size": 14,
+      "color": "dim"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "HOUR",
+      "color": "dim"
+    },
+    {
+      "type": "bar",
+      "h": 10,
+      "value": "{time.min / 0.6}",
+      "color": "ok"
+    },
+    {
+      "type": "text",
+      "text": "{60 - time.min} min to {(time.hour + 1) % 24}:00",
+      "font": "sans",
+      "size": 14,
+      "color": "dim"
+    }
+  ]
+}

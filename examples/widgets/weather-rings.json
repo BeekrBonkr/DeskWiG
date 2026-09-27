@@ -1,0 +1,124 @@
+{
+  "name": "Weather Rings",
+  "style": {
+    "direction": "column",
+    "gap": 10,
+    "padding": 8,
+    "align": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "CONDITIONS",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "arc",
+                  "x": 0,
+                  "y": 0,
+                  "w": 76,
+                  "value": "{api.weather.humidity}",
+                  "color": "accent",
+                  "style": {
+                    "thickness": 8
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "{api.weather.humidity}",
+                  "x": 38,
+                  "y": 28,
+                  "align": "center",
+                  "font": "bold",
+                  "size": 20
+                }
+              ],
+              "w": 76,
+              "h": 76
+            },
+            {
+              "type": "text",
+              "text": "humidity",
+              "color": "dim",
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 4,
+            "align": "center"
+          }
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "arc",
+                  "x": 0,
+                  "y": 0,
+                  "w": 76,
+                  "value": "{min(api.weather.wind * 2, 100)}",
+                  "color": "ok",
+                  "style": {
+                    "thickness": 8
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "{api.weather.wind}",
+                  "x": 38,
+                  "y": 28,
+                  "align": "center",
+                  "font": "bold",
+                  "size": 20
+                }
+              ],
+              "w": 76,
+              "h": 76
+            },
+            {
+              "type": "text",
+              "text": "wind",
+              "color": "dim",
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 4,
+            "align": "center"
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 8
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.weather.temp}°C",
+      "font": "bold",
+      "size": 48,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "updated {api.weather.updated}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

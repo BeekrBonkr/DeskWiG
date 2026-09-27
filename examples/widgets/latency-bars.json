@@ -1,0 +1,144 @@
+{
+  "name": "Latency Bars",
+  "style": {
+    "direction": "column",
+    "gap": 10,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "LATENCY  (bar = 0-100 ms)",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.0.name}"
+            },
+            {
+              "type": "text",
+              "text": "{ping.0.ms} ms {ping.0.trend}",
+              "align": "right",
+              "color": "{ping.0.color}"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          }
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{min(ping.0.ms, 100)}",
+          "color": "{ping.0.color}",
+          "style": {
+            "radius": 3
+          }
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.1.name}"
+            },
+            {
+              "type": "text",
+              "text": "{ping.1.ms} ms {ping.1.trend}",
+              "align": "right",
+              "color": "{ping.1.color}"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          }
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{min(ping.1.ms, 100)}",
+          "color": "{ping.1.color}",
+          "style": {
+            "radius": 3
+          }
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.2.name}"
+            },
+            {
+              "type": "text",
+              "text": "{ping.2.ms} ms {ping.2.trend}",
+              "align": "right",
+              "color": "{ping.2.color}"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          }
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{min(ping.2.ms, 100)}",
+          "color": "{ping.2.color}",
+          "style": {
+            "radius": 3
+          }
+        }
+      ],
+      "style": {
+        "direction": "column",
+        "gap": 3
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "history {ping.0.bars}",
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{time.sec}",
+      "font": "sans",
+      "size": 16,
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}
