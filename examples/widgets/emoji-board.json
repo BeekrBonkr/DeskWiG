@@ -1,0 +1,147 @@
+{
+  "name": "Emoji Board",
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "EMOJI (monochrome, any colour)",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "☀",
+          "font": "emoji",
+          "size": 36,
+          "color": "warn"
+        },
+        {
+          "type": "text",
+          "text": "🌧",
+          "font": "emoji",
+          "size": 36,
+          "color": "accent"
+        },
+        {
+          "type": "text",
+          "text": "⚡",
+          "font": "emoji",
+          "size": 36,
+          "color": "warn"
+        },
+        {
+          "type": "text",
+          "text": "❄",
+          "font": "emoji",
+          "size": 36,
+          "color": "text"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "✅",
+          "font": "emoji",
+          "size": 36,
+          "color": "ok"
+        },
+        {
+          "type": "text",
+          "text": "⚠",
+          "font": "emoji",
+          "size": 36,
+          "color": "warn"
+        },
+        {
+          "type": "text",
+          "text": "❌",
+          "font": "emoji",
+          "size": 36,
+          "color": "bad"
+        },
+        {
+          "type": "text",
+          "text": "❤",
+          "font": "emoji",
+          "size": 36,
+          "color": "bad"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "🚀",
+          "font": "emoji",
+          "size": 36
+        },
+        {
+          "type": "text",
+          "text": "⭐",
+          "font": "emoji",
+          "size": 36,
+          "color": "warn"
+        },
+        {
+          "type": "text",
+          "text": "🔒",
+          "font": "emoji",
+          "size": 36
+        },
+        {
+          "type": "text",
+          "text": "💡",
+          "font": "emoji",
+          "size": 36,
+          "color": "warn"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "bitmap text works too: ☀ 🏠 🖥",
+      "size": 1
+    },
+    {
+      "type": "text",
+      "text": "Inter + emoji: 🏠 {time}",
+      "font": "sans",
+      "size": 20
+    },
+    {
+      "type": "text",
+      "text": "😀 {api.weather.temp}°",
+      "font": "bold",
+      "size": 40,
+      "align": "center"
+    }
+  ]
+}

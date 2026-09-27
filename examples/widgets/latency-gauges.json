@@ -1,0 +1,191 @@
+{
+  "name": "Latency Gauges",
+  "style": {
+    "direction": "column",
+    "gap": 12,
+    "padding": 8,
+    "justify": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "PING GAUGES",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "arc",
+                  "x": 0,
+                  "y": 0,
+                  "w": 48,
+                  "value": "{min(ping.0.ms, 100)}",
+                  "color": "{ping.0.color}",
+                  "start": 40,
+                  "end": 320,
+                  "style": {
+                    "thickness": 6
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "{ping.0.ms}",
+                  "x": 24,
+                  "y": 18,
+                  "align": "center"
+                }
+              ],
+              "w": 48,
+              "h": 48
+            },
+            {
+              "type": "text",
+              "text": "{ping.0.name}",
+              "color": "dim",
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2,
+            "align": "center"
+          }
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "arc",
+                  "x": 0,
+                  "y": 0,
+                  "w": 48,
+                  "value": "{min(ping.1.ms, 100)}",
+                  "color": "{ping.1.color}",
+                  "start": 40,
+                  "end": 320,
+                  "style": {
+                    "thickness": 6
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "{ping.1.ms}",
+                  "x": 24,
+                  "y": 18,
+                  "align": "center"
+                }
+              ],
+              "w": 48,
+              "h": 48
+            },
+            {
+              "type": "text",
+              "text": "{ping.1.name}",
+              "color": "dim",
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2,
+            "align": "center"
+          }
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "arc",
+                  "x": 0,
+                  "y": 0,
+                  "w": 48,
+                  "value": "{min(ping.2.ms, 100)}",
+                  "color": "{ping.2.color}",
+                  "start": 40,
+                  "end": 320,
+                  "style": {
+                    "thickness": 6
+                  }
+                },
+                {
+                  "type": "text",
+                  "text": "{ping.2.ms}",
+                  "x": 24,
+                  "y": 18,
+                  "align": "center"
+                }
+              ],
+              "w": 48,
+              "h": 48
+            },
+            {
+              "type": "text",
+              "text": "{ping.2.name}",
+              "color": "dim",
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2,
+            "align": "center"
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{ping.0.status}",
+          "color": "{ping.0.color}"
+        },
+        {
+          "type": "text",
+          "text": "{ping.1.status}",
+          "color": "{ping.1.color}"
+        },
+        {
+          "type": "text",
+          "text": "{ping.2.status}",
+          "color": "{ping.2.color}"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "bold",
+      "size": 36,
+      "align": "center"
+    }
+  ]
+}

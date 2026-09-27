@@ -1,0 +1,79 @@
+{
+  "name": "ISS",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "gap": 10,
+    "padding": 8,
+    "align": "center"
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "🛰",
+      "font": "emoji",
+      "size": 64
+    },
+    {
+      "type": "text",
+      "text": "INTERNATIONAL SPACE STATION",
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "lat",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.iss.lat, 2)}°",
+          "font": "bold",
+          "size": 24,
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "lon",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.iss.lon, 2)}°",
+          "font": "bold",
+          "size": 24,
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{api.iss.age} ago · every 30 s",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

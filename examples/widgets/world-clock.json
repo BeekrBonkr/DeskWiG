@@ -1,0 +1,133 @@
+{
+  "name": "World Clock",
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "styles": {
+    "city": {
+      "color": "dim",
+      "font": "sans",
+      "size": 14
+    },
+    "t": {
+      "font": "bold",
+      "size": 26,
+      "align": "right"
+    }
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "WORLD CLOCK",
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "{time}",
+      "font": "bold",
+      "size": 40,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "local",
+      "font": "sans",
+      "size": 12,
+      "color": "dim",
+      "align": "center"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "London",
+          "class": "city"
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour + 5) % 24}:{time.min}",
+          "class": "t"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "Berlin",
+          "class": "city"
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour + 6) % 24}:{time.min}",
+          "class": "t"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "Tokyo",
+          "class": "city"
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour + 13) % 24}:{time.min}",
+          "class": "t"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "Sydney",
+          "class": "city"
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour + 14) % 24}:{time.min}",
+          "class": "t"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "offsets from US Eastern",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

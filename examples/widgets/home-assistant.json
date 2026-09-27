@@ -1,0 +1,73 @@
+{
+  "name": "Home Assistant",
+  "style": {
+    "direction": "column",
+    "justify": "center",
+    "gap": 10,
+    "padding": 10
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "🏠 LIVING ROOM",
+      "font": "sans",
+      "size": 16,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "{api.ha.state}",
+          "font": "bold",
+          "size": 64
+        },
+        {
+          "type": "text",
+          "text": "{api.ha.unit}",
+          "font": "sans",
+          "size": 20,
+          "color": "dim"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "end",
+        "gap": 6
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.ha.name}",
+      "font": "sans",
+      "size": 14,
+      "color": "dim"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "circle",
+          "w": 10,
+          "color": "{api.ha.color}"
+        },
+        {
+          "type": "text",
+          "text": "{api.ha.status} · updated {api.ha.updated}",
+          "color": "dim"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "align": "center",
+        "gap": 6
+      }
+    }
+  ]
+}

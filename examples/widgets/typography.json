@@ -1,0 +1,101 @@
+{
+  "name": "Typography",
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "bitmap size 1 (28 cols)"
+    },
+    {
+      "type": "text",
+      "text": "bitmap size 2",
+      "size": 2
+    },
+    {
+      "type": "text",
+      "text": "bitmap 3",
+      "size": 3,
+      "color": "accent"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "sans 12 px line height",
+      "font": "sans",
+      "size": 12
+    },
+    {
+      "type": "text",
+      "text": "sans 18 px",
+      "font": "sans",
+      "size": 18
+    },
+    {
+      "type": "text",
+      "text": "sans 24 px",
+      "font": "sans",
+      "size": 24
+    },
+    {
+      "type": "text",
+      "text": "bold 32 px",
+      "font": "bold",
+      "size": 32
+    },
+    {
+      "type": "text",
+      "text": "bold 44",
+      "font": "bold",
+      "size": 44,
+      "color": "warn"
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "left",
+          "font": "sans",
+          "size": 14
+        },
+        {
+          "type": "text",
+          "text": "center",
+          "font": "sans",
+          "size": 14,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "right",
+          "font": "sans",
+          "size": 14,
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "upload .ttf on the setup page",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

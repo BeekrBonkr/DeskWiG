@@ -1,0 +1,235 @@
+{
+  "name": "Styles Demo",
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 6
+  },
+  "styles": {
+    "card": {
+      "background": "#0f1a24",
+      "border": "#24425a",
+      "radius": 10,
+      "padding": 8,
+      "gap": 4
+    },
+    "label": {
+      "color": "#7fa7c8"
+    },
+    "value": {
+      "font": "bold",
+      "size": 24,
+      "align": "right"
+    },
+    "pill": {
+      "background": "accent",
+      "radius": 8,
+      "padding": 4,
+      "align": "center"
+    }
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "CLASSES",
+          "class": "label"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "time",
+              "class": "label"
+            },
+            {
+              "type": "text",
+              "text": "{time}",
+              "class": "value"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          }
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "JUSTIFY BETWEEN",
+          "class": "label"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "A"
+            },
+            {
+              "type": "text",
+              "text": "B"
+            },
+            {
+              "type": "text",
+              "text": "C"
+            },
+            {
+              "type": "text",
+              "text": "D"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          }
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "JUSTIFY CENTER + GAP",
+          "class": "label"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "x"
+            },
+            {
+              "type": "text",
+              "text": "y"
+            },
+            {
+              "type": "text",
+              "text": "z"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "justify": "center",
+            "gap": 20
+          }
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "ALIGN",
+          "class": "label"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "top",
+              "color": "dim"
+            },
+            {
+              "type": "text",
+              "text": "mid",
+              "font": "bold",
+              "size": 28
+            },
+            {
+              "type": "text",
+              "text": "end",
+              "color": "dim"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "end"
+          }
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "PILLS",
+          "class": "label"
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{wifi.pct}%",
+                  "align": "center"
+                }
+              ],
+              "w": 44,
+              "class": "pill"
+            },
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{heap}",
+                  "align": "center"
+                }
+              ],
+              "w": 44,
+              "class": "pill"
+            },
+            {
+              "type": "box",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{ping.count} tgt",
+                  "align": "center"
+                }
+              ],
+              "w": 58,
+              "class": "pill"
+            }
+          ],
+          "style": {
+            "direction": "row",
+            "gap": 6
+          }
+        }
+      ],
+      "class": "card"
+    },
+    {
+      "type": "text",
+      "text": "inline style beats class",
+      "style": {
+        "color": "warn",
+        "align": "center"
+      },
+      "class": "label"
+    }
+  ]
+}
