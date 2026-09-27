@@ -897,13 +897,15 @@ static void ssEnd(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_
     ssArgbSize = ssArgb ? need : 0;
     if (!ssArgb) return;
   }
-  static uint16_t row0[SCREEN_W * 2], row1[SCREEN_W * 2];
+  // Typed as rgb565_t: the uint16_t overload of readRect hands back
+  // byte-swapped pixels, which flipped every colour and hid the key.
+  static lgfx::rgb565_t row0[SCREEN_W * 2], row1[SCREEN_W * 2];
   lgfx::argb8888_t* out = (lgfx::argb8888_t*)ssArgb;
   for (int16_t oy = 0; oy < h; oy++) {
     ssSprite->readRect(0, oy * 2, w * 2, 1, row0);
     ssSprite->readRect(0, oy * 2 + 1, w * 2, 1, row1);
     for (int16_t ox = 0; ox < w; ox++) {
-      uint16_t s[4] = { row0[ox * 2], row0[ox * 2 + 1], row1[ox * 2], row1[ox * 2 + 1] };
+      uint16_t s[4] = { row0[ox * 2].raw, row0[ox * 2 + 1].raw, row1[ox * 2].raw, row1[ox * 2 + 1].raw };
       uint16_t r = 0, g = 0, b = 0;
       uint8_t n = 0;
       for (uint8_t k = 0; k < 4; k++) {
