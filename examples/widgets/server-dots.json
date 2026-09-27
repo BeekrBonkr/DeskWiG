@@ -1,5 +1,43 @@
 {
   "name": "Server Dots",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "rules": [
+      {
+        "key": "ping.0.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.1.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.2.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.3.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "when": "ping.0.ms > 100 || ping.1.ms > 100 || ping.2.ms > 100",
+        "color": "warn"
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 8,

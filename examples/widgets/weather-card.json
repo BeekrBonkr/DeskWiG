@@ -1,5 +1,31 @@
 {
   "name": "Weather",
+  "led": {
+    "color": "{api.weather.color}",
+    "mode": "solid",
+    "brightness": 40,
+    "rules": [
+      {
+        "key": "api.weather.status",
+        "is": "error",
+        "color": "warn",
+        "mode": "blink",
+        "speed": 800
+      },
+      {
+        "when": "api.weather.temp >= 30",
+        "color": "#ff4000",
+        "mode": "breathe",
+        "speed": 2500
+      },
+      {
+        "when": "api.weather.temp <= 0",
+        "color": "#40a0ff",
+        "mode": "breathe",
+        "speed": 2500
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 6,

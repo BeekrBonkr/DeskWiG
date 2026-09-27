@@ -1,5 +1,10 @@
 {
   "name": "Typography",
+  "led": {
+    "color": "warn",
+    "mode": "solid",
+    "brightness": 20
+  },
   "style": {
     "direction": "column",
     "gap": 6,

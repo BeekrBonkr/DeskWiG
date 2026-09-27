@@ -1,5 +1,33 @@
 {
   "name": "Latency Gauges",
+  "led": {
+    "color": "{ping.0.color}",
+    "mode": "breathe",
+    "speed": 3000,
+    "rules": [
+      {
+        "key": "ping.0.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.1.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.2.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 12,

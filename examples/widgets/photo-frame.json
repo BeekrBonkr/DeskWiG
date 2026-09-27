@@ -1,5 +1,11 @@
 {
   "name": "Photo Frame",
+  "led": {
+    "color": "#ffffff",
+    "mode": "breathe",
+    "speed": 8000,
+    "brightness": 15
+  },
   "style": {
     "image": "https://httpbin.org/image/png",
     "direction": "column",

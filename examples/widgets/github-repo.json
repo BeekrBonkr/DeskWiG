@@ -1,5 +1,25 @@
 {
   "name": "GitHub",
+  "led": {
+    "color": "#a060ff",
+    "mode": "solid",
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.repo.issues > 20",
+        "color": "warn",
+        "mode": "breathe",
+        "speed": 2000
+      },
+      {
+        "key": "api.repo.status",
+        "is": "error",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 800
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 8,

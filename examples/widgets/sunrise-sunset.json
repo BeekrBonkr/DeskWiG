@@ -1,5 +1,24 @@
 {
   "name": "Sun Times",
+  "led": {
+    "color": "#ffb000",
+    "mode": "breathe",
+    "speed": 6000,
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.sun.uv >= 8",
+        "color": "bad",
+        "mode": "pulse",
+        "speed": 1200
+      },
+      {
+        "when": "api.sun.uv >= 6",
+        "color": "warn",
+        "mode": "solid"
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "justify": "center",

@@ -248,7 +248,7 @@ HTTPS connections are encrypted but the server certificate is **not** verified. 
 
 A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
 
-Twenty-five more example layouts live in [`examples/widgets/`](examples/widgets/), each showing a different feature, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
+Twenty-five more example layouts live in [`examples/widgets/`](examples/widgets/), each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
 
 Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack, Signal Meter, Weather and Cards. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 

@@ -1,5 +1,38 @@
 {
   "name": "Latency Bars",
+  "led": {
+    "color": "{ping.0.color}",
+    "mode": "solid",
+    "rules": [
+      {
+        "when": "max(ping.0.ms, ping.1.ms, ping.2.ms) > 100",
+        "color": "warn",
+        "mode": "pulse",
+        "speed": 1000
+      },
+      {
+        "key": "ping.0.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.1.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      },
+      {
+        "key": "ping.2.status",
+        "is": "down",
+        "color": "bad",
+        "mode": "blink",
+        "speed": 400
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "gap": 10,

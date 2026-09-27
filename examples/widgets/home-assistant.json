@@ -1,5 +1,31 @@
 {
   "name": "Home Assistant",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "brightness": 25,
+    "rules": [
+      {
+        "when": "api.ha.state >= 26",
+        "color": "bad",
+        "mode": "breathe",
+        "speed": 2000
+      },
+      {
+        "when": "api.ha.state <= 17",
+        "color": "#40a0ff",
+        "mode": "breathe",
+        "speed": 2000
+      },
+      {
+        "key": "api.ha.status",
+        "is": "error",
+        "color": "warn",
+        "mode": "blink",
+        "speed": 800
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "justify": "center",

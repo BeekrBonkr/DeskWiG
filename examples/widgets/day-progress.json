@@ -1,5 +1,18 @@
 {
   "name": "Day Progress",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 3000,
+    "rules": [
+      {
+        "when": "time.min == 0",
+        "color": "text",
+        "mode": "pulse",
+        "speed": 600
+      }
+    ]
+  },
   "style": {
     "direction": "column",
     "justify": "center",

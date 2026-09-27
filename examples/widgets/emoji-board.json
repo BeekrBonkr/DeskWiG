@@ -1,5 +1,10 @@
 {
   "name": "Emoji Board",
+  "led": {
+    "mode": "rainbow",
+    "speed": 4000,
+    "brightness": 50
+  },
   "style": {
     "direction": "column",
     "gap": 8,
