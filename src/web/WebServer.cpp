@@ -10,6 +10,7 @@
 #include "../layout/LayoutStore.h"
 #include "../layout/LayoutData.h"
 #include "../layout/LayoutTemplates.h"
+#include "../layout/FontService.h"
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
 #include "../net/TimeService.h"
@@ -609,6 +610,155 @@ static void registerSources() {
   });
 }
 
+// =====================
+// FONTS
+// =====================
+static void fillFontList(JsonDocument& doc) {
+  fontsToJson(doc["fonts"].to<JsonArray>());
+  doc["max"] = MAX_FONTS;
+  doc["fsFree"] = LittleFS.totalBytes() - LittleFS.usedBytes();
+  doc["fsTotal"] = LittleFS.totalBytes();
+}
+
+// Per-request state for a font upload.
+struct FontUpload {
+  File file;
+  String name;
+  String tmp;
+  size_t written;
+  bool ok;
+  char err[80];
+};
+
+static void fontUploadFail(FontUpload* u, const char* msg) {
+  if (u->ok) strlcpy(u->err, msg, sizeof(u->err));
+  u->ok = false;
+  if (u->file) { u->file.close(); }
+  if (u->tmp.length()) { LittleFS.remove(u->tmp); u->tmp = ""; }
+}
+
+static void registerFonts() {
+  server.on(AsyncURIMatcher::exact("/api/fonts"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillFontList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // POST /api/fonts?name=<name>  multipart upload of a .ttf file.
+  server.on(AsyncURIMatcher::exact("/api/fonts"), HTTP_POST,
+    [](AsyncWebServerRequest* req) {
+      FontUpload* u = (FontUpload*)req->_tempObject;
+      if (!u) { sendError(req, 400, "no file uploaded"); return; }
+      bool ok = u->ok;
+      char err[80];
+      strlcpy(err, u->err, sizeof(err));
+      String name = u->name, tmp = u->tmp;
+      if (u->file) u->file.close();
+      delete u;
+      req->_tempObject = nullptr;
+
+      if (!ok) { sendError(req, err[0] ? 400 : 500, err[0] ? err : "upload failed"); return; }
+      if (!fontValidateFile(tmp.c_str())) {
+        LittleFS.remove(tmp);
+        sendError(req, 400, "not a usable TrueType (.ttf) file");
+        return;
+      }
+      String path = fontPath(name.c_str());
+      LittleFS.remove(path);
+      if (!LittleFS.rename(tmp, path)) {
+        LittleFS.remove(tmp);
+        sendError(req, 500, "failed to store font");
+        return;
+      }
+      fontsRescan();
+      JsonDocument doc;
+      fillFontList(doc);
+      doc["saved"] = name;
+      sendJson(req, 200, doc);
+    },
+    [](AsyncWebServerRequest* req, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
+      FontUpload* u = (FontUpload*)req->_tempObject;
+      if (index == 0) {
+        u = new FontUpload();
+        u->written = 0;
+        u->ok = true;
+        u->err[0] = '\0';
+        req->_tempObject = u;
+
+        // Auth is checked here rather than with requireAuth() because a
+        // response cannot be sent mid-upload; the final handler reports it.
+        bool authed = false;
+        if (req->hasHeader("Authorization")) {
+          String v = req->getHeader("Authorization")->value();
+          authed = v.startsWith("Bearer ") && v.substring(7) == settings.apiToken;
+        }
+        if (!authed) { fontUploadFail(u, "unauthorized"); return; }
+
+        String name = req->hasParam("name") ? req->getParam("name")->value() : filename;
+        if (name.endsWith(".ttf")) name = name.substring(0, name.length() - 4);
+        name.toLowerCase();
+        if (!fontValidName(name.c_str())) { fontUploadFail(u, "invalid name: use 1-23 lowercase letters, digits and dashes"); return; }
+        int existing = fontFind(name.c_str());
+        if (existing >= 0 && fontBuiltinData(name.c_str(), nullptr)) { fontUploadFail(u, "that name is a built-in font"); return; }
+        if (existing < 0) {
+          JsonDocument tmpDoc;
+          JsonArray arr = tmpDoc.to<JsonArray>();
+          fontsToJson(arr);
+          if (arr.size() >= MAX_FONTS) { fontUploadFail(u, "no free font slots"); return; }
+        }
+        size_t total = req->contentLength();
+        if (total > FONT_MAX_FILE + 4096) { fontUploadFail(u, "font larger than 2 MB"); return; }
+        size_t freeBytes = LittleFS.totalBytes() - LittleFS.usedBytes();
+        if (total + 8192 > freeBytes) { fontUploadFail(u, "not enough space on the filesystem"); return; }
+        if (!LittleFS.exists("/fonts")) LittleFS.mkdir("/fonts");
+        u->name = name;
+        u->tmp = fontPath(name.c_str()) + ".tmp";
+        u->file = LittleFS.open(u->tmp, "w");
+        if (!u->file) { fontUploadFail(u, "cannot write file"); return; }
+      }
+      if (!u || !u->ok) return;
+      if (len) {
+        if (u->written + len > FONT_MAX_FILE) { fontUploadFail(u, "font larger than 2 MB"); return; }
+        if (u->file.write(data, len) != len) { fontUploadFail(u, "write failed (filesystem full?)"); return; }
+        u->written += len;
+      }
+      if (final) u->file.close();
+    });
+
+  server.on(AsyncURIMatcher::exact("/api/fonts"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("name")) { sendError(req, 400, "missing name"); return; }
+    String name = req->getParam("name")->value();
+    char err[80];
+    if (!fontDelete(name.c_str(), err, sizeof(err))) { sendError(req, 400, err); return; }
+    JsonDocument doc;
+    fillFontList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // The font files themselves, so the editor's preview can use them.
+  server.on(AsyncURIMatcher::prefix("/fonts/"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    String url = req->url();
+    String base = url.substring(7);
+    if (!base.endsWith(".ttf")) { sendError(req, 404, "not found"); return; }
+    String name = base.substring(0, base.length() - 4);
+    if (!fontValidName(name.c_str())) { sendError(req, 404, "not found"); return; }
+    size_t len = 0;
+    const uint8_t* data = fontBuiltinData(name.c_str(), &len);
+    AsyncWebServerResponse* r;
+    if (data) {
+      r = req->beginResponse(200, "font/ttf", data, len);
+    } else if (fontExists(name.c_str())) {
+      r = req->beginResponse(LittleFS, fontPath(name.c_str()), "font/ttf");
+    } else {
+      sendError(req, 404, "not found");
+      return;
+    }
+    r->addHeader("Cache-Control", "max-age=86400");
+    req->send(r);
+  });
+}
+
 static void registerSystem() {
   server.on(AsyncURIMatcher::exact("/api/system/reboot"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
@@ -638,6 +788,7 @@ void startWebServer() {
   registerWifi();
   registerConfig();
   registerSources();
+  registerFonts();
   registerSystem();
 
   // Captive portal: any unknown URL requested over the hotspot lands on /setup.

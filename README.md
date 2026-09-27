@@ -101,6 +101,10 @@ Once on your network, the device serves:
 | `POST /api/wifi/forget`         | yes  | Clears credentials, returns to hotspot                         |
 | `GET /api/config`               | no   | Hostname, ping interval, clock, LED settings                   |
 | `PUT /api/config`               | yes  | JSON with any subset of the above; saved immediately           |
+| `GET /api/fonts`                | no   | Fonts on the device with size and whether built in             |
+| `POST /api/fonts?name=<name>`   | yes  | Multipart upload of a `.ttf` (field `file`), up to 2 MB       |
+| `DELETE /api/fonts?name=<name>` | yes  | Remove an uploaded font                                        |
+| `GET /fonts/<name>.ttf`         | no   | The font file, used by the editor's preview                    |
 | `GET /api/sources`              | no   | Data sources with fetch state and current values (header value redacted) |
 | `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
 | `DELETE /api/sources?id=<id>`   | yes  | Remove a data source                                           |
@@ -311,6 +315,19 @@ Box properties, all in `style`:
 
 The top-level `style` applies to the implicit root box, so `{"style":{"direction":"column","gap":8,"padding":6}}` is how a layout gets margins and spacing.
 
+### Fonts
+
+Text uses the built-in 6 × 8 bitmap font scaled by `size` unless `font` names a TrueType font, in which case `size` is the line height in pixels (6–160):
+
+```json
+{"type":"text","text":"{time}","font":"bold","size":48,"align":"center"}
+{"type":"text","text":"☀ {api.weather.temp}°","font":"sans","size":20}
+```
+
+Three fonts are built into the firmware: **sans** and **bold** (Inter, Latin subset) and **emoji** (Noto Emoji, monochrome, about 1,300 common emoji). Upload more `.ttf` files (up to 2 MB each, 12 fonts total) under **Fonts** on the setup page or with `POST /api/fonts?name=<name>` as a multipart form with a `file` field. Uploaded fonts live in `/fonts` on the filesystem and are loaded into PSRAM the first time a layout uses them.
+
+Any character a font lacks falls back to the emoji font and then to sans, so emoji work in every font, including the bitmap one, and render in the element's colour. Glyphs are rasterised on the device with [stb_truetype](https://github.com/nothings/stb) into a cache in PSRAM. That library does no bounds checking on the font file, so only upload fonts you trust. The editor loads the same font files from the device, so the preview matches. Built-in fonts are subset with `tools/make_fonts.py`; regenerate them from the full fonts if you want a different character set.
+
 ### Styles
 
 Style properties can be flat fields on the element (`color`, `size`, `align`, `fill`), a `style` object, or a named entry in the top-level `styles` map applied with `class`. Later ones win: class, then flat fields, then the `style` object.
@@ -321,7 +338,8 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `background` (or `bg`)      | box, rect, text, shapes, bar, arc | Fill behind the element; the track for bar and arc |
 | `border`, `borderWidth`     | box, rect, shapes         | Outline colour and width                                |
 | `radius`                    | box, rect, bar            | Corner radius                                           |
-| `size`                      | text                      | Font scale 1–8                                          |
+| `font`                      | text                      | TrueType font name; empty for the bitmap font           |
+| `size`                      | text                      | Bitmap scale 1–8, or pixel line height 6–160 with a font |
 | `align`                     | text, box                 | Text alignment, or a box's cross-axis alignment         |
 | `fill`                      | rect, shapes              | Fill with `color`                                       |
 | `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
@@ -415,7 +433,9 @@ src/
   main.cpp            display init, recovery jumper, boot sequence, main loop
   app/                Board pins, Widget interface, ScreenManager, status LED, system screens
   widgets/            PingWidget, ClockWidget
-  layout/             JSON layout widgets: parser/renderer, template keys, file store + preview, built-in templates
+  layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, file store + preview, built-in templates
+fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
+lib/stb/              stb_truetype (public domain) font rasteriser
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task)
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps
