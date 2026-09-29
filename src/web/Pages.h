@@ -18,7 +18,8 @@ input{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;backgrou
 .card{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px}
 .dim{color:#999}
 .hint{color:#999;font-size:13px}
-#msg{color:#fc6;min-height:1.4em}
+#msg,.msg{color:#fc6;min-height:1.4em;margin:6px 0}
+.msg:empty{display:none}
 a{color:#6cf}
 nav{display:flex;gap:16px;margin-bottom:8px;font-size:14px}
 nav a.gh{margin-left:auto;color:#999}
@@ -85,6 +86,7 @@ static const char SETUP_HTML[] = R"html(
 <input id="pass" type="password" placeholder="Password">
 <button id="join" class="primary">Join</button>
 <button id="forget" class="danger">Forget saved network</button>
+<p class="msg" id="msg-wifi"></p>
 </div>
 </details>
 
@@ -93,6 +95,7 @@ static const char SETUP_HTML[] = R"html(
 <div class="body">
 <input id="host" placeholder="deskwig" autocapitalize="off" autocorrect="off" maxlength="32">
 <button id="saveHost">Save name</button>
+<p class="msg" id="msg-name"></p>
 <p class="hint">Reachable at http://<span id="hostPreview">deskwig</span>.local once connected. Letters, digits and dashes only.</p>
 </div>
 </details>
@@ -111,6 +114,7 @@ static const char SETUP_HTML[] = R"html(
 <input id="ntpServer" placeholder="NTP server hostname or IP" autocapitalize="off" autocorrect="off" maxlength="63" style="display:none">
 <label class="inline"><input type="checkbox" id="h24"> 24-hour clock</label>
 <button id="saveClock">Save clock settings</button>
+<p class="msg" id="msg-clock"></p>
 <p class="hint">"Router" asks your WiFi gateway for the time, which works on networks without internet access if the router runs an NTP server (most do). The timezone converts NTP's UTC to local time and handles daylight saving.</p>
 </div>
 </details>
@@ -123,6 +127,7 @@ static const char SETUP_HTML[] = R"html(
   <input type="file" id="fontFile" accept=".ttf,font/ttf" class="p">
   <button id="fontUpload" type="button">Upload</button>
 </div>
+<p class="msg" id="msg-fonts"></p>
 <p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasteriser does no bounds checking.</p>
 </div>
 </details>
@@ -135,6 +140,7 @@ static const char SETUP_HTML[] = R"html(
   <input type="file" id="imgFile" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif" class="p">
   <button id="imgUpload" type="button">Upload</button>
 </div>
+<p class="msg" id="msg-images"></p>
 <p class="hint">PNG, JPEG or animated GIF up to 512 KB. The screen is 170 &times; 320, so resize images before uploading: <a href="https://ezgif.com/resize" target="_blank" rel="noopener">ezgif.com/resize</a> shrinks any image or GIF to the size you need, and <a href="https://ezgif.com/optimize" target="_blank" rel="noopener">ezgif.com/optimize</a> squeezes it under the limit. Use one with <code>{"type":"image","src":"name","w":64}</code> or as a box background with <code>"style":{"image":"name"}</code>. <code>src</code> can also be an http(s) URL, fetched while the widget is on screen.</p>
 </div>
 </details>
@@ -160,6 +166,7 @@ static const char SETUP_HTML[] = R"html(
   <button id="srcSave" class="primary">Save data source</button>
   <button id="srcCancel">Cancel</button>
 </div>
+<p class="msg" id="msg-sources"></p>
 <p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified.</p>
 </div>
 </details>
@@ -174,6 +181,7 @@ static const char SETUP_HTML[] = R"html(
 <input id="pwCurrent" type="password" placeholder="Current password" maxlength="64" autocomplete="current-password">
 <input id="pwNew" type="password" placeholder="New password (8+ characters)" maxlength="64" autocomplete="new-password">
 <button id="pwChange" type="button">Change password</button>
+<p class="msg" id="msg-account"></p>
 <button id="logout" type="button">Log out</button>
 </div>
 </details>
@@ -186,6 +194,7 @@ static const char SETUP_HTML[] = R"html(
   <input type="file" id="fwFile" accept=".bin" class="p">
   <button id="fwUpload" type="button">Update</button>
 </div>
+<p class="msg" id="msg-firmware"></p>
 <p class="hint">Upload <code>firmware.bin</code> from a PlatformIO build (<code>.pio/build/esp32-s3-devkitc-1/firmware.bin</code>). The device writes it to its spare app slot and reboots; settings, layouts, fonts and images are kept.</p>
 </div>
 </details>
@@ -195,7 +204,16 @@ const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const bars = r => r > -55 ? '||||' : r > -65 ? '|||.' : r > -75 ? '||..' : '|...';
-const msg = t => { $('msg').textContent = t; };
+// Status text goes next to the buttons of the open section (msg-<name>),
+// so it is beside whatever was just pressed; with no section open it
+// falls back to the line under the status card.
+const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'account', 'firmware'];
+function msg(t, sec) {
+  const target = sec || SECTIONS.find(n => $('sec-' + n).open);
+  SECTIONS.forEach(n => { if (n !== target) $('msg-' + n).textContent = ''; });
+  $('msg').textContent = target ? '' : t;
+  if (target) $('msg-' + target).textContent = t;
+}
 
 // Every page starts by checking the login; unauthenticated browsers go to /login.
 const toLogin = () => { location.replace('/login?next=' + encodeURIComponent(location.pathname)); };
@@ -223,7 +241,6 @@ async function api(path, method, body) {
 // One panel open at a time; the choice lives in the URL hash so a reload
 // or a link (/setup#firmware) lands on the right panel. Each summary shows
 // a one-line summary of that section filled in by its loader.
-const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'account', 'firmware'];
 function openSection(name, scroll) {
   SECTIONS.forEach(n => { $('sec-' + n).open = n === name; });
   if (name) {
