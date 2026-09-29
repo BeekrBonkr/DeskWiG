@@ -98,7 +98,7 @@ curl -X POST http://deskwig.local/api/system/update \
 
 The image goes into the spare OTA app slot and the device reboots into it; settings, layouts, fonts and images are kept.
 
-Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32Async/AsyncTCP, ArduinoJson) are pulled in automatically from `platformio.ini`. The partition table (`default_16MB.csv`) gives two OTA app slots and a 3.4 MB LittleFS partition.
+Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32Async/AsyncTCP, ArduinoJson, AnimatedGIF) are pulled in automatically from `platformio.ini`. The partition table (`default_16MB.csv`) gives two OTA app slots and a 3.4 MB LittleFS partition.
 
 ## First boot and WiFi setup
 
@@ -499,7 +499,6 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `ping.N.name`, `ping.N.host`                   | Target N (0-based) as configured                            |
 | `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; colour role            |
 | `ping.N.bars`, `ping.N.trend`                  | Last 8 results as `\|\|.\|\|\|\|\|`; `^`, `v` or `>`            |
-
 | `api.<id>.<field>`                             | A value from a [data source](#data-sources)                |
 | `api.<id>.status`, `.color`, `.age`, `.updated`| Fetch state of that source                                  |
 
