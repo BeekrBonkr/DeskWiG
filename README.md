@@ -16,7 +16,20 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 | ESP32-S3-DevKitC-1 (N16R8: 16 MB flash, 8 MB PSRAM) | https://a.co/d/0ay0gra1                                                          |
 | 1.9" 170×320 IPS LCD, ST7789V2, SPI                 | https://a.co/d/0bqQSNMt                                                          |
 | Printable enclosure (STL)                           | https://makerworld.com/en/models/2918927-esp-32-desktop-widget#profileId-3265758 |
+| Enclosure CAD (Onshape, editable)                   | https://cad.onshape.com/documents/7a23cb218b9a52f763bc7c6a/w/3ad90a7117954c688588aa81/e/1314d7b6e64d683ea28f6cf7 |
 | Rotary encoder with push button (KY-040 module), optional | any                                                                        |
+
+### Enclosure
+
+The case is two printed parts: a base that holds the DevKitC, and a hinged display panel that tilts back. An optional second hinge takes the rotary encoder. The STL is on MakerWorld and the source model is on Onshape (links above) if you want to change it.
+
+<p align="center">
+  <img src="docs/images/enclosure-front.png" alt="Enclosure with the display panel open and the encoder mount raised" width="49%">
+  <img src="docs/images/enclosure-side.png" alt="Enclosure from the encoder side, showing the knob and the tilted display" width="49%">
+</p>
+<p align="center">
+  <img src="docs/images/enclosure-top.png" alt="Enclosure base from above, showing the board cutout and hinge slots" width="60%">
+</p>
 
 The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)).
 
@@ -118,7 +131,18 @@ A tactile switch or two exposed pads on the enclosure work equally well.
 
 ## Web interface
 
-Once on your network, the device serves:
+Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, data sources and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
+
+<p align="center">
+  <img src="docs/images/web-setup.png" alt="Setup page: WiFi network, device name, clock, fonts, images, data sources, account and firmware" width="49%">
+  <img src="docs/images/web-widgets.png" alt="Widgets page: drag to reorder, delete, or restore built-in widgets" width="49%">
+</p>
+<p align="center">
+  <img src="docs/images/web-editor.png" alt="Editor page: JSON on the left, live preview and element list on the right" width="49%">
+  <img src="docs/images/web-terminal.png" alt="Terminal page: RAM, PSRAM and storage usage above the live serial log" width="49%">
+</p>
+
+The routes:
 
 | Route                           | Auth | Purpose                                                        |
 | ------------------------------- | ---- | -------------------------------------------------------------- |
@@ -538,6 +562,7 @@ src/
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
 examples/widgets/     52 example layouts with a README of the data sources they use
+docs/images/          enclosure renders and web page screenshots used in this README
 tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
 web/                  cm.js.gz, embedded in the firmware
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
