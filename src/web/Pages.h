@@ -41,10 +41,12 @@ label.inline input{width:auto;display:inline;margin:0}
 .dkeys button{display:inline-block;width:auto;margin:0;padding:4px 8px;font:12px ui-monospace,monospace;text-align:left}
 .dkeys button span{color:#999;margin-left:6px}
 .dkeys button.added{border-color:#3c3}
-.wrow{display:flex;gap:6px;margin:8px 0}
+.wrow{display:flex;gap:6px;margin:8px 0;align-items:stretch}
 .wrow button{margin:0}
 .wrow .pick{flex:1}
 .wrow .del{width:auto;padding:12px 14px}
+.wrow .grip{display:flex;align-items:center;padding:0 10px;color:#777;border:1px solid #444;border-radius:6px;background:#222;cursor:grab;touch-action:none;user-select:none}
+.wrow.dragging{opacity:.4}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -790,6 +792,7 @@ static const char WIDGETS_HTML[] = R"html(
 <h2>Widget Selector</h2>
 <div id="list"></div>
 <p id="msg"></p>
+<p class="hint">Drag the handle to change the order the encoder knob steps through.</p>
 <div id="hidden"></div>
 
 <script>
@@ -813,6 +816,13 @@ function render(j) {
   j.widgets.forEach((w, i) => {
     const row = document.createElement('div');
     row.className = 'wrow';
+    row.dataset.key = w.key;
+    const g = document.createElement('span');
+    g.className = 'grip';
+    g.innerHTML = '&#9776;';
+    g.title = 'Drag to reorder';
+    g.onpointerdown = e => startDrag(e, row);
+    row.appendChild(g);
     const b = document.createElement('button');
     b.className = 'pick' + (i === j.active ? ' active' : '');
     b.textContent = w.name + (i === j.active ? '  (active)' : '');
@@ -850,6 +860,46 @@ async function load() {
   } catch (e) {
     $('msg').textContent = 'Failed to load widgets';
   }
+}
+
+// ---------- drag to reorder ----------
+// Pointer events so the same code serves mouse and touch. The dragged
+// row is moved in the DOM as the pointer crosses its neighbours' midlines,
+// and the new order is sent when the pointer is released.
+function startDrag(e, row) {
+  e.preventDefault();
+  const list = $('list');
+  const grip = e.currentTarget;
+  grip.setPointerCapture(e.pointerId);
+  row.classList.add('dragging');
+  const move = ev => {
+    const rows = [...list.children].filter(r => r !== row);
+    for (const r of rows) {
+      const b = r.getBoundingClientRect();
+      const mid = b.top + b.height / 2;
+      if (ev.clientY < mid) { list.insertBefore(row, r); return; }
+    }
+    list.appendChild(row);
+  };
+  const up = async () => {
+    grip.removeEventListener('pointermove', move);
+    grip.removeEventListener('pointerup', up);
+    grip.removeEventListener('pointercancel', up);
+    row.classList.remove('dragging');
+    const order = [...list.children].map(r => r.dataset.key);
+    const r = await fetch('/api/widgets/order', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order })
+    });
+    if (r.status === 401) { toLogin(); return; }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { $('msg').textContent = j.error || ('HTTP ' + r.status); load(); return; }
+    render(j);
+  };
+  grip.addEventListener('pointermove', move);
+  grip.addEventListener('pointerup', up);
+  grip.addEventListener('pointercancel', up);
 }
 
 async function remove(key) {

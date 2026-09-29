@@ -45,7 +45,7 @@ All pins are defined in `src/app/Board.h`.
 
 ### Rotary encoder
 
-A KY-040 style encoder (or a bare encoder plus a button) turns the knob into a widget selector, no phone needed:
+A KY-040 style encoder (or a bare encoder plus a button) turns the knob into a widget selector, no phone needed. The knob steps through widgets in the order shown on `/widgets`, where rows can be dragged to rearrange them:
 
 - **Turn** goes to the next or previous widget, in the order the Widgets page lists them, wrapping at the ends. A banner with the widget's name and position appears for a moment, and the choice is saved so it survives a reboot. Turning also ends an editor preview.
 - **Click** shows the connection screen (address and API key) for 15 seconds; click again to dismiss it.
@@ -124,7 +124,7 @@ Once on your network, the device serves:
 | ------------------------------- | ---- | -------------------------------------------------------------- |
 | `/login`                        | no   | Create the account, log in, or reset a forgotten password      |
 | `/setup`                        | no   | WiFi scan/join, device name, clock, data sources, account      |
-| `/widgets`                      | no   | Switch the active screen, delete or restore widgets            |
+| `/widgets`                      | no   | Switch the active screen, drag to reorder, delete or restore widgets |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
 | `GET /api/auth`                 | no   | Whether an account exists and whether this browser is logged in |
 | `POST /api/auth/setup`          | key  | JSON `{"key","user","pass"}`. Creates the account, or replaces it and rotates the key |
@@ -157,6 +157,7 @@ Once on your network, the device serves:
 | `GET /api/widgets`              | no   | JSON list of widgets (`name`, `key`, `builtin`), the active index and deleted built-ins |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
 | `DELETE /api/widgets?key=<key>` | yes  | Remove a widget: a built-in is hidden, a layout is deleted     |
+| `PUT /api/widgets/order`        | yes  | JSON `{"order":["key",...]}`. Order for the list and the encoder knob; persisted |
 | `POST /api/widgets/restore` (`key=K`) | yes | Bring back a deleted built-in widget                       |
 | `GET /api/layouts`              | no   | List of layout widgets (`id`, `name`, `index`) and free slots  |
 | `GET /api/layouts?id=<id>`      | no   | The stored layout JSON                                         |

@@ -11,6 +11,8 @@ constexpr uint8_t HOSTNAME_MAX  = 32;
 constexpr uint8_t TZ_MAX        = 63;
 constexpr uint8_t NTP_HOST_MAX  = 63;
 constexpr uint8_t MAX_HIDDEN_WIDGETS = 4;
+constexpr uint8_t MAX_WIDGET_ORDER = 16;    // matches ScreenManager::MAX_WIDGETS
+constexpr uint8_t WIDGET_KEY_LEN = 24;
 
 struct Settings {
   // ---- Stored in NVS. Survives a filesystem wipe so the device stays reachable.
@@ -28,6 +30,11 @@ struct Settings {
   // Built-in widgets the user has deleted, by key ("Ping", "Clock").
   uint8_t hiddenCount = 0;
   char hiddenWidgets[MAX_HIDDEN_WIDGETS][16];
+
+  // Widget keys in the order the encoder steps through them. Widgets not
+  // listed (new layouts) follow in load order.
+  uint8_t orderCount = 0;
+  char widgetOrder[MAX_WIDGET_ORDER][WIDGET_KEY_LEN + 1];
 
   // POSIX TZ string, e.g. "EST5EDT,M3.2.0,M11.1.0". "UTC0" = no offset.
   char clockTz[TZ_MAX + 1] = "UTC0";
