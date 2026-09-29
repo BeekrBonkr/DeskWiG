@@ -2,6 +2,10 @@
 
 DeskWiG (Desk Widget) started as a Christmas gift for my dad. A small 3D-printed desktop display built around an ESP32-S3 and a 1.9" IPS screen. The firmware is a simple widget framework: each screen is a `Widget` class, and you pick which one is showing from a web page served by the device.
 
+<p align="center">
+  <img src="docs/images/deskwig-front.jpg" alt="DeskWiG on a desk showing the Stacked Clock widget, with the rotary encoder knob beside the screen" width="45%">
+</p>
+
 It currently ships with two widgets (either can be deleted from the widgets page if you only want your own, and restored from the same place):
 
 - **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers*.
@@ -29,6 +33,9 @@ The case is one solid printed model with no moving parts: the base holds the Dev
 </p>
 <p align="center">
   <img src="docs/images/enclosure-top.png" alt="Enclosure from above, showing the board cutout and mounting slots" width="60%">
+</p>
+<p align="center">
+  <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
 </p>
 
 The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)).
@@ -562,7 +569,7 @@ src/
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
 examples/widgets/     52 example layouts with a README of the data sources they use
-docs/images/          enclosure renders and web page screenshots used in this README
+docs/images/          photos, enclosure renders and web page screenshots used in this README
 tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
 web/                  cm.js.gz, embedded in the firmware
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
