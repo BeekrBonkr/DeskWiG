@@ -1,6 +1,6 @@
 # Example widgets
 
-Fifty-one layouts that show what DeskWiG layouts can do. They are not preloaded on the device: open `http://deskwig.local/editor`, paste one into the editor, and press **Save**, or push it from a shell:
+Fifty-two layouts that show what DeskWiG layouts can do. They are not preloaded on the device: open `http://deskwig.local/editor`, paste one into the editor, and press **Save**, or push it from a shell:
 
 ```bash
 curl -X PUT "http://deskwig.local/api/layouts?id=big-clock" \
@@ -52,6 +52,7 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `space-weather.json` | Object keys that look like numbers (`0.G.Scale`), aurora alert LED | `swpc` |
 | `space-dashboard.json` | Three sources on one screen with emoji icons in rows | `iss` `astros` `neo` |
 | **Weather** | | |
+| `weather-hourly.json` | Condition tiles lit by `if()` on the weather code and `is_day`, hourly fields at index 0 thanks to `forecast_hours`, rain chance rows, stat cards | `wx` |
 | `rain-next-hours.json` | Six hourly bars from one array (`hourly.x.0` to `.5`), `max()` | `rain` |
 | `forecast-3day.json` | Daily highs, lows and rain chance for three days | `fc` `weather` |
 | `barometer.json` | Gauge over a 950–1050 hPa window with `clamp()` | `baro` |
@@ -268,6 +269,26 @@ url:      https://api.nasa.gov/neo/rest/v1/feed/today?detailed=false&api_key=DEM
 interval: 3600
 fields:   count = element_count
 ```
+
+**wx** (Open-Meteo hourly in imperial units, no key). `forecast_hours` makes every hourly array start at the current hour, so index `.0` is now and `.3` is three hours ahead. Twelve fields, so raise nothing: a source holds up to 24.
+
+```
+url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,precipitation_probability,rain,showers,snowfall,snow_depth,is_day,weather_code&timezone=auto&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_hours=6
+interval: 600
+fields:   temp = hourly.temperature_2m.0 (decimals 0)
+          feels = hourly.apparent_temperature.0 (decimals 0)
+          humidity = hourly.relative_humidity_2m.0
+          precip = hourly.precipitation.0 (decimals 2)
+          snow = hourly.snowfall.0
+          day = hourly.is_day.0
+          code = hourly.weather_code.0
+          p0 = hourly.precipitation_probability.0
+          p1 = hourly.precipitation_probability.1
+          p2 = hourly.precipitation_probability.2
+          p3 = hourly.precipitation_probability.3
+```
+
+The tiles read the WMO `weather_code`: 0–1 clear (sun by day, moon at night), 2–48 cloud and fog, 51–94 rain or snow depending on `snowfall`, 95+ thunderstorm.
 
 **rain** (Open-Meteo hourly, no key)
 
