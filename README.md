@@ -19,13 +19,18 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 | --------------------------------------------------- | -------------------------------------------------------------------------------- |
 | ESP32-S3-DevKitC-1 (N16R8: 16 MB flash, 8 MB PSRAM) | https://a.co/d/0ay0gra1                                                          |
 | 1.9" 170×320 IPS LCD, ST7789V2, SPI                 | https://a.co/d/0bqQSNMt                                                          |
-| Printable enclosure (STL)                           | https://makerworld.com/en/models/2918927-esp-32-desktop-widget#profileId-3265758 |
-| Enclosure CAD (Onshape, editable)                   | https://cad.onshape.com/documents/7a23cb218b9a52f763bc7c6a/w/3ad90a7117954c688588aa81/e/1314d7b6e64d683ea28f6cf7 |
+| 2× M2×6 screws (hold the display to the enclosure)  | any                                                                              |
 | Rotary encoder with push button (KY-040 module), optional | any                                                                        |
+| M7 nut for the encoder, optional (printed or bought) | any                                                                             |
+| Printable enclosure (STL), Printables               | https://www.printables.com/model/1860176-deskwig-esp32-desk-widget-enclosure    |
+| Printable enclosure (STL), MakerWorld               | https://makerworld.com/en/@Weguishin/upload                                      |
+| Enclosure CAD (Onshape, editable)                   | https://cad.onshape.com/documents/7a23cb218b9a52f763bc7c6a/w/3ad90a7117954c688588aa81/e/1314d7b6e64d683ea28f6cf7 |
 
 ### Enclosure
 
-The case is one solid printed model with no moving parts: the base holds the DevKitC, the display sits in an angled panel, and a second angled mount takes the optional rotary encoder. The encoder is held in with an M7 nut, which can be printed or bought. The STL is on MakerWorld and the source model is on Onshape (links above) if you want to change it.
+The case is one solid printed model with no moving parts: the base holds the DevKitC, the display sits in an angled panel held on with two M2×6 screws, and a second angled mount takes the optional rotary encoder. The encoder is held in with an M7 nut, which can be printed or bought. The STL is on Printables and MakerWorld, and the source model is on Onshape (links above) if you want to remix it.
+
+Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://makerworld.com/en/models/2918927-esp-32-desktop-widget) on MakerWorld holds just the ESP32 and the display. The firmware works the same either way, since with no encoder connected the pins simply stay high.
 
 <p align="center">
   <img src="docs/images/enclosure-front.png" alt="Enclosure showing the angled display panel and the encoder mount" width="49%">
