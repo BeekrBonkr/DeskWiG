@@ -148,7 +148,7 @@ bool sourceFromJson(DataSource& s, JsonVariantConst v, char* err, size_t errLen)
   if (!sourceValidId(id)) { strlcpy(err, "invalid id: use 1-16 lowercase letters, digits and dashes", errLen); return false; }
 
   const char* url = v["url"] | "";
-  if (!validUrl(url)) { strlcpy(err, "invalid url: must start with http:// or https:// (max 191 chars)", errLen); return false; }
+  if (!validUrl(url)) { strlcpy(err, "invalid url: must start with http:// or https:// (max 511 chars)", errLen); return false; }
 
   const char* hName  = v["header"]["name"]  | "";
   const char* hValue = v["header"]["value"] | "";
@@ -516,7 +516,7 @@ static void discoverFrom(const uint8_t* body, size_t len, FetchResult& r) {
 }
 
 bool sourceDiscoverStart(const char* url, const char* headerName, const char* headerValue, char* err, size_t errLen) {
-  if (!validUrl(url)) { strlcpy(err, "invalid url: must start with http:// or https:// (max 191 chars)", errLen); return false; }
+  if (!validUrl(url)) { strlcpy(err, "invalid url: must start with http:// or https:// (max 511 chars)", errLen); return false; }
   if (!validHeaderName(headerName) || !validHeaderValue(headerValue)) { strlcpy(err, "invalid header", errLen); return false; }
   sourcesLock();
   if (disc.state == SourceState::FETCHING || disc.pending) {

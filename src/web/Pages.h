@@ -159,7 +159,7 @@ static const char SETUP_HTML[] = R"html(
 <button id="srcAdd">Add data source</button>
 <div class="card" id="srcForm" style="display:none">
   <input id="srcId" placeholder="Name used in layouts, e.g. weather" autocapitalize="off" autocorrect="off" maxlength="16">
-  <input id="srcUrl" placeholder="https://api.example.com/data?key=..." autocapitalize="off" autocorrect="off" maxlength="191">
+  <input id="srcUrl" placeholder="https://api.example.com/data?key=..." autocapitalize="off" autocorrect="off" maxlength="511">
   <input id="srcInterval" type="number" min="10" placeholder="Refresh every N seconds (default 300)">
   <div class="row">
     <input id="srcHdrName" class="n" placeholder="Header (optional)" autocapitalize="off" autocorrect="off" maxlength="31">
