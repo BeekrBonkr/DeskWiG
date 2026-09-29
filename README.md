@@ -23,7 +23,7 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 | Rotary encoder with push button (KY-040 module), optional | any                                                                        |
 | M7 nut for the encoder, optional (printed or bought) | any                                                                             |
 | Printable enclosure (STL), Printables               | https://www.printables.com/model/1860176-deskwig-esp32-desk-widget-enclosure    |
-| Printable enclosure (STL), MakerWorld               | https://makerworld.com/en/@Weguishin/upload                                      |
+| Printable enclosure (STL), MakerWorld               | pending review, link coming                                                       |
 | Enclosure CAD (Onshape, editable)                   | https://cad.onshape.com/documents/7a23cb218b9a52f763bc7c6a/w/3ad90a7117954c688588aa81/e/1314d7b6e64d683ea28f6cf7 |
 
 ### Enclosure
