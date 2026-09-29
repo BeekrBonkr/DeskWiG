@@ -270,7 +270,7 @@ interval: 3600
 fields:   count = element_count
 ```
 
-**wx** (Open-Meteo hourly in imperial units, no key). `forecast_hours` makes every hourly array start at the current hour, so index `.0` is now and `.3` is three hours ahead. Twelve fields, so raise nothing: a source holds up to 24.
+**wx** (Open-Meteo hourly in imperial units, no key). `forecast_hours` makes every hourly array start at the current hour, so index `.0` is now and `.3` is three hours ahead. Eleven fields; a source holds up to 24.
 
 ```
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,precipitation_probability,rain,showers,snowfall,snow_depth,is_day,weather_code&timezone=auto&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_hours=6
