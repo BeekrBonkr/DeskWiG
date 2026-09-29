@@ -205,9 +205,20 @@ static void registerPages() {
     req->send(r);
   });
 
+  // Same revalidation for the stylesheet: a cached copy from the previous
+  // firmware would otherwise leave new page elements unstyled for an hour.
   server.on(AsyncURIMatcher::exact("/style.css"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    char etag[48];
+    snprintf(etag, sizeof(etag), "\"css-%s-%u\"", FW_VERSION, (unsigned)strlen(STYLE_CSS));
+    if (req->hasHeader("If-None-Match") && req->getHeader("If-None-Match")->value() == etag) {
+      AsyncWebServerResponse* r = req->beginResponse(304);
+      r->addHeader("ETag", etag);
+      req->send(r);
+      return;
+    }
     AsyncWebServerResponse* r = req->beginResponse(200, "text/css", (const uint8_t*)STYLE_CSS, strlen(STYLE_CSS));
-    r->addHeader("Cache-Control", "max-age=3600");
+    r->addHeader("Cache-Control", "no-cache");
+    r->addHeader("ETag", etag);
     req->send(r);
   });
 

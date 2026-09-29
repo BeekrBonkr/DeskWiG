@@ -46,8 +46,9 @@ label.inline input{width:auto;display:inline;margin:0}
 .wrow button{margin:0}
 .wrow .pick{flex:1}
 .wrow .del{width:auto;padding:12px 14px}
-.wrow .grip{display:flex;align-items:center;padding:0 10px;color:#777;border:1px solid #444;border-radius:6px;background:#222;cursor:grab;touch-action:none;user-select:none}
+.wrow .grip{display:flex;align-items:center;padding:0 10px;color:#777;border:1px solid #444;border-radius:6px;background:#222;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .wrow.dragging{opacity:.4}
+body.dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .term{background:#000;color:#ddd;border:1px solid #333;border-radius:8px;padding:10px;font:13px ui-monospace,monospace;white-space:pre-wrap;word-break:break-all;height:70vh;overflow-y:auto;margin:8px 0}
 .bar{display:flex;gap:6px;align-items:center;margin:8px 0}
 .bar button{width:auto;margin:0;padding:8px 12px;font-size:14px}
@@ -919,6 +920,8 @@ function render(j) {
     g.className = 'grip';
     g.innerHTML = '&#9776;';
     g.title = 'Drag to reorder';
+    g.draggable = false;
+    g.onmousedown = e => e.preventDefault();   // Firefox selects text on pointerdown alone
     g.onpointerdown = e => startDrag(e, row);
     row.appendChild(g);
     const b = document.createElement('button');
@@ -965,25 +968,27 @@ async function load() {
 // row is moved in the DOM as the pointer crosses its neighbours' midlines,
 // and the new order is sent when the pointer is released.
 function startDrag(e, row) {
+  if (e.button !== undefined && e.button !== 0) return;
   e.preventDefault();
   const list = $('list');
-  const grip = e.currentTarget;
-  grip.setPointerCapture(e.pointerId);
   row.classList.add('dragging');
+  document.body.classList.add('dragging');
   const move = ev => {
-    const rows = [...list.children].filter(r => r !== row);
+    ev.preventDefault();
+    const rows = [...list.children].filter(r => r !== row && r.classList.contains('wrow'));
     for (const r of rows) {
       const b = r.getBoundingClientRect();
       const mid = b.top + b.height / 2;
-      if (ev.clientY < mid) { list.insertBefore(row, r); return; }
+      if (ev.clientY < mid) { if (row.nextSibling !== r) list.insertBefore(row, r); return; }
     }
-    list.appendChild(row);
+    if (list.lastElementChild !== row) list.appendChild(row);
   };
   const up = async () => {
-    grip.removeEventListener('pointermove', move);
-    grip.removeEventListener('pointerup', up);
-    grip.removeEventListener('pointercancel', up);
+    document.removeEventListener('pointermove', move);
+    document.removeEventListener('pointerup', up);
+    document.removeEventListener('pointercancel', up);
     row.classList.remove('dragging');
+    document.body.classList.remove('dragging');
     const order = [...list.children].map(r => r.dataset.key);
     const r = await fetch('/api/widgets/order', {
       method: 'PUT',
@@ -995,9 +1000,10 @@ function startDrag(e, row) {
     if (!r.ok) { $('msg').textContent = j.error || ('HTTP ' + r.status); load(); return; }
     render(j);
   };
-  grip.addEventListener('pointermove', move);
-  grip.addEventListener('pointerup', up);
-  grip.addEventListener('pointercancel', up);
+  // Listen on the document so the drag survives the pointer leaving the handle.
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+  document.addEventListener('pointercancel', up);
 }
 
 async function remove(key) {
