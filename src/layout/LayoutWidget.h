@@ -57,7 +57,7 @@ struct LayoutStyle {
   char color[24];      // text colour, fill colour (fill=true) or outline colour
   char bg[24];         // background (box, rect, shapes) or arc track; "" = none
   char border[24];     // border colour; "" = none
-  uint8_t size;        // bitmap text scale 1-8, or pixel line height 6-160 with a font
+  uint8_t size;        // bitmap text scale 1-40, or pixel line height 6-160 with a font
   uint8_t borderW;     // border width in px
   uint8_t radius;      // corner radius (box, rect)
   uint8_t pad;         // box padding
