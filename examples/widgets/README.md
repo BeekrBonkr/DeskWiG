@@ -52,7 +52,7 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `space-weather.json` | Object keys that look like numbers (`0.G.Scale`), aurora alert LED | `swpc` |
 | `space-dashboard.json` | Three sources on one screen with emoji icons in rows | `iss` `astros` `neo` |
 | **Weather** | | |
-| `weather-hourly.json` | Condition tiles lit by `if()` on the weather code and `is_day`, hourly fields at index 0 thanks to `forecast_hours`, rain chance rows, stat cards | `wx` |
+| `weather-hourly.json` | Condition tiles lit by `if()` on rain, snow and `is_day`, field names as **Discover keys** generates them, hourly index 0 via `forecast_hours`, stat cards | `wx` |
 | `rain-next-hours.json` | Six hourly bars from one array (`hourly.x.0` to `.5`), `max()` | `rain` |
 | `forecast-3day.json` | Daily highs, lows and rain chance for three days | `fc` `weather` |
 | `barometer.json` | Gauge over a 950–1050 hPa window with `clamp()` | `baro` |
@@ -270,25 +270,23 @@ interval: 3600
 fields:   count = element_count
 ```
 
-**wx** (Open-Meteo hourly in imperial units, no key). `forecast_hours` makes every hourly array start at the current hour, so index `.0` is now and `.3` is three hours ahead. Eleven fields; a source holds up to 24.
+**wx** (Open-Meteo hourly in imperial units, no key). `forecast_hours` makes every hourly array start at the current hour, so index `.0` is now. The field names below are exactly what **Discover keys** produces when you tap the `hourly_units` entries first and then the `hourly` values: the second tap of a name gets a `2`, and names are cut to 16 characters. Tap only the value paths and rename them to these, or tap both sets and use them as they come.
 
 ```
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,precipitation_probability,rain,showers,snowfall,snow_depth,is_day,weather_code&timezone=auto&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_hours=6
 interval: 600
-fields:   temp = hourly.temperature_2m.0 (decimals 0)
-          feels = hourly.apparent_temperature.0 (decimals 0)
-          humidity = hourly.relative_humidity_2m.0
-          precip = hourly.precipitation.0 (decimals 2)
-          snow = hourly.snowfall.0
-          day = hourly.is_day.0
-          code = hourly.weather_code.0
-          p0 = hourly.precipitation_probability.0
-          p1 = hourly.precipitation_probability.1
-          p2 = hourly.precipitation_probability.2
-          p3 = hourly.precipitation_probability.3
+fields:   temperature_2m2 = hourly.temperature_2m.0
+          apparent_tempe2 = hourly.apparent_temperature.0
+          relative_humid2 = hourly.relative_humidity_2m.0
+          precipitation2 = hourly.precipitation.0
+          precipitation_2 = hourly.precipitation_probability.0
+          rain2 = hourly.rain.0
+          showers2 = hourly.showers.0
+          snowfall2 = hourly.snowfall.0
+          is_day2 = hourly.is_day.0
 ```
 
-The tiles read the WMO `weather_code`: 0–1 clear (sun by day, moon at night), 2–48 cloud and fog, 51–94 rain or snow depending on `snowfall`, 95+ thunderstorm.
+The tiles light from the amounts: sun or moon (by `is_day`) when nothing is falling, rain when `rain + showers` is above zero, snow when `snowfall` is. Temperatures are rounded in the layout with `round()`, so the fields can keep their decimals.
 
 **rain** (Open-Meteo hourly, no key)
 
