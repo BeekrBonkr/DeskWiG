@@ -16,7 +16,7 @@
 constexpr uint8_t  MAX_SOURCES           = 6;
 constexpr uint8_t  MAX_SOURCE_FIELDS     = 8;
 constexpr uint8_t  SOURCE_ID_LEN         = 16;
-constexpr uint8_t  SOURCE_URL_LEN        = 191;
+constexpr uint16_t SOURCE_URL_LEN        = 511;   // long enough for Open-Meteo style query strings
 constexpr uint8_t  SOURCE_FIELD_NAME_LEN = 16;
 constexpr uint8_t  SOURCE_PATH_LEN       = 63;
 constexpr uint8_t  SOURCE_VALUE_LEN      = 31;
