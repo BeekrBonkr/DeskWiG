@@ -520,22 +520,21 @@ public:
 };
 ```
 
-Then register it in `setup()` in `src/main.cpp`:
+Then add an instance to the `BUILTINS` array in `src/app/Builtins.cpp`:
 
 ```cpp
-MyWidget myWidget;
-// ...
-screens.add(&myWidget);
+static MyWidget myWidget;
+static Widget* const BUILTINS[] = { &pingWidget, &clockWidget, &myWidget };
 ```
 
-It will appear in the web selector automatically. The `ScreenManager` holds up to 16 widgets (native plus layouts). Rendering is double-buffered through a full-screen `LGFX_Sprite`, so widgets just draw and don't need to worry about flicker.
+It will appear in the web selector automatically, and like Ping and Clock it can be deleted and restored from there. Print with `Log.printf(...)` rather than `Serial` so the output also reaches the `/terminal` page. The `ScreenManager` holds up to 16 widgets (native plus layouts). Rendering is double-buffered through a full-screen `LGFX_Sprite`, so widgets just draw and don't need to worry about flicker.
 
 ## Project layout
 
 ```
 src/
   main.cpp            display init, recovery jumper, boot sequence, main loop
-  app/                Board pins, Widget interface, ScreenManager, status LED, system screens
+  app/                Board pins, Widget interface, ScreenManager, built-in widget registry, log buffer, status LED, system screens
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
 examples/widgets/     25 example layouts with a README of the data sources they use
