@@ -1,0 +1,467 @@
+{
+  "name": "Weather Now",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "brightness": 40,
+    "rules": [
+      {
+        "key": "api.wx.status",
+        "is": "error",
+        "color": "warn",
+        "mode": "blink",
+        "speed": 800
+      },
+      {
+        "when": "api.wx.code >= 95",
+        "color": "warn",
+        "mode": "blink",
+        "speed": 300
+      },
+      {
+        "when": "api.wx.p0 >= 60 || api.wx.p1 >= 60",
+        "color": "accent",
+        "mode": "pulse",
+        "speed": 1000
+      },
+      {
+        "when": "api.wx.snow > 0",
+        "color": "#40a0ff",
+        "mode": "breathe",
+        "speed": 2500
+      },
+      {
+        "when": "api.wx.temp >= 90",
+        "color": "#ff4000",
+        "mode": "breathe",
+        "speed": 2500
+      },
+      {
+        "when": "api.wx.temp <= 32",
+        "color": "#40a0ff",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "WEATHER",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "{api.wx.age}",
+          "color": "{api.wx.color}",
+          "align": "right"
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.wx.temp}°",
+      "font": "bold",
+      "size": 60,
+      "align": "center"
+    },
+    {
+      "type": "text",
+      "text": "feels like {api.wx.feels}°",
+      "font": "sans",
+      "size": 14,
+      "align": "center",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "w": 24,
+          "h": 24,
+          "children": [
+            {
+              "type": "bar",
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 24,
+              "value": "{if(api.wx.code<=1&&api.wx.day==1,100,0)}",
+              "color": "accent",
+              "style": {
+                "background": "#202020",
+                "radius": 6
+              }
+            },
+            {
+              "type": "text",
+              "x": 4,
+              "y": 4,
+              "text": "☀",
+              "font": "emoji",
+              "size": 16
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "h": 24,
+          "children": [
+            {
+              "type": "bar",
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 24,
+              "value": "{if(api.wx.code<=1&&api.wx.day==0,100,0)}",
+              "color": "accent",
+              "style": {
+                "background": "#202020",
+                "radius": 6
+              }
+            },
+            {
+              "type": "text",
+              "x": 4,
+              "y": 4,
+              "text": "🌙",
+              "font": "emoji",
+              "size": 16
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "h": 24,
+          "children": [
+            {
+              "type": "bar",
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 24,
+              "value": "{if(api.wx.code>=2&&api.wx.code<=48,100,0)}",
+              "color": "accent",
+              "style": {
+                "background": "#202020",
+                "radius": 6
+              }
+            },
+            {
+              "type": "text",
+              "x": 4,
+              "y": 4,
+              "text": "☁",
+              "font": "emoji",
+              "size": 16
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "h": 24,
+          "children": [
+            {
+              "type": "bar",
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 24,
+              "value": "{if(api.wx.code>=51&&api.wx.code<95&&api.wx.snow==0,100,0)}",
+              "color": "accent",
+              "style": {
+                "background": "#202020",
+                "radius": 6
+              }
+            },
+            {
+              "type": "text",
+              "x": 4,
+              "y": 4,
+              "text": "🌧",
+              "font": "emoji",
+              "size": 16
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "h": 24,
+          "children": [
+            {
+              "type": "bar",
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 24,
+              "value": "{if(api.wx.code>=51&&api.wx.code<95&&api.wx.snow>0,100,0)}",
+              "color": "accent",
+              "style": {
+                "background": "#202020",
+                "radius": 6
+              }
+            },
+            {
+              "type": "text",
+              "x": 4,
+              "y": 4,
+              "text": "❄",
+              "font": "emoji",
+              "size": 16
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "h": 24,
+          "children": [
+            {
+              "type": "bar",
+              "x": 0,
+              "y": 0,
+              "w": 24,
+              "h": 24,
+              "value": "{if(api.wx.code>=95,100,0)}",
+              "color": "accent",
+              "style": {
+                "background": "#202020",
+                "radius": 6
+              }
+            },
+            {
+              "type": "text",
+              "x": 4,
+              "y": 4,
+              "text": "⛈",
+              "font": "emoji",
+              "size": 16
+            }
+          ]
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 2,
+        "justify": "center"
+      }
+    },
+    {
+      "type": "text",
+      "text": "☔ CHANCE OF RAIN",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "now",
+          "color": "dim",
+          "w": 30
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{api.wx.p0}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.wx.p0}%",
+          "align": "right",
+          "w": 30
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+1h",
+          "color": "dim",
+          "w": 30
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{api.wx.p1}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.wx.p1}%",
+          "align": "right",
+          "w": 30
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+2h",
+          "color": "dim",
+          "w": 30
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{api.wx.p2}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.wx.p2}%",
+          "align": "right",
+          "w": 30
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "+3h",
+          "color": "dim",
+          "w": 30
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{api.wx.p3}",
+          "color": "accent",
+          "style": {
+            "background": "#202020",
+            "radius": 3
+          }
+        },
+        {
+          "type": "text",
+          "text": "{api.wx.p3}%",
+          "align": "right",
+          "w": 30
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "PRECIP",
+              "color": "dim",
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "{api.wx.precip}\"",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2,
+            "padding": 6,
+            "background": "#181818",
+            "border": "#333333",
+            "radius": 8
+          }
+        },
+        {
+          "type": "box",
+          "children": [
+            {
+              "type": "text",
+              "text": "HUMIDITY",
+              "color": "dim",
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "{api.wx.humidity}%",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ],
+          "style": {
+            "direction": "column",
+            "gap": 2,
+            "padding": 6,
+            "background": "#181818",
+            "border": "#333333",
+            "radius": 8
+          }
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "gap": 6
+      }
+    },
+    {
+      "type": "text",
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
+    }
+  ]
+}
