@@ -8,6 +8,7 @@
 #include <esp_heap_caps.h>
 
 #include "../net/WifiManager.h"
+#include "../app/Log.h"
 
 static const char* IMG_DIR = "/img";
 static const uint16_t TRANSP = 0x0821;          // sprite colour treated as "nothing drawn"
@@ -375,7 +376,7 @@ static Decoded* decodeGet(RawImage* r, int16_t w, int16_t h, ImgFit fit, uint32_
     default: ok = false;
   }
   if (!ok) {
-    Serial.printf("[IMG] %s: decode failed\n", r->src);
+    Log.printf("[IMG] %s: decode failed\n", r->src);
     decodedFree(d);
     return nullptr;
   }
@@ -625,7 +626,7 @@ static void fetchTask(void*) {
     }
     give();
     if (buf) free(buf);
-    Serial.printf("[IMG] %s: %s%s\n", url, error[0] ? "error - " : "ok", error);
+    Log.printf("[IMG] %s: %s%s\n", url, error[0] ? "error - " : "ok", error);
     vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
@@ -637,5 +638,5 @@ void imagesBegin() {
   scanLocked();
   give();
   xTaskCreatePinnedToCore(fetchTask, "images", 12288, nullptr, 1, nullptr, 0);
-  Serial.printf("[IMG] %u image(s)\n", fileCount);
+  Log.printf("[IMG] %u image(s)\n", fileCount);
 }

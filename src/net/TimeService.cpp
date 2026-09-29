@@ -5,6 +5,7 @@
 
 #include "WifiManager.h"
 #include "../web/Settings.h"
+#include "../app/Log.h"
 
 static const char* POOL_SERVER = "pool.ntp.org";
 static const time_t MIN_VALID_TIME = 1600000000;
@@ -53,7 +54,7 @@ static void pickServer() {
 void timeApply() {
   pickServer();
   configTzTime(settings.clockTz, serverBuf);
-  Serial.printf("[TIME] NTP %s (%s), TZ %s\n", serverBuf, ntpSourceName(settings.ntpSource), settings.clockTz);
+  Log.printf("[TIME] NTP %s (%s), TZ %s\n", serverBuf, ntpSourceName(settings.ntpSource), settings.clockTz);
 }
 
 void timeBegin() {

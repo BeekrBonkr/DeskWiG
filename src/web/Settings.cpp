@@ -4,6 +4,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <esp_random.h>
+#include "../app/Log.h"
 
 Settings settings;
 
@@ -83,7 +84,7 @@ void regenerateApiToken() {
   prefs.begin(NVS_NS, false);
   prefs.putString("token", settings.apiToken);
   prefs.end();
-  Serial.println("[CFG] Generated new API key");
+  Log.println("[CFG] Generated new API key");
 }
 
 static void loadNvs() {
@@ -164,7 +165,7 @@ static bool loadConfigFile() {
   f.close();
 
   if (err) {
-    Serial.printf("[CFG] %s parse failed: %s\n", CONFIG_PATH, err.c_str());
+    Log.printf("[CFG] %s parse failed: %s\n", CONFIG_PATH, err.c_str());
     return false;
   }
 
@@ -225,7 +226,7 @@ static bool loadConfigFile() {
     if (sourceFromJson(settings.sources[settings.sourceCount], v, err, sizeof(err))) {
       settings.sourceCount++;
     } else {
-      Serial.printf("[CFG] Skipping data source: %s\n", err);
+      Log.printf("[CFG] Skipping data source: %s\n", err);
     }
   }
 
@@ -275,7 +276,7 @@ bool saveSettings() {
   // mid-write can't leave a half-written config.
   File f = LittleFS.open(CONFIG_TMP, "w");
   if (!f) {
-    Serial.println("[CFG] Failed to open temp config for writing");
+    Log.println("[CFG] Failed to open temp config for writing");
     return false;
   }
   size_t written = serializeJsonPretty(doc, f);
@@ -283,7 +284,7 @@ bool saveSettings() {
 
   if (written == 0) {
     LittleFS.remove(CONFIG_TMP);
-    Serial.println("[CFG] Failed to serialize config");
+    Log.println("[CFG] Failed to serialize config");
     return false;
   }
 
@@ -291,7 +292,7 @@ bool saveSettings() {
     // Some VFS builds refuse to rename over an existing file.
     LittleFS.remove(CONFIG_PATH);
     if (!LittleFS.rename(CONFIG_TMP, CONFIG_PATH)) {
-      Serial.println("[CFG] Failed to move config into place");
+      Log.println("[CFG] Failed to move config into place");
       return false;
     }
   }
@@ -356,7 +357,7 @@ bool setNtpServer(const char* host) {
 // FACTORY RESET
 // =====================
 void factoryReset() {
-  Serial.println("[CFG] Factory reset: erasing LittleFS and NVS");
+  Log.println("[CFG] Factory reset: erasing LittleFS and NVS");
   LittleFS.end();
   LittleFS.format();
 
@@ -376,21 +377,21 @@ void loadSettings() {
   loadNvs();
 
   if (!LittleFS.begin(true)) {
-    Serial.println("[CFG] LittleFS mount failed, running on defaults");
+    Log.println("[CFG] LittleFS mount failed, running on defaults");
     loadDefaultTargets();
     return;
   }
 
   if (loadConfigFile()) {
-    Serial.printf("[CFG] Loaded %s\n", CONFIG_PATH);
+    Log.printf("[CFG] Loaded %s\n", CONFIG_PATH);
     return;
   }
 
   if (migrateLegacyNvs()) {
-    Serial.println("[CFG] Migrated settings from legacy NVS layout");
+    Log.println("[CFG] Migrated settings from legacy NVS layout");
   } else {
     loadDefaultTargets();
-    Serial.println("[CFG] No config found, using defaults");
+    Log.println("[CFG] No config found, using defaults");
   }
 
   saveSettings();

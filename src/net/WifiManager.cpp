@@ -5,6 +5,7 @@
 #include <ESPmDNS.h>
 
 #include "../web/Settings.h"
+#include "../app/Log.h"
 
 WifiState wifiState = WifiState::CONNECTING;
 ApReason apReason = ApReason::NONE;
@@ -42,7 +43,7 @@ static void startAp(ApReason reason) {
     dns.setErrorReplyCode(DNSReplyCode::NoError);
     dns.start(53, "*", WiFi.softAPIP());
     apActive = true;
-    Serial.printf("[WIFI] Hotspot up: %s  http://%s\n", AP_SSID, WiFi.softAPIP().toString().c_str());
+    Log.printf("[WIFI] Hotspot up: %s  http://%s\n", AP_SSID, WiFi.softAPIP().toString().c_str());
   }
   apReason = reason;
   wifiState = WifiState::AP_MODE;
@@ -55,7 +56,7 @@ static void stopAp() {
   WiFi.softAPdisconnect(true);
   WiFi.mode(WIFI_STA);
   apActive = false;
-  Serial.println("[WIFI] Hotspot stopped");
+  Log.println("[WIFI] Hotspot stopped");
 }
 
 static void startConnect() {
@@ -67,7 +68,7 @@ static void startConnect() {
   WiFi.begin(settings.wifiSSID, settings.wifiPass);
   connectStart = millis();
   wifiState = WifiState::CONNECTING;
-  Serial.printf("[WIFI] Connecting to %s\n", settings.wifiSSID);
+  Log.printf("[WIFI] Connecting to %s\n", settings.wifiSSID);
 }
 
 // Stop the station trying. Without this the core keeps reconnecting to a
@@ -95,9 +96,9 @@ static void startMdns() {
   if (MDNS.begin(settings.hostname)) {
     MDNS.addService("http", "tcp", 80);
     mdnsStarted = true;
-    Serial.printf("[WIFI] mDNS: http://%s.local\n", settings.hostname);
+    Log.printf("[WIFI] mDNS: http://%s.local\n", settings.hostname);
   } else {
-    Serial.println("[WIFI] mDNS failed to start");
+    Log.println("[WIFI] mDNS failed to start");
   }
 }
 
@@ -106,7 +107,7 @@ static void onConnected() {
   connectFailures = 0;
   wifiState = WifiState::CONNECTED;
   apReason = ApReason::NONE;
-  Serial.printf("[WIFI] Connected, IP %s\n", WiFi.localIP().toString().c_str());
+  Log.printf("[WIFI] Connected, IP %s\n", WiFi.localIP().toString().c_str());
   startMdns();
   if (apActive) apDropAt = millis() + AP_GRACE_MS;
 }
@@ -145,7 +146,7 @@ void wifiLoop() {
       uint32_t timeout = (everConnected && !apActive) ? RECONNECT_TIMEOUT_MS : CONNECT_TIMEOUT_MS;
       if (now - connectStart > timeout) {
         if (connectFailures < 255) connectFailures++;
-        Serial.printf("[WIFI] Connect timed out (status %d, %u failures)\n", (int)WiFi.status(), connectFailures);
+        Log.printf("[WIFI] Connect timed out (status %d, %u failures)\n", (int)WiFi.status(), connectFailures);
         stopConnect();
         startAp(ApReason::CONNECT_FAILED);
       }
@@ -154,7 +155,7 @@ void wifiLoop() {
 
     case WifiState::CONNECTED:
       if (WiFi.status() != WL_CONNECTED) {
-        Serial.println("[WIFI] Connection lost, reconnecting");
+        Log.println("[WIFI] Connection lost, reconnecting");
         connectStart = now;
         wifiState = WifiState::CONNECTING;
         break;

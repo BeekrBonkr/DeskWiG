@@ -3,6 +3,7 @@
 #include <LittleFS.h>
 #include "LayoutTemplates.h"
 #include "../web/Settings.h"
+#include "../app/Log.h"
 
 static const char* LAYOUT_DIR = "/widgets";
 static const char* SEED_MARKER = "/widgets/.seeded";
@@ -92,7 +93,7 @@ static void seedTemplates() {
     if (!f) continue;
     f.print(t.json);
     f.close();
-    Serial.printf("[LAYOUT] Preloaded %s\n", t.id);
+    Log.printf("[LAYOUT] Preloaded %s\n", t.id);
   }
 
   File m = LittleFS.open(SEED_MARKER, "w");
@@ -107,7 +108,7 @@ void layoutsBegin(ScreenManager& sm) {
 
   File dir = LittleFS.open(LAYOUT_DIR);
   if (!dir || !dir.isDirectory()) {
-    Serial.println("[LAYOUT] No widget directory");
+    Log.println("[LAYOUT] No widget directory");
     return;
   }
 
@@ -123,28 +124,28 @@ void layoutsBegin(ScreenManager& sm) {
     if (base.startsWith(".") || !base.endsWith(".json")) continue;
     String id = base.substring(0, base.length() - 5);
     if (!layoutValidId(id.c_str())) {
-      Serial.printf("[LAYOUT] Skipping %s: bad id\n", path.c_str());
+      Log.printf("[LAYOUT] Skipping %s: bad id\n", path.c_str());
       continue;
     }
 
     LayoutWidget* slot = freeSlot();
     if (!slot) {
-      Serial.printf("[LAYOUT] Skipping %s: no free slot\n", path.c_str());
+      Log.printf("[LAYOUT] Skipping %s: no free slot\n", path.c_str());
       continue;
     }
 
     JsonDocument doc;
     if (!parseFile(path, doc, err, sizeof(err))) {
-      Serial.printf("[LAYOUT] Skipping %s: %s\n", path.c_str(), err);
+      Log.printf("[LAYOUT] Skipping %s: %s\n", path.c_str(), err);
       continue;
     }
     slot->setId(id.c_str());
     if (!slot->load(doc.as<JsonVariantConst>(), err, sizeof(err))) {
-      Serial.printf("[LAYOUT] Skipping %s: %s\n", path.c_str(), err);
+      Log.printf("[LAYOUT] Skipping %s: %s\n", path.c_str(), err);
       continue;
     }
     screens->add(slot);
-    Serial.printf("[LAYOUT] Loaded %s (%s)\n", id.c_str(), slot->name());
+    Log.printf("[LAYOUT] Loaded %s (%s)\n", id.c_str(), slot->name());
   }
   dir.close();
 }
