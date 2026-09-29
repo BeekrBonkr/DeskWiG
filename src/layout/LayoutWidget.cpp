@@ -19,6 +19,8 @@ static const int16_t SCREEN_W = 170;
 static const int16_t SCREEN_H = 320;
 static const int16_t CHAR_W = 6;
 static const int16_t CHAR_H = 8;
+// Largest bitmap scale: 40 x 8 px fills the 320 px screen height.
+static const uint8_t BITMAP_MAX_SCALE = 40;
 static const size_t TEXT_RUN = 96;
 
 struct LayoutWidget::NamedStyle {
@@ -166,7 +168,7 @@ bool LayoutWidget::parseStyle(LayoutStyle& st, JsonObjectConst obj, const char* 
       st.thick = clampU8(v | 1, 1, 80);
     } else if (!strcmp(k, "size")) {
       int size = v | 1;
-      if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-8 (bitmap font) or 6-160 (TrueType font)");
+      if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-40 (bitmap font) or 6-160 (TrueType font)");
       st.size = size;
     } else if (!strcmp(k, "font")) {
       const char* f = v | "";
@@ -272,7 +274,7 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     }
     if (!v["size"].isNull()) {
       int size = v["size"] | 1;
-      if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-8 (bitmap font) or 6-160 (TrueType font)");
+      if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-40 (bitmap font) or 6-160 (TrueType font)");
       e.st.size = size;
     }
     if (!v["font"].isNull()) {
@@ -290,7 +292,7 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
       if (!parseStyle(e.st, v["style"].as<JsonObjectConst>(), path, err, errLen)) return false;
     }
     if (e.type == ElType::TEXT) {
-      if (!e.st.font[0] && e.st.size > 8) return fail(err, errLen, path, "size must be 1-8 with the bitmap font; set \"font\" for pixel sizes");
+      if (!e.st.font[0] && e.st.size > BITMAP_MAX_SCALE) return fail(err, errLen, path, "size must be 1-40 with the bitmap font; set \"font\" for pixel sizes");
       if (e.st.font[0] && e.st.size < FONT_MIN_PX) return fail(err, errLen, path, "size must be at least 6 with a TrueType font");
     }
 

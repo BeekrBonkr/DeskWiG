@@ -161,7 +161,7 @@ style: {font, size, color, background,
   direction, justify, position}
 font: sans | bold | emoji | uploaded;
   size is then pixels (6-160).
-  no font = 6x8 bitmap, size 1-8;
+  no font = 6x8 bitmap, size 1-40;
   emoji work in both.
 "styles": {"name": {...}} then
   "class": "name" on an element
@@ -522,7 +522,7 @@ function parseStyle(st, obj, path) {
       case 'padding': st.pad = Math.max(0, Math.min(80, v | 0)); break;
       case 'gap': st.gap = Math.max(0, Math.min(200, v | 0)); break;
       case 'thickness': case 'width': st.thick = Math.max(1, Math.min(80, v | 0)); break;
-      case 'size': if (!Number.isInteger(v) || v < 1 || v > 160) throw new Error(at(path) + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = v; break;
+      case 'size': if (!Number.isInteger(v) || v < 1 || v > 160) throw new Error(at(path) + ': size must be 1-40 (bitmap font) or 6-160 (TrueType font)'); st.size = v; break;
       case 'font': if (v && !fontNames.includes(v)) throw new Error(at(path) + ': unknown font (see the setup page for the list)'); st.font = String(v ?? ''); break;
       case 'align': if (!ALIGNS[v]) throw new Error(at(path) + ': align must be left/start, center, right/end or stretch'); st.align = ALIGNS[v]; break;
       case 'justify': if (!['start', 'center', 'end', 'between'].includes(v)) throw new Error(at(path) + ': justify must be start, center, end or between'); st.justify = v; break;
@@ -561,13 +561,13 @@ function buildNode(e, path, styles, depth) {
     Object.assign(st, m);
   }
   if (e.color !== undefined) { checkColor(e.color, path, 'color'); st.color = String(e.color); }
-  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 160) throw new Error(at(path) + ': size must be 1-8 (bitmap font) or 6-160 (TrueType font)'); st.size = e.size; }
+  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 160) throw new Error(at(path) + ': size must be 1-40 (bitmap font) or 6-160 (TrueType font)'); st.size = e.size; }
   if (e.font !== undefined) { if (e.font && !fontNames.includes(e.font)) throw new Error(at(path) + ': unknown font (see the setup page for the list)'); st.font = String(e.font ?? ''); }
   if (e.align !== undefined) { if (!ALIGNS[e.align]) throw new Error(at(path) + ': align must be left, center or right'); st.align = ALIGNS[e.align]; }
   if (e.fill !== undefined) st.fill = !!e.fill;
   if (e.style && typeof e.style === 'object') parseStyle(st, e.style, path);
   if (e.type === 'text') {
-    if (!st.font && st.size > 8) throw new Error(at(path) + ': size must be 1-8 with the bitmap font; set "font" for pixel sizes');
+    if (!st.font && st.size > 40) throw new Error(at(path) + ': size must be 1-40 with the bitmap font; set "font" for pixel sizes');
     if (st.font && st.size < 6) throw new Error(at(path) + ': size must be at least 6 with a TrueType font');
   }
   n.st = st;

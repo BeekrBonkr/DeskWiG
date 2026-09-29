@@ -368,7 +368,7 @@ The top-level `style` applies to the implicit root box, so `{"style":{"direction
 
 ### Fonts
 
-Text uses the built-in 6 × 8 bitmap font scaled by `size` unless `font` names a TrueType font, in which case `size` is the line height in pixels (6–160):
+Text uses the built-in 6 × 8 bitmap font scaled by `size` (1–40) unless `font` names a TrueType font, in which case `size` is the line height in pixels (6–160):
 
 ```json
 {"type":"text","text":"{time}","font":"bold","size":48,"align":"center"}

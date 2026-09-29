@@ -372,7 +372,7 @@ const FIELDS = [
   { key: 'value', label: 'Value', kind: 'text', types: ['bar', 'arc'], hint: '0-100 after expansion' },
   { key: 'src', label: 'Image', kind: 'image', types: ['image'] },
   { key: 'font', label: 'Font', kind: 'font', types: ['text'] },
-  { key: 'size', label: 'Size', kind: 'num', types: ['text'], hint: '1-8 bitmap, 6-160 with a font' },
+  { key: 'size', label: 'Size', kind: 'num', types: ['text'], hint: '1-40 bitmap, 6-160 with a font' },
   { key: 'align', label: 'Align', kind: 'sel', opts: ['', 'left', 'center', 'right'], types: ['text'] },
   { key: 'color', label: 'Color', kind: 'color', types: ['text', 'line', 'rect', 'bar', 'circle', 'ellipse', 'arc', 'triangle', 'polygon'] },
   { key: 'fill', label: 'Fill', kind: 'bool', types: ['rect', 'circle', 'ellipse', 'triangle', 'polygon'] },
