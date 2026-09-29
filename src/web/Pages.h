@@ -1,7 +1,7 @@
 #pragma once
 
 // Static pages served by the device. Kept in a separate header so
-// WebServer.cpp stays readable. Phase 3 replaces these with a proper SPA.
+// WebServer.cpp stays readable.
 
 static const char STYLE_CSS[] = R"css(
 :root{color-scheme:dark}
