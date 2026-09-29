@@ -52,6 +52,13 @@ body.dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
 .bar{display:flex;gap:6px;align-items:center;margin:8px 0}
 .bar button{width:auto;margin:0;padding:8px 12px;font-size:14px}
 .bar label.inline{margin:0 0 0 auto}
+.res{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:8px 0}
+.res .card{padding:8px 10px}
+.res .k{font-size:12px;color:#999;text-transform:uppercase;letter-spacing:.06em}
+.res .v{font-size:15px;margin:2px 0}
+.res .m{height:4px;background:#333;border-radius:2px;overflow:hidden}
+.res .m i{display:block;height:100%;background:#3c3}
+.res .m i.warn{background:#fc6}.res .m i.bad{background:#f66}
 details.sec{background:#1a1a1a;border:1px solid #333;border-radius:8px;margin:8px 0}
 details.sec>summary{display:flex;align-items:center;gap:10px;padding:12px;font-size:16px;cursor:pointer;list-style:none}
 details.sec>summary::-webkit-details-marker{display:none}
@@ -1064,6 +1071,7 @@ static const char TERMINAL_HTML[] = R"html(
 <nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a href="/terminal">Terminal</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Terminal</h2>
 <p class="hint">Everything the device prints to its USB serial port, live. The device keeps the last 32 KB, so the log starts where the buffer does.</p>
+<div class="res" id="res"></div>
 <div class="bar">
   <button id="pause" type="button">Pause</button>
   <button id="clear" type="button">Clear</button>
@@ -1121,6 +1129,32 @@ $('out').addEventListener('scroll', () => {
   const atBottom = o.scrollHeight - o.scrollTop - o.clientHeight < 4;
   if (!atBottom) $('follow').checked = false;
 });
+
+// ---------- resources ----------
+const kb = n => n >= 1048576 ? (n / 1048576).toFixed(2) + ' MB' : Math.round(n / 1024) + ' KB';
+function tile(k, v, used, total, note) {
+  const pct = total ? Math.min(100, Math.round(100 * used / total)) : 0;
+  const cls = pct >= 90 ? 'bad' : pct >= 75 ? 'warn' : '';
+  return '<div class="card"><div class="k">' + k + '</div><div class="v">' + v + '</div>' +
+    '<div class="m"><i class="' + cls + '" style="width:' + pct + '%"></i></div>' +
+    (note ? '<div class="k" style="text-transform:none;margin-top:4px">' + note + '</div>' : '') + '</div>';
+}
+async function loadResources() {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    const m = (await r.json()).memory;
+    if (!m) return;
+    $('res').innerHTML =
+      tile('RAM', kb(m.heapFree) + ' free of ' + kb(m.heapTotal), m.heapTotal - m.heapFree, m.heapTotal,
+           'lowest ' + kb(m.heapMin) + ' \u00b7 largest block ' + kb(m.heapBlock)) +
+      tile('PSRAM', kb(m.psramFree) + ' free of ' + kb(m.psramTotal), m.psramTotal - m.psramFree, m.psramTotal) +
+      tile('Storage', kb(m.fsUsed) + ' used of ' + kb(m.fsTotal), m.fsUsed, m.fsTotal,
+           kb(m.fsTotal - m.fsUsed) + ' free for fonts, images and layouts');
+  } catch (e) {}
+}
+setInterval(loadResources, 5000);
+loadResources();
 
 setInterval(poll, 1000);
 poll();

@@ -381,6 +381,18 @@ static void registerStatus() {
     doc["uptimeMs"]     = millis();
     doc["freeHeap"]     = ESP.getFreeHeap();
     doc["freePsram"]    = ESP.getFreePsram();
+    // Memory and storage, for the terminal page's resource strip. minHeap
+    // is the low-water mark since boot: a small value there points at
+    // what crashed the device even when the live number looks fine.
+    JsonObject mem = doc["memory"].to<JsonObject>();
+    mem["heapTotal"]  = ESP.getHeapSize();
+    mem["heapFree"]   = ESP.getFreeHeap();
+    mem["heapMin"]    = ESP.getMinFreeHeap();
+    mem["heapBlock"]  = ESP.getMaxAllocHeap();
+    mem["psramTotal"] = ESP.getPsramSize();
+    mem["psramFree"]  = ESP.getFreePsram();
+    mem["fsTotal"]    = LittleFS.totalBytes();
+    mem["fsUsed"]     = LittleFS.usedBytes();
     doc["activeWidget"] = screens.getActive();
     doc["widgetCount"]  = screens.getCount();
     fillWifiStatus(doc["wifi"].to<JsonObject>());

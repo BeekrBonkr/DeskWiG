@@ -126,7 +126,7 @@ Once on your network, the device serves:
 | `/setup`                        | no   | WiFi scan/join, device name, clock, data sources, account      |
 | `/widgets`                      | no   | Switch the active screen, drag to reorder, delete or restore widgets |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
-| `/terminal`                     | no   | Live view of the device's serial output (the last 32 KB is kept) |
+| `/terminal`                     | no   | Live serial output (the last 32 KB is kept) with RAM, PSRAM and storage usage |
 | `GET /api/auth`                 | no   | Whether an account exists and whether this browser is logged in |
 | `POST /api/auth/setup`          | key  | JSON `{"key","user","pass"}`. Creates the account, or replaces it and rotates the key |
 | `POST /api/auth/login`          | no   | JSON `{"user","pass"}`. Sets the session cookie                |
@@ -134,7 +134,7 @@ Once on your network, the device serves:
 | `POST /api/auth/reveal`         | no   | Shows the API key on the device screen for 60 s                |
 | `GET /api/auth/key`             | yes  | The API key, for scripts                                       |
 | `PUT /api/auth/password`        | yes  | JSON `{"current","pass"}`. Changes the password               |
-| `GET /api/status`               | no   | Firmware, uptime, heap, WiFi state, active widget, clock sync  |
+| `GET /api/status`               | no   | Firmware, uptime, memory and storage usage, WiFi state, active widget, clock sync |
 | `GET /api/wifi`                 | no   | Connection state, SSID, IP, hostname, hotspot state            |
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
 | `POST /api/wifi/join`           | yes  | JSON `{"ssid","pass"}`. Saves and connects, hotspot stays up   |
