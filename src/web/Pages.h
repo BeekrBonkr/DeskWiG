@@ -36,8 +36,7 @@ label.inline input{width:auto;display:inline;margin:0}
 .src .btns button{margin:0;padding:8px;font-size:14px;text-align:center}
 .ok{color:#3c3}.bad{color:#f66}.warn{color:#fc6}
 .thumb{display:flex;align-items:center;gap:10px}
-.thumb img{width:48px;height:48px;object-fit:contain;background:#000;border:1px solid #333;border-radius:4px}
-.thumb .btns{margin-left:auto}
+.thumb .btns{margin-left:auto;display:flex;gap:6px}
 .dkeys{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .dkeys button{display:inline-block;width:auto;margin:0;padding:4px 8px;font:12px ui-monospace,monospace;text-align:left}
 .dkeys button span{color:#999;margin-left:6px}
@@ -594,10 +593,13 @@ async function loadImages() {
     sub('images', (r.images || []).length ? (r.images.length + ' images') : 'none yet');
     (r.images || []).forEach(im => {
       const d = document.createElement('div');
+      // No inline thumbnails: the page would open every image at once,
+      // and each is a file streamed from the device, which ran it out of
+      // RAM with a long list. "View" fetches one on demand instead.
       d.className = 'card src thumb';
-      d.innerHTML = '<img src="/img/' + esc(im.name) + '.' + esc(im.type) + '?t=' + Date.now() + '" alt="">' +
-        '<div><b>' + esc(im.name) + '</b><br><span class="dim">' + esc(im.type) + ' &middot; ' + fmtBytes(im.size) + '</span></div>' +
-        '<div class="btns"><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
+      d.innerHTML = '<div><b>' + esc(im.name) + '</b><br><span class="dim">' + esc(im.type) + ' &middot; ' + fmtBytes(im.size) + '</span></div>' +
+        '<div class="btns"><button class="view">View</button><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
+      d.querySelector('.view').onclick = () => window.open('/img/' + encodeURIComponent(im.name) + '.' + im.type, '_blank');
       d.querySelector('.del').onclick = () => deleteImage(im.name);
       box.appendChild(d);
     });
