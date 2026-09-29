@@ -430,6 +430,37 @@ static void registerWidgets() {
     sendJson(req, 200, doc);
   });
 
+  // PUT /api/widgets/order {"order":["key",...]}: keys listed come first in
+  // that order, anything missing keeps its place after them.
+  auto* order = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/widgets/order"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    JsonArrayConst arr = json["order"].as<JsonArrayConst>();
+    if (arr.isNull()) { sendError(req, 400, "missing order array"); return; }
+
+    const char* keys[MAX_WIDGET_ORDER];
+    uint8_t n = 0;
+    for (JsonVariantConst v : arr) {
+      const char* k = v | "";
+      if (!*k || strlen(k) > WIDGET_KEY_LEN) { sendError(req, 400, "bad key"); return; }
+      if (n >= MAX_WIDGET_ORDER) break;
+      keys[n++] = k;
+    }
+    screens.applyOrder(keys, n);
+
+    // Save the resulting full order, not just what was sent.
+    settings.orderCount = 0;
+    for (uint8_t i = 0; i < screens.getCount() && i < MAX_WIDGET_ORDER; i++) {
+      strlcpy(settings.widgetOrder[settings.orderCount++], screens.get(i)->key(), sizeof(settings.widgetOrder[0]));
+    }
+    settings.activeWidget = screens.getActive();
+    if (!saveSettings()) { sendError(req, 500, "failed to save settings"); return; }
+    JsonDocument doc;
+    fillWidgetList(doc);
+    sendJson(req, 200, doc);
+  });
+  order->setMethod(HTTP_PUT);
+  server.addHandler(order);
+
   server.on(AsyncURIMatcher::exact("/api/widgets/restore"), HTTP_POST, [](AsyncWebServerRequest* req) {
     if (!requireAuth(req)) return;
     if (!req->hasParam("key", true)) { sendError(req, 400, "missing key"); return; }

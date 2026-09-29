@@ -192,6 +192,11 @@ void setup() {
 
   builtinsBegin(screens);           // Ping and Clock, unless deleted
   layoutsBegin(screens);            // JSON widgets from /widgets/*.json
+  {
+    const char* keys[MAX_WIDGET_ORDER];
+    for (uint8_t i = 0; i < settings.orderCount; i++) keys[i] = settings.widgetOrder[i];
+    screens.applyOrder(keys, settings.orderCount);
+  }
   // Restore the active widget by name; the index is only a fallback for
   // configs written before names were stored.
   screens.setActive(settings.activeWidget);

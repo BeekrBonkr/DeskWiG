@@ -14,6 +14,11 @@ public:
   void update(uint32_t now);
   void render(lgfx::LGFX_Sprite& ui);
 
+  // Reorders the list so widgets whose key appears in keys[] come first,
+  // in that order; the rest keep their relative order after them. The
+  // active widget stays the same widget.
+  void applyOrder(const char* const* keys, uint8_t n);
+
   void setActive(uint8_t idx);
   uint8_t getActive() const;
   uint8_t getCount() const;

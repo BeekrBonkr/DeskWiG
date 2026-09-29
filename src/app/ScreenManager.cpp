@@ -41,6 +41,30 @@ void ScreenManager::render(lgfx::LGFX_Sprite& ui) {
   else ui.fillScreen(TFT_BLACK);
 }
 
+void ScreenManager::applyOrder(const char* const* keys, uint8_t n) {
+  Widget* wasActive = count ? widgets[active] : nullptr;
+  Widget* sorted[MAX_WIDGETS];
+  bool placed[MAX_WIDGETS] = {};
+  uint8_t out = 0;
+
+  for (uint8_t k = 0; k < n; k++) {
+    for (uint8_t i = 0; i < count; i++) {
+      if (!placed[i] && !strcmp(widgets[i]->key(), keys[k])) {
+        sorted[out++] = widgets[i];
+        placed[i] = true;
+        break;
+      }
+    }
+  }
+  for (uint8_t i = 0; i < count; i++) {
+    if (!placed[i]) sorted[out++] = widgets[i];
+  }
+  for (uint8_t i = 0; i < count; i++) widgets[i] = sorted[i];
+
+  int idx = indexOf(wasActive);
+  active = idx >= 0 ? idx : 0;
+}
+
 void ScreenManager::setActive(uint8_t idx) {
   if (idx < count) active = idx;
 }

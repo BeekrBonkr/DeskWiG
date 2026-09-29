@@ -182,6 +182,13 @@ static bool loadConfigFile() {
     strlcpy(settings.hiddenWidgets[settings.hiddenCount++], k, sizeof(settings.hiddenWidgets[0]));
   }
 
+  settings.orderCount = 0;
+  for (JsonVariantConst v : doc["widgetOrder"].as<JsonArrayConst>()) {
+    const char* k = v | "";
+    if (!*k || settings.orderCount >= MAX_WIDGET_ORDER) continue;
+    strlcpy(settings.widgetOrder[settings.orderCount++], k, sizeof(settings.widgetOrder[0]));
+  }
+
   JsonVariantConst clock = doc["clock"];
   resetClockDefaults();
   if (!clock["tz"].isNull()) {
@@ -235,6 +242,9 @@ bool saveSettings() {
 
   JsonArray hidden = doc["hiddenWidgets"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.hiddenCount; i++) hidden.add(settings.hiddenWidgets[i]);
+
+  JsonArray order = doc["widgetOrder"].to<JsonArray>();
+  for (uint8_t i = 0; i < settings.orderCount; i++) order.add(settings.widgetOrder[i]);
 
   JsonObject clock = doc["clock"].to<JsonObject>();
   clock["tz"]        = settings.clockTz;
