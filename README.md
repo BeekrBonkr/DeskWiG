@@ -436,7 +436,7 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `border`, `borderWidth`     | box, rect, shapes         | Outline colour and width                                |
 | `radius`                    | box, rect, bar            | Corner radius                                           |
 | `font`                      | text                      | TrueType font name; empty for the bitmap font           |
-| `size`                      | text                      | Bitmap scale 1–8, or pixel line height 6–160 with a font |
+| `size`                      | text                      | Bitmap scale 1–40, or pixel line height 6–160 with a font |
 | `align`                     | text, box                 | Text alignment, or a box's cross-axis alignment         |
 | `fill`                      | rect, shapes              | Fill with `color`                                       |
 | `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
