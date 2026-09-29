@@ -277,7 +277,7 @@ curl -X PUT "http://<device-ip>/api/sources?id=weather" \
 | `url`            | `http://` or `https://`, up to 511 characters. Put API keys that go in the query string here          |
 | `intervalS`      | Seconds between fetches, minimum 10, default 300                                                     |
 | `header`         | Optional `{ "name": "Authorization", "value": "Bearer ..." }` for APIs that want a key in a header    |
-| `fields`         | Up to 8 of `{ "name", "path", "decimals" }`. `path` is a dot path into the JSON: `current.temp`, `items[0].price`, `data.0.value`. An empty path takes the whole response as text, for endpoints that answer with a bare value. `decimals` rounds numbers |
+| `fields`         | Up to 24 of `{ "name", "path", "decimals" }`. `path` is a dot path into the JSON: `current.temp`, `items[0].price`, `data.0.value`. An empty path takes the whole response as text, for endpoints that answer with a bare value. `decimals` rounds numbers |
 
 A layout then uses `{api.<id>.<field>}`, for example `{api.weather.temp}`. Every source also provides:
 
