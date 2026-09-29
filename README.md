@@ -21,7 +21,7 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 
 ### Enclosure
 
-The case is two printed parts: a base that holds the DevKitC, and a hinged display panel that tilts back. An optional second hinge takes the rotary encoder. The STL is on MakerWorld and the source model is on Onshape (links above) if you want to change it.
+The case prints as a single model: the base holds the DevKitC, the display panel tilts back on a hinge, and a second hinge takes the optional rotary encoder. The encoder is held in with an M7 nut, which can be printed or bought. The STL is on MakerWorld and the source model is on Onshape (links above) if you want to change it.
 
 <p align="center">
   <img src="docs/images/enclosure-front.png" alt="Enclosure with the display panel open and the encoder mount raised" width="49%">
