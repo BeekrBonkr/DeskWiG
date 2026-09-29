@@ -8,8 +8,7 @@
 #include "app/SystemScreens.h"
 #include "app/Encoder.h"
 
-#include "widgets/PingWidget.h"
-#include "widgets/ClockWidget.h"
+#include "app/Builtins.h"
 #include "layout/LayoutStore.h"
 
 #include "web/Settings.h"
@@ -71,9 +70,6 @@ LGFX_Sprite ui(&tft);
 // WIDGETS / SCREENS
 // =====================
 ScreenManager screens;
-
-PingWidget  pingWidget;
-ClockWidget clockWidget;
 
 // =====================
 // RECOVERY JUMPER
@@ -194,8 +190,7 @@ void setup() {
   timeBegin();
   sourcesBegin();
 
-  screens.add(&pingWidget);
-  screens.add(&clockWidget);
+  builtinsBegin(screens);           // Ping and Clock, unless deleted
   layoutsBegin(screens);            // JSON widgets from /widgets/*.json
   // Restore the active widget by name; the index is only a fallback for
   // configs written before names were stored.

@@ -150,6 +150,7 @@ public:
   void update(uint32_t now) override;
   void render(lgfx::LGFX_Sprite& ui) override;
   const char* name() const override { return _name; }
+  const char* key() const override { return _id; }
   bool ledSpec(LedSpec& out) override;
 
 private:

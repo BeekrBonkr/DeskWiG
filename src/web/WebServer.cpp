@@ -15,6 +15,7 @@
 #include "../layout/ImageService.h"
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
+#include "../app/Builtins.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
 #include "Settings.h"
@@ -119,9 +120,14 @@ static void fillWidgetList(JsonDocument& doc) {
   doc["active"] = screens.getActive();
   JsonArray list = doc["widgets"].to<JsonArray>();
   for (uint8_t i = 0; i < screens.getCount(); i++) {
-    const char* name = screens.getName(i);
-    list.add((name && *name) ? name : "Unknown");
+    Widget* w = screens.get(i);
+    const char* name = w->name();
+    JsonObject o = list.add<JsonObject>();
+    o["name"]    = (name && *name) ? name : "Unknown";
+    o["key"]     = w->key();
+    o["builtin"] = builtinExists(w->key());
   }
+  builtinsHiddenToJson(doc["hidden"].to<JsonArray>());
 }
 
 static void fillWifiStatus(JsonObject doc) {
@@ -404,6 +410,32 @@ static void registerWidgets() {
       sendError(req, 500, "failed to save settings");
       return;
     }
+    JsonDocument doc;
+    fillWidgetList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // DELETE /api/widgets?key=<key>: a built-in is hidden (restorable), a
+  // layout is deleted from the filesystem like DELETE /api/layouts.
+  server.on(AsyncURIMatcher::exact("/api/widgets"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("key")) { sendError(req, 400, "missing key"); return; }
+    String key = req->getParam("key")->value();
+    char err[96];
+    bool ok = builtinExists(key.c_str()) ? builtinHide(key.c_str(), err, sizeof(err))
+                                         : layoutDelete(key.c_str(), err, sizeof(err));
+    if (!ok) { sendError(req, 400, err); return; }
+    JsonDocument doc;
+    fillWidgetList(doc);
+    sendJson(req, 200, doc);
+  });
+
+  server.on(AsyncURIMatcher::exact("/api/widgets/restore"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("key", true)) { sendError(req, 400, "missing key"); return; }
+    String key = req->getParam("key", true)->value();
+    char err[96];
+    if (!builtinRestore(key.c_str(), err, sizeof(err))) { sendError(req, 400, err); return; }
     JsonDocument doc;
     fillWidgetList(doc);
     sendJson(req, 200, doc);

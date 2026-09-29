@@ -41,6 +41,10 @@ label.inline input{width:auto;display:inline;margin:0}
 .dkeys button{display:inline-block;width:auto;margin:0;padding:4px 8px;font:12px ui-monospace,monospace;text-align:left}
 .dkeys button span{color:#999;margin-left:6px}
 .dkeys button.added{border-color:#3c3}
+.wrow{display:flex;gap:6px;margin:8px 0}
+.wrow button{margin:0}
+.wrow .pick{flex:1}
+.wrow .del{width:auto;padding:12px 14px}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -786,6 +790,7 @@ static const char WIDGETS_HTML[] = R"html(
 <h2>Widget Selector</h2>
 <div id="list"></div>
 <p id="msg"></p>
+<div id="hidden"></div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -799,23 +804,79 @@ async function requireLogin() {
 }
 requireLogin();
 
+let delPending = null;
+
+function render(j) {
+  const list = $('list');
+  list.innerHTML = '';
+  if (!j.widgets.length) list.innerHTML = '<p class="dim">No widgets. Restore a built-in below or make one in the editor.</p>';
+  j.widgets.forEach((w, i) => {
+    const row = document.createElement('div');
+    row.className = 'wrow';
+    const b = document.createElement('button');
+    b.className = 'pick' + (i === j.active ? ' active' : '');
+    b.textContent = w.name + (i === j.active ? '  (active)' : '');
+    b.onclick = () => activate(i);
+    const d = document.createElement('button');
+    d.className = 'del danger';
+    d.textContent = delPending === w.key ? 'Tap again' : 'Delete';
+    d.title = w.builtin ? 'Remove this built-in widget (it can be restored)' : 'Delete this layout from the device';
+    d.onclick = () => remove(w.key);
+    row.appendChild(b);
+    row.appendChild(d);
+    list.appendChild(row);
+  });
+  const h = $('hidden');
+  h.innerHTML = '';
+  if (j.hidden.length) {
+    const p = document.createElement('p');
+    p.className = 'hint';
+    p.textContent = 'Deleted built-in widgets:';
+    h.appendChild(p);
+    j.hidden.forEach(k => {
+      const b = document.createElement('button');
+      b.textContent = 'Restore ' + k;
+      b.onclick = () => restore(k);
+      h.appendChild(b);
+    });
+  }
+}
+
 async function load() {
   $('msg').textContent = '';
   try {
     const r = await fetch('/api/widgets');
-    const j = await r.json();
-    const list = $('list');
-    list.innerHTML = '';
-    j.widgets.forEach((w, i) => {
-      const b = document.createElement('button');
-      b.textContent = w + (i === j.active ? '  (active)' : '');
-      if (i === j.active) b.className = 'active';
-      b.onclick = () => activate(i);
-      list.appendChild(b);
-    });
+    render(await r.json());
   } catch (e) {
     $('msg').textContent = 'Failed to load widgets';
   }
+}
+
+async function remove(key) {
+  if (delPending !== key) {
+    delPending = key;
+    load();
+    setTimeout(() => { if (delPending === key) { delPending = null; load(); } }, 4000);
+    return;
+  }
+  delPending = null;
+  const r = await fetch('/api/widgets?key=' + encodeURIComponent(key), { method: 'DELETE' });
+  if (r.status === 401) { toLogin(); return; }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { $('msg').textContent = j.error || ('HTTP ' + r.status); load(); return; }
+  render(j);
+}
+
+async function restore(key) {
+  const r = await fetch('/api/widgets/restore', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'key=' + encodeURIComponent(key)
+  });
+  if (r.status === 401) { toLogin(); return; }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { $('msg').textContent = j.error || ('HTTP ' + r.status); return; }
+  render(j);
 }
 
 async function activate(i) {

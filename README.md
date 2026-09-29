@@ -2,7 +2,7 @@
 
 DeskWiG (Desk Widget) started as a Christmas gift for my dad. A small 3D-printed desktop display built around an ESP32-S3 and a 1.9" IPS screen. The firmware is a simple widget framework: each screen is a `Widget` class, and you pick which one is showing from a web page served by the device.
 
-It currently ships with two widgets:
+It currently ships with two widgets (either can be deleted from the widgets page if you only want your own, and restored from the same place):
 
 - **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers*.
 - **Clock** – NTP-synced clock with 12/24-hour display. Time can come from the internet, from your router, or from any NTP server you name; timezones use POSIX TZ strings so daylight saving is automatic.
@@ -124,7 +124,7 @@ Once on your network, the device serves:
 | ------------------------------- | ---- | -------------------------------------------------------------- |
 | `/login`                        | no   | Create the account, log in, or reset a forgotten password      |
 | `/setup`                        | no   | WiFi scan/join, device name, clock, data sources, account      |
-| `/widgets`                      | no   | Page with a button per widget to switch the active screen      |
+| `/widgets`                      | no   | Switch the active screen, delete or restore widgets            |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
 | `GET /api/auth`                 | no   | Whether an account exists and whether this browser is logged in |
 | `POST /api/auth/setup`          | key  | JSON `{"key","user","pass"}`. Creates the account, or replaces it and rotates the key |
@@ -154,8 +154,10 @@ Once on your network, the device serves:
 | `POST /api/sources/test?id=<id>`| yes  | Fetch it now; poll `GET /api/sources` for the result           |
 | `POST /api/sources/discover`    | yes  | JSON `{"url","header":{"name","value"}}`. Fetch once and list every JSON path; poll the GET |
 | `GET /api/sources/discover`     | yes  | State of the last discovery and its paths with sample values   |
-| `GET /api/widgets`              | no   | JSON list of widgets and the active index                      |
+| `GET /api/widgets`              | no   | JSON list of widgets (`name`, `key`, `builtin`), the active index and deleted built-ins |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
+| `DELETE /api/widgets?key=<key>` | yes  | Remove a widget: a built-in is hidden, a layout is deleted     |
+| `POST /api/widgets/restore` (`key=K`) | yes | Bring back a deleted built-in widget                       |
 | `GET /api/layouts`              | no   | List of layout widgets (`id`, `name`, `index`) and free slots  |
 | `GET /api/layouts?id=<id>`      | no   | The stored layout JSON                                         |
 | `PUT /api/layouts?id=<id>`      | yes  | Create or replace a layout; validated, saved, applied at once  |
