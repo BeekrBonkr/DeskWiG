@@ -30,7 +30,7 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 
 The case is one solid printed model with no moving parts: the base holds the DevKitC, the display sits in an angled panel held on with two M2×6 screws, and a second angled mount takes the optional rotary encoder. The encoder is held in with an M7 nut, which can be printed or bought. The STL is on Printables and MakerWorld, and the source model is on Onshape (links above) if you want to remix it.
 
-Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://makerworld.com/en/models/2918927-esp-32-desktop-widget) on MakerWorld holds just the ESP32 and the display. The firmware works the same either way, since with no encoder connected the pins simply stay high.
+Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://makerworld.com/en/models/2918927-esp-32-desktop-widget#profileId-3265758) on MakerWorld holds just the ESP32 and the display. The firmware works the same either way, since with no encoder connected the pins simply stay high.
 
 <p align="center">
   <img src="docs/images/enclosure-front.png" alt="Enclosure showing the angled display panel and the encoder mount" width="49%">
@@ -79,7 +79,21 @@ Wire CLK, DT and SW to GPIO 5, 6 and 7, the module's `+` to 3V3 and `GND` to gro
 
 If clockwise goes the wrong way, swap CLK and DT or set `ENC_REVERSE` in `src/app/Board.h`. If one click of the knob skips a widget or needs two clicks, set `ENC_STEPS_PER_DETENT` to 2 or 4 to match your encoder. Rotation is decoded in interrupts with a state table, so bounce doesn't register as extra steps.
 
-## Building and flashing
+## Flashing
+
+### From a release, in the browser
+
+Every [release](https://github.com/BeekrBonkr/DeskWiG/releases/latest) includes `deskwig-vX.Y.Z-factory.bin`, one image with the bootloader, partition table and firmware. Flashing it needs nothing installed, only Chrome or Edge (Firefox and Safari don't support Web Serial):
+
+1. Download `deskwig-vX.Y.Z-factory.bin` from the latest release.
+2. Connect the DevKitC's **UART** USB port to the computer (the board has two; the other, labelled **USB**, works too but needs the BOOT button more often).
+3. Open [espressif.github.io/esptool-js](https://espressif.github.io/esptool-js/), leave the baud rate as it is, and click **Connect**. Pick the serial port the browser offers (CP210x or USB JTAG/serial). If nothing shows up, hold **BOOT**, tap **RESET**, release **BOOT** and try again. On Linux, add your user to the `dialout` (or `uucp`) group if the port is missing.
+4. Set **Flash Address** to `0x0`, choose the downloaded file and click **Program**. It takes about a minute at the default speed.
+5. Click **Disconnect** and press **RESET**. The screen lights up in setup mode; continue at [First boot and WiFi setup](#first-boot-and-wifi-setup).
+
+Flashing the factory image erases every setting on the device. To update a running device instead, use `firmware.bin` from the release with the over-the-air update below; that keeps settings, layouts, fonts and images.
+
+### From source
 
 This is a [PlatformIO](https://platformio.org/) project. Open the folder in VS Code with the PlatformIO extension, or from the command line:
 
@@ -88,7 +102,9 @@ pio run -t upload
 pio device monitor
 ```
 
-Once the device is on your network you can update it without a cable: build with `pio run`, then upload `.pio/build/esp32-s3-devkitc-1/firmware.bin` under **Firmware** on `http://deskwig.local/setup`, or from a shell:
+### Over the air
+
+Once the device is on your network you can update it without a cable: take `firmware.bin` from a release, or build one with `pio run` (it lands in `.pio/build/esp32-s3-devkitc-1/`), and upload it under **Firmware** on `http://deskwig.local/setup`, or from a shell:
 
 ```bash
 curl -X POST http://deskwig.local/api/system/update \
