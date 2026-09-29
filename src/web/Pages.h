@@ -51,6 +51,14 @@ label.inline input{width:auto;display:inline;margin:0}
 .bar{display:flex;gap:6px;align-items:center;margin:8px 0}
 .bar button{width:auto;margin:0;padding:8px 12px;font-size:14px}
 .bar label.inline{margin:0 0 0 auto}
+details.sec{background:#1a1a1a;border:1px solid #333;border-radius:8px;margin:8px 0}
+details.sec>summary{display:flex;align-items:center;gap:10px;padding:12px;font-size:16px;cursor:pointer;list-style:none}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary::after{content:"\203A";margin-left:auto;color:#999;font-size:20px;transition:transform .15s}
+details.sec[open]>summary::after{transform:rotate(90deg)}
+details.sec>summary .sub{color:#999;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+details.sec>.body{padding:0 12px 12px;border-top:1px solid #2a2a2a}
+details.sec>.body>h3:first-child{margin-top:12px}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -66,22 +74,32 @@ static const char SETUP_HTML[] = R"html(
 <nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a href="/terminal">Terminal</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Device Setup</h2>
 <div class="card" id="status">Loading&hellip;</div>
+<p id="msg"></p>
 
-<h3>WiFi network</h3>
+<details class="sec" id="sec-wifi">
+<summary><span>WiFi network</span><span class="sub" id="sub-wifi"></span></summary>
+<div class="body">
 <button id="scan">Scan for networks</button>
 <div id="nets"></div>
 <input id="ssid" placeholder="Network name" autocapitalize="off" autocorrect="off">
 <input id="pass" type="password" placeholder="Password">
 <button id="join" class="primary">Join</button>
 <button id="forget" class="danger">Forget saved network</button>
-<p id="msg"></p>
+</div>
+</details>
 
-<h3>Device name</h3>
+<details class="sec" id="sec-name">
+<summary><span>Device name</span><span class="sub" id="sub-name"></span></summary>
+<div class="body">
 <input id="host" placeholder="deskwig" autocapitalize="off" autocorrect="off" maxlength="32">
 <button id="saveHost">Save name</button>
 <p class="hint">Reachable at http://<span id="hostPreview">deskwig</span>.local once connected. Letters, digits and dashes only.</p>
+</div>
+</details>
 
-<h3>Clock</h3>
+<details class="sec" id="sec-clock">
+<summary><span>Clock</span><span class="sub" id="sub-clock"></span></summary>
+<div class="body">
 <div class="card" id="clockStatus">Loading&hellip;</div>
 <select id="tz"></select>
 <input id="tzCustom" placeholder="POSIX TZ string, e.g. EST5EDT,M3.2.0,M11.1.0" autocapitalize="off" autocorrect="off" maxlength="63" style="display:none">
@@ -94,24 +112,36 @@ static const char SETUP_HTML[] = R"html(
 <label class="inline"><input type="checkbox" id="h24"> 24-hour clock</label>
 <button id="saveClock">Save clock settings</button>
 <p class="hint">"Router" asks your WiFi gateway for the time, which works on networks without internet access if the router runs an NTP server (most do). The timezone converts NTP's UTC to local time and handles daylight saving.</p>
+</div>
+</details>
 
-<h3>Fonts</h3>
+<details class="sec" id="sec-fonts">
+<summary><span>Fonts</span><span class="sub" id="sub-fonts"></span></summary>
+<div class="body">
 <div id="fontList" class="dim">Loading&hellip;</div>
 <div class="row">
   <input type="file" id="fontFile" accept=".ttf,font/ttf" class="p">
   <button id="fontUpload" type="button">Upload</button>
 </div>
 <p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasteriser does no bounds checking.</p>
+</div>
+</details>
 
-<h3>Images</h3>
+<details class="sec" id="sec-images">
+<summary><span>Images</span><span class="sub" id="sub-images"></span></summary>
+<div class="body">
 <div id="imgList" class="dim">Loading&hellip;</div>
 <div class="row">
   <input type="file" id="imgFile" accept=".png,.jpg,.jpeg,.gif,image/png,image/jpeg,image/gif" class="p">
   <button id="imgUpload" type="button">Upload</button>
 </div>
 <p class="hint">PNG, JPEG or animated GIF up to 512 KB. The screen is 170 &times; 320, so resize images before uploading: <a href="https://ezgif.com/resize" target="_blank" rel="noopener">ezgif.com/resize</a> shrinks any image or GIF to the size you need, and <a href="https://ezgif.com/optimize" target="_blank" rel="noopener">ezgif.com/optimize</a> squeezes it under the limit. Use one with <code>{"type":"image","src":"name","w":64}</code> or as a box background with <code>"style":{"image":"name"}</code>. <code>src</code> can also be an http(s) URL, fetched while the widget is on screen.</p>
+</div>
+</details>
 
-<h3>Data sources</h3>
+<details class="sec" id="sec-sources">
+<summary><span>Data sources</span><span class="sub" id="sub-sources"></span></summary>
+<div class="body">
 <div id="srcList" class="dim">Loading&hellip;</div>
 <button id="srcAdd">Add data source</button>
 <div class="card" id="srcForm" style="display:none">
@@ -131,8 +161,12 @@ static const char SETUP_HTML[] = R"html(
   <button id="srcCancel">Cancel</button>
 </div>
 <p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified.</p>
+</div>
+</details>
 
-<h3>Account</h3>
+<details class="sec" id="sec-account">
+<summary><span>Account</span><span class="sub" id="sub-account"></span></summary>
+<div class="body">
 <div class="card" id="acct">Loading&hellip;</div>
 <button id="showKey" type="button">Show API key</button>
 <pre id="keyBox" style="display:none"></pre>
@@ -141,14 +175,20 @@ static const char SETUP_HTML[] = R"html(
 <input id="pwNew" type="password" placeholder="New password (8+ characters)" maxlength="64" autocomplete="new-password">
 <button id="pwChange" type="button">Change password</button>
 <button id="logout" type="button">Log out</button>
+</div>
+</details>
 
-<h3>Firmware</h3>
+<details class="sec" id="sec-firmware">
+<summary><span>Firmware</span><span class="sub" id="sub-firmware"></span></summary>
+<div class="body">
 <div class="card" id="fwInfo">Loading&hellip;</div>
 <div class="row">
   <input type="file" id="fwFile" accept=".bin" class="p">
   <button id="fwUpload" type="button">Update</button>
 </div>
 <p class="hint">Upload <code>firmware.bin</code> from a PlatformIO build (<code>.pio/build/esp32-s3-devkitc-1/firmware.bin</code>). The device writes it to its spare app slot and reboots; settings, layouts, fonts and images are kept.</p>
+</div>
+</details>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -179,6 +219,33 @@ async function api(path, method, body) {
   return j;
 }
 
+// ---------- sections ----------
+// One panel open at a time; the choice lives in the URL hash so a reload
+// or a link (/setup#firmware) lands on the right panel. Each summary shows
+// a one-line summary of that section filled in by its loader.
+const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'account', 'firmware'];
+function openSection(name, scroll) {
+  SECTIONS.forEach(n => { $('sec-' + n).open = n === name; });
+  if (name) {
+    if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+    if (scroll) $('sec-' + name).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else if (location.hash) {
+    history.replaceState(null, '', location.pathname);
+  }
+}
+function sub(name, text) { $('sub-' + name).textContent = text || ''; }
+SECTIONS.forEach(n => {
+  $('sec-' + n).addEventListener('toggle', e => {
+    if (e.target.open) openSection(n, false);
+    else if (location.hash === '#' + n) history.replaceState(null, '', location.pathname);
+  });
+});
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (SECTIONS.includes(h)) openSection(h, true); });
+{
+  const h = location.hash.slice(1);
+  if (SECTIONS.includes(h)) openSection(h, false);
+}
+
 // ---------- account ----------
 async function loadAccount() {
   const a = auth || await requireLogin();
@@ -186,6 +253,7 @@ async function loadAccount() {
   $('acct').innerHTML = a.hotspot && !a.configured
     ? 'No account yet. Create one on the <a href="/login">login page</a> once the device is on your network.'
     : 'Logged in as <b>' + esc(a.user || '') + '</b>';
+  sub('account', a.configured ? (a.user || '') : 'no account yet');
 }
 $('showKey').onclick = async () => {
   try {
@@ -224,10 +292,14 @@ function showStatus(s) {
     t = 'Setup hotspot active. ' + why;
   }
   $('status').innerHTML = t;
+  sub('wifi', s.state === 'connected' ? s.ssid : s.state === 'connecting' ? 'connecting…' : 'setup hotspot');
   if (s.hostname && !$('host').value) {
     $('host').value = s.hostname;
     $('hostPreview').textContent = s.hostname;
   }
+  if (s.hostname) sub('name', s.hostname + '.local');
+  // With no panel chosen, land on WiFi until the device is on a network.
+  if (!location.hash && s.state !== 'connected' && !SECTIONS.some(n => $('sec-' + n).open)) openSection('wifi', false);
 }
 
 async function refresh() {
@@ -310,6 +382,7 @@ async function saveHost() {
     const c = await api('/api/config', 'PUT', { hostname: hostname });
     $('host').value = c.hostname;
     $('hostPreview').textContent = c.hostname;
+    sub('name', c.hostname + '.local');
     msg('Saved. Reachable at http://' + c.hostname + '.local');
   } catch (e) { msg(e.message); }
 }
@@ -358,6 +431,7 @@ function showClock(c, t) {
     syncClockInputs();
   }
   if (t) {
+    sub('clock', t.synced ? t.local : 'waiting for time');
     $('clockStatus').innerHTML = t.synced
       ? 'Device time <b>' + esc(t.local) + '</b><br><span class="dim">from ' + esc(t.server) + ' (' + esc(t.source) + ')</span>'
       : 'Waiting for time from ' + esc(t.server) + ' (' + esc(t.source) + ')&hellip;';
@@ -394,7 +468,7 @@ loadClock();
 
 // ---------- firmware ----------
 async function loadFw() {
-  try { const st = await api('/api/status'); $('fwInfo').innerHTML = 'Running firmware <b>' + esc(st.firmware) + '</b> &middot; up ' + Math.round(st.uptimeMs / 60000) + ' min'; }
+  try { const st = await api('/api/status'); $('fwInfo').innerHTML = 'Running firmware <b>' + esc(st.firmware) + '</b> &middot; up ' + Math.round(st.uptimeMs / 60000) + ' min'; sub('firmware', 'v' + st.firmware); }
   catch (e) { $('fwInfo').textContent = e.message; }
 }
 function uploadFw() {
@@ -447,6 +521,7 @@ async function loadFonts() {
     free.className = 'hint';
     free.textContent = fmtBytes(r.fsFree) + ' free on the device for fonts, images and layouts.';
     box.appendChild(free);
+    sub('fonts', (r.fonts || []).length + ' fonts');
   } catch (e) { $('fontList').textContent = e.message; }
 }
 
@@ -498,6 +573,7 @@ async function loadImages() {
     box.className = '';
     box.innerHTML = '';
     if (!(r.images || []).length) box.innerHTML = '<div class="dim">No images yet.</div>';
+    sub('images', (r.images || []).length ? (r.images.length + ' images') : 'none yet');
     (r.images || []).forEach(im => {
       const d = document.createElement('div');
       d.className = 'card src thumb';
@@ -635,6 +711,7 @@ async function loadSources() {
     const r = await api('/api/sources');
     sources = r.sources || [];
     renderSources();
+    sub('sources', sources.length ? sources.map(x => x.id).join(', ') : 'none yet');
     $('srcAdd').disabled = r.free === 0;
     $('srcAdd').textContent = r.free === 0 ? 'All ' + r.max + ' source slots used' : 'Add data source';
   } catch (e) { $('srcList').textContent = e.message; }
