@@ -175,6 +175,13 @@ static bool loadConfigFile() {
   settings.activeWidget = doc["activeWidget"] | 0;
   strlcpy(settings.activeWidgetName, doc["activeWidgetName"] | "", sizeof(settings.activeWidgetName));
 
+  settings.hiddenCount = 0;
+  for (JsonVariantConst v : doc["hiddenWidgets"].as<JsonArrayConst>()) {
+    const char* k = v | "";
+    if (!*k || settings.hiddenCount >= MAX_HIDDEN_WIDGETS) continue;
+    strlcpy(settings.hiddenWidgets[settings.hiddenCount++], k, sizeof(settings.hiddenWidgets[0]));
+  }
+
   JsonVariantConst clock = doc["clock"];
   resetClockDefaults();
   if (!clock["tz"].isNull()) {
@@ -225,6 +232,9 @@ bool saveSettings() {
   doc["pingIntervalMs"] = settings.pingIntervalMs;
   doc["activeWidget"]   = settings.activeWidget;
   doc["activeWidgetName"] = settings.activeWidgetName;
+
+  JsonArray hidden = doc["hiddenWidgets"].to<JsonArray>();
+  for (uint8_t i = 0; i < settings.hiddenCount; i++) hidden.add(settings.hiddenWidgets[i]);
 
   JsonObject clock = doc["clock"].to<JsonObject>();
   clock["tz"]        = settings.clockTz;

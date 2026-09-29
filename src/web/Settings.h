@@ -10,6 +10,7 @@ constexpr uint8_t API_TOKEN_LEN = 8;
 constexpr uint8_t HOSTNAME_MAX  = 32;
 constexpr uint8_t TZ_MAX        = 63;
 constexpr uint8_t NTP_HOST_MAX  = 63;
+constexpr uint8_t MAX_HIDDEN_WIDGETS = 4;
 
 struct Settings {
   // ---- Stored in NVS. Survives a filesystem wipe so the device stays reachable.
@@ -23,6 +24,10 @@ struct Settings {
   uint32_t pingIntervalMs = 10000;
   uint8_t activeWidget = 0;           // index, kept for older configs
   char activeWidgetName[33] = "";     // preferred: widget list order changes as layouts come and go
+
+  // Built-in widgets the user has deleted, by key ("Ping", "Clock").
+  uint8_t hiddenCount = 0;
+  char hiddenWidgets[MAX_HIDDEN_WIDGETS][16];
 
   // POSIX TZ string, e.g. "EST5EDT,M3.2.0,M11.1.0". "UTC0" = no offset.
   char clockTz[TZ_MAX + 1] = "UTC0";

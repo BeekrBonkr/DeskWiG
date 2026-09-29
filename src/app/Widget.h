@@ -10,6 +10,10 @@ public:
   virtual void render(lgfx::LGFX_Sprite& ui) = 0;
   virtual const char* name() const = 0;
 
+  // Stable identifier for saved settings: layouts use their file id,
+  // native widgets their name.
+  virtual const char* key() const { return name(); }
+
   // What the status LED should show while this widget is on screen.
   // Return false to leave it off.
   virtual bool ledSpec(LedSpec& out) { (void)out; return false; }
