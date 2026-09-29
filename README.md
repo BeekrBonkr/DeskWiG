@@ -21,14 +21,14 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 
 ### Enclosure
 
-The case prints as a single model: the base holds the DevKitC, the display panel tilts back on a hinge, and a second hinge takes the optional rotary encoder. The encoder is held in with an M7 nut, which can be printed or bought. The STL is on MakerWorld and the source model is on Onshape (links above) if you want to change it.
+The case is one solid printed model with no moving parts: the base holds the DevKitC, the display sits in an angled panel, and a second angled mount takes the optional rotary encoder. The encoder is held in with an M7 nut, which can be printed or bought. The STL is on MakerWorld and the source model is on Onshape (links above) if you want to change it.
 
 <p align="center">
-  <img src="docs/images/enclosure-front.png" alt="Enclosure with the display panel open and the encoder mount raised" width="49%">
-  <img src="docs/images/enclosure-side.png" alt="Enclosure from the encoder side, showing the knob and the tilted display" width="49%">
+  <img src="docs/images/enclosure-front.png" alt="Enclosure showing the angled display panel and the encoder mount" width="49%">
+  <img src="docs/images/enclosure-side.png" alt="Enclosure from the encoder side, showing the knob and the angled display" width="49%">
 </p>
 <p align="center">
-  <img src="docs/images/enclosure-top.png" alt="Enclosure base from above, showing the board cutout and hinge slots" width="60%">
+  <img src="docs/images/enclosure-top.png" alt="Enclosure from above, showing the board cutout and mounting slots" width="60%">
 </p>
 
 The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)).
