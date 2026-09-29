@@ -3,6 +3,7 @@
 #include "../widgets/PingWidget.h"
 #include "../widgets/ClockWidget.h"
 #include "../web/Settings.h"
+#include "Log.h"
 
 static PingWidget  pingWidget;
 static ClockWidget clockWidget;
@@ -37,7 +38,7 @@ void builtinsBegin(ScreenManager& sm) {
   screens = &sm;
   for (Widget* w : BUILTINS) {
     if (hiddenIndex(w->key()) < 0) sm.add(w);
-    else Serial.printf("[SYS] Built-in widget %s is hidden\n", w->key());
+    else Log.printf("[SYS] Built-in widget %s is hidden\n", w->key());
   }
 }
 

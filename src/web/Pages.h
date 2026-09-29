@@ -47,6 +47,10 @@ label.inline input{width:auto;display:inline;margin:0}
 .wrow .del{width:auto;padding:12px 14px}
 .wrow .grip{display:flex;align-items:center;padding:0 10px;color:#777;border:1px solid #444;border-radius:6px;background:#222;cursor:grab;touch-action:none;user-select:none}
 .wrow.dragging{opacity:.4}
+.term{background:#000;color:#ddd;border:1px solid #333;border-radius:8px;padding:10px;font:13px ui-monospace,monospace;white-space:pre-wrap;word-break:break-all;height:70vh;overflow-y:auto;margin:8px 0}
+.bar{display:flex;gap:6px;align-items:center;margin:8px 0}
+.bar button{width:auto;margin:0;padding:8px 12px;font-size:14px}
+.bar label.inline{margin:0 0 0 auto}
 )css";
 
 static const char SETUP_HTML[] = R"html(
@@ -59,7 +63,7 @@ static const char SETUP_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a href="/terminal">Terminal</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Device Setup</h2>
 <div class="card" id="status">Loading&hellip;</div>
 
@@ -788,7 +792,7 @@ static const char WIDGETS_HTML[] = R"html(
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a href="/terminal">Terminal</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2>Widget Selector</h2>
 <div id="list"></div>
 <p id="msg"></p>
@@ -940,6 +944,84 @@ async function activate(i) {
 }
 
 load();
+</script>
+</body>
+</html>
+)html";
+
+static const char TERMINAL_HTML[] = R"html(
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a href="/terminal">Terminal</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
+<h2>Terminal</h2>
+<p class="hint">Everything the device prints to its USB serial port, live. The device keeps the last 32 KB, so the log starts where the buffer does.</p>
+<div class="bar">
+  <button id="pause" type="button">Pause</button>
+  <button id="clear" type="button">Clear</button>
+  <label class="inline"><input type="checkbox" id="follow" checked> Follow</label>
+</div>
+<div class="term" id="out"></div>
+<p id="msg"></p>
+
+<script>
+const $ = id => document.getElementById(id);
+const toLogin = () => { location.replace('/login?next=' + encodeURIComponent(location.pathname)); };
+let auth = null;
+async function requireLogin() {
+  try { auth = await (await fetch('/api/auth')).json(); } catch (e) { return null; }
+  if (!auth.loggedIn) { toLogin(); return null; }
+  return auth;
+}
+requireLogin();
+
+let since = 0;      // byte number of the next output we have not seen
+let paused = false;
+let polling = false;
+
+async function poll() {
+  if (paused || polling) return;
+  polling = true;
+  try {
+    const r = await fetch('/api/log?since=' + since);
+    if (r.status === 401) { toLogin(); return; }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const next = parseInt(r.headers.get('X-Log-Seq') || '0', 10);
+    const text = await r.text();
+    if (text.length) {
+      const out = $('out');
+      out.appendChild(document.createTextNode(text));
+      // Keep the page responsive: trim to the last ~64 KB of text.
+      while (out.textContent.length > 65536 && out.firstChild) out.removeChild(out.firstChild);
+      if ($('follow').checked) out.scrollTop = out.scrollHeight;
+    }
+    since = next;
+    $('msg').textContent = '';
+  } catch (e) { $('msg').textContent = 'Connection lost, retrying…'; }
+  polling = false;
+}
+
+$('pause').onclick = () => {
+  paused = !paused;
+  $('pause').textContent = paused ? 'Resume' : 'Pause';
+  if (!paused) poll();
+};
+$('clear').onclick = () => { $('out').textContent = ''; };
+// Scrolling up turns Follow off, so the reader is not yanked back down.
+$('out').addEventListener('scroll', () => {
+  const o = $('out');
+  const atBottom = o.scrollHeight - o.scrollTop - o.clientHeight < 4;
+  if (!atBottom) $('follow').checked = false;
+});
+
+setInterval(poll, 1000);
+poll();
 </script>
 </body>
 </html>

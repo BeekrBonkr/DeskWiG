@@ -126,6 +126,7 @@ Once on your network, the device serves:
 | `/setup`                        | no   | WiFi scan/join, device name, clock, data sources, account      |
 | `/widgets`                      | no   | Switch the active screen, drag to reorder, delete or restore widgets |
 | `/editor`                       | no   | In-browser editor for JSON layout widgets                      |
+| `/terminal`                     | no   | Live view of the device's serial output (the last 32 KB is kept) |
 | `GET /api/auth`                 | no   | Whether an account exists and whether this browser is logged in |
 | `POST /api/auth/setup`          | key  | JSON `{"key","user","pass"}`. Creates the account, or replaces it and rotates the key |
 | `POST /api/auth/login`          | no   | JSON `{"user","pass"}`. Sets the session cookie                |
@@ -167,6 +168,7 @@ Once on your network, the device serves:
 | `DELETE /api/layouts/preview`   | yes  | End the preview early                                          |
 | `GET /api/layouts/data`         | no   | Every template key with its current value                      |
 | `GET /api/layouts/templates`    | no   | Built-in templates with their layout JSON                      |
+| `GET /api/log?since=N`          | yes  | Serial output after byte N as text; `X-Log-Seq` header gives the next N |
 | `POST /api/system/update`       | yes  | Multipart upload of `firmware.bin` (field `file`); writes the spare OTA slot and reboots |
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |

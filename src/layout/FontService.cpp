@@ -13,6 +13,7 @@ static void* psAlloc(size_t n) {
 #define STBTT_free(x, u)   ((void)(u), free(x))
 #define STBTT_assert(x)    ((void)0)
 #include "stb_truetype.h"
+#include "../app/Log.h"
 
 // Built into the firmware (platformio.ini board_build.embed_files).
 extern const uint8_t sans_ttf_start[]  asm("_binary_fonts_sans_ttf_start");
@@ -106,7 +107,7 @@ static bool initFont(Font& f) {
   int off = stbtt_GetFontOffsetForIndex(f.data, 0);
   if (off < 0 || !stbtt_InitFont(&f.info, f.data, off)) {
     f.broken = true;
-    Serial.printf("[FONT] %s: not a usable TrueType file\n", f.name);
+    Log.printf("[FONT] %s: not a usable TrueType file\n", f.name);
     return false;
   }
   stbtt_GetFontVMetrics(&f.info, &f.ascent, &f.descent, &f.lineGap);
@@ -126,7 +127,7 @@ static bool ensureLoaded(Font& f) {
   if (size == 0 || size > FONT_MAX_FILE || loadedBytes + size > FONT_MAX_LOADED) {
     file.close();
     f.broken = true;
-    Serial.printf("[FONT] %s: too large to load (%u bytes)\n", f.name, (unsigned)size);
+    Log.printf("[FONT] %s: too large to load (%u bytes)\n", f.name, (unsigned)size);
     return false;
   }
   uint8_t* buf = (uint8_t*)heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
@@ -138,7 +139,7 @@ static bool ensureLoaded(Font& f) {
   f.size = size;
   loadedBytes += size;
   if (!initFont(f)) return false;
-  Serial.printf("[FONT] Loaded %s (%u bytes)\n", f.name, (unsigned)size);
+  Log.printf("[FONT] Loaded %s (%u bytes)\n", f.name, (unsigned)size);
   return true;
 }
 
@@ -199,7 +200,7 @@ void fontsBegin() {
   idxEmoji = 2;
   scanLocked();
   give();
-  Serial.printf("[FONT] %u font(s)\n", fontCount);
+  Log.printf("[FONT] %u font(s)\n", fontCount);
 }
 
 void fontsRescan() {

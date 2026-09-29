@@ -1,5 +1,6 @@
 #include "Encoder.h"
 #include "Board.h"
+#include "Log.h"
 
 // Quadrature decoding: index by (previous CLK, previous DT, CLK, DT) and
 // get -1, 0 or +1. Invalid transitions (both lines changing at once, which
@@ -33,7 +34,7 @@ void encoderBegin() {
   attachInterrupt(digitalPinToInterrupt(Board::ENC_CLK), onEdge, CHANGE);
   attachInterrupt(digitalPinToInterrupt(Board::ENC_DT),  onEdge, CHANGE);
   btnRaw = btnDown = digitalRead(Board::ENC_SW) == LOW;
-  Serial.printf("[ENC] Rotary encoder on CLK=%d DT=%d SW=%d\n", Board::ENC_CLK, Board::ENC_DT, Board::ENC_SW);
+  Log.printf("[ENC] Rotary encoder on CLK=%d DT=%d SW=%d\n", Board::ENC_CLK, Board::ENC_DT, Board::ENC_SW);
 }
 
 EncoderEvent encoderLoop(uint32_t now) {

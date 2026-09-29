@@ -16,6 +16,7 @@
 #include "../app/StatusLed.h"
 #include "../net/WifiManager.h"
 #include "../app/Builtins.h"
+#include "../app/Log.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
 #include "Settings.h"
@@ -24,6 +25,7 @@
 #include "LoginPage.h"
 #include "EditorPage.h"
 #include "DesignerPage.h"
+#include "../app/Log.h"
 
 extern ScreenManager screens;
 
@@ -228,6 +230,10 @@ static void registerPages() {
   server.on(AsyncURIMatcher::exact("/editor"), HTTP_GET, [](AsyncWebServerRequest* req) {
     // From flash, no copy: the pages are far larger than the free heap allows to duplicate.
     req->send(req->beginResponse(200, "text/html", (const uint8_t*)EDITOR_HTML, strlen(EDITOR_HTML)));
+  });
+
+  server.on(AsyncURIMatcher::exact("/terminal"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    req->send(req->beginResponse(200, "text/html", (const uint8_t*)TERMINAL_HTML, strlen(TERMINAL_HTML)));
   });
 
   server.on(AsyncURIMatcher::exact("/login"), HTTP_GET, [](AsyncWebServerRequest* req) {
@@ -1273,7 +1279,7 @@ static void registerUpdate() {
       doc["written"] = written;
       doc["rebooting"] = true;
       sendJson(req, 200, doc);
-      Serial.printf("[OTA] Update written (%u bytes), rebooting\n", (unsigned)written);
+      Log.printf("[OTA] Update written (%u bytes), rebooting\n", (unsigned)written);
       schedule(PendingAction::REBOOT, 800);
     },
     [](AsyncWebServerRequest* req, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
@@ -1290,7 +1296,7 @@ static void registerUpdate() {
         if (len < 1 || data[0] != 0xE9) { u->ok = false; strlcpy(u->err, "not an ESP32 app image (expected firmware.bin)", sizeof(u->err)); return; }
         if (!Update.begin(UPDATE_SIZE_UNKNOWN, U_FLASH)) { u->ok = false; strlcpy(u->err, Update.errorString(), sizeof(u->err)); return; }
         u->started = true;
-        Serial.printf("[OTA] Receiving %s\n", filename.c_str());
+        Log.printf("[OTA] Receiving %s\n", filename.c_str());
       }
       if (!u || !u->ok || !u->started) return;
       if (len && Update.write(data, len) != len) {
@@ -1302,6 +1308,29 @@ static void registerUpdate() {
       u->written += len;
       (void)final;
     });
+}
+
+// GET /api/log?since=N -> the output written after byte N as text/plain,
+// with X-Log-Seq giving the value to pass next time. since=0 (or one the
+// buffer no longer holds) returns everything still kept.
+static void registerLog() {
+  server.on(AsyncURIMatcher::exact("/api/log"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    uint32_t since = req->hasParam("since") ? strtoul(req->getParam("since")->value().c_str(), nullptr, 10) : 0;
+    const size_t CHUNK = 8192;
+    char* buf = (char*)malloc(CHUNK);
+    if (!buf) { sendError(req, 500, "out of memory"); return; }
+    uint32_t next = 0;
+    size_t n = Log.read(since, buf, CHUNK, &next);
+    // The response is sent after this handler returns, so it takes a copy.
+    String body;
+    body.concat(buf, n);
+    free(buf);
+    AsyncWebServerResponse* res = req->beginResponse(200, "text/plain; charset=utf-8", body);
+    res->addHeader("X-Log-Seq", String(next));
+    res->addHeader("Cache-Control", "no-store");
+    req->send(res);
+  });
 }
 
 static void registerSystem() {
@@ -1332,6 +1361,7 @@ void startWebServer() {
   registerWidgets();
   registerLayouts();
   registerWifi();
+  registerLog();
   registerConfig();
   registerSources();
   registerFonts();
@@ -1353,7 +1383,7 @@ void startWebServer() {
   });
 
   server.begin();
-  Serial.println("[WEB] Server started");
+  Log.println("[WEB] Server started");
 }
 
 void webLoop() {
@@ -1368,7 +1398,7 @@ void webLoop() {
     ledLoop();
     factoryReset();
   }
-  Serial.println("[SYS] Restarting");
+  Log.println("[SYS] Restarting");
   delay(100);
   ESP.restart();
 }

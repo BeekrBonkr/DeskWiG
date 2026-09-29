@@ -8,6 +8,7 @@
 
 #include "WifiManager.h"
 #include "../web/Settings.h"
+#include "../app/Log.h"
 
 static const uint32_t CONNECT_TIMEOUT_MS = 5000;
 static const uint32_t READ_TIMEOUT_MS    = 8000;
@@ -670,7 +671,7 @@ static void applyResult(const FetchJob& job, const FetchResult& r) {
     else { disc.state = SourceState::ERROR; strlcpy(disc.error, r.error, sizeof(disc.error)); }
     sourcesUnlock();
     discScratch = "";
-    Serial.printf("[SRC] discover: %s%s%s\n", r.ok ? "ok" : "error", r.ok ? "" : " - ", r.ok ? "" : r.error);
+    Log.printf("[SRC] discover: %s%s%s\n", r.ok ? "ok" : "error", r.ok ? "" : " - ", r.ok ? "" : r.error);
     return;
   }
   sourcesLock();
@@ -700,7 +701,7 @@ static void applyResult(const FetchJob& job, const FetchResult& r) {
     }
   }
   sourcesUnlock();
-  Serial.printf("[SRC] %s: %s%s%s\n", job.id, r.ok ? "ok" : "error", r.ok ? "" : " - ", r.ok ? "" : r.error);
+  Log.printf("[SRC] %s: %s%s%s\n", job.id, r.ok ? "ok" : "error", r.ok ? "" : " - ", r.ok ? "" : r.error);
 }
 
 static void fetchTask(void*) {
@@ -722,5 +723,5 @@ void sourcesBegin() {
   lock = xSemaphoreCreateMutex();
   for (uint8_t i = 0; i < settings.sourceCount; i++) sourceResetRuntime(settings.sources[i]);
   xTaskCreatePinnedToCore(fetchTask, "sources", TASK_STACK, nullptr, 1, nullptr, 0);
-  Serial.printf("[SRC] %u data source(s)\n", settings.sourceCount);
+  Log.printf("[SRC] %u data source(s)\n", settings.sourceCount);
 }

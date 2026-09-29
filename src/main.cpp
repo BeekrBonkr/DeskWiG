@@ -19,6 +19,7 @@
 #include "net/DataSource.h"
 #include "layout/FontService.h"
 #include "layout/ImageService.h"
+#include "app/Log.h"
 
 // How long the connection-info screen (IP + API key) stays up after WiFi connects.
 constexpr uint32_t INFO_SCREEN_MS = 30000;
@@ -81,7 +82,7 @@ static bool checkRecoveryJumper() {
   delay(20);
   if (digitalRead(Board::RECOVERY_PIN) != LOW) return false;
 
-  Serial.println("[SYS] Recovery jumper detected");
+  Log.println("[SYS] Recovery jumper detected");
   ledSet(LedPattern::AP_MODE);
   uint32_t start = millis();
 
@@ -102,7 +103,7 @@ static bool checkRecoveryJumper() {
     delay(50);
   }
 
-  Serial.println("[SYS] Jumper released, forcing setup hotspot");
+  Log.println("[SYS] Jumper released, forcing setup hotspot");
   return true;
 }
 
@@ -166,7 +167,7 @@ static void encoderStep(uint32_t now) {
 lgfx::LGFX_Sprite* uiSprite() { return &ui; }
 
 void setup() {
-  Serial.begin(115200);
+  Log.begin(115200);
 
   tft.init();
   tft.setColorDepth(16);

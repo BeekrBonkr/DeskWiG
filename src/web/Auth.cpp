@@ -4,6 +4,7 @@
 #include <esp_random.h>
 #include <mbedtls/sha256.h>
 #include "Settings.h"
+#include "../app/Log.h"
 
 static const char* NVS_NS = "auth";
 
@@ -107,7 +108,7 @@ void authBegin() {
   prefs.end();
   configured = validUser(account) && fromHex(saltHex, salt, SALT_LEN) && fromHex(hashHex, hash, 32);
   if (!configured) account[0] = '\0';
-  Serial.printf("[AUTH] %s\n", configured ? "Account loaded" : "No account yet");
+  Log.printf("[AUTH] %s\n", configured ? "Account loaded" : "No account yet");
 }
 
 bool authConfigured() { return configured; }
@@ -137,7 +138,7 @@ bool authSetAccount(const char* user, const char* pass, char* err, size_t errLen
   memcpy(hash, newHash, 32);
   configured = true;
   authSessionsClear();
-  Serial.printf("[AUTH] Account set for %s\n", account);
+  Log.printf("[AUTH] Account set for %s\n", account);
   return true;
 }
 
@@ -184,7 +185,7 @@ void authNoteFailure() {
   if (++failures >= AUTH_MAX_FAILURES) {
     locked = true;
     lockedUntil = millis() + LOCKOUT_MS;
-    Serial.println("[AUTH] Too many failed attempts, locked");
+    Log.println("[AUTH] Too many failed attempts, locked");
   }
 }
 

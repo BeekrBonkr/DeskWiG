@@ -20,7 +20,7 @@ input.key{font:20px ui-monospace,monospace;letter-spacing:.15em;text-align:cente
 </style>
 </head>
 <body>
-<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
+<nav><a href="/setup">Setup</a><a href="/widgets">Widgets</a><a href="/editor">Editor</a><a href="/terminal">Terminal</a><a class="gh" href="https://github.com/BeekrBonkr/DeskWiG" target="_blank" rel="noopener" title="Project page and README on GitHub">GitHub</a></nav>
 <h2 id="title">Log in</h2>
 <div class="card dim" id="status">Checking&hellip;</div>
 
