@@ -7,146 +7,390 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
+    "gap": 6,
     "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "EMOJI (monochrome, any colour)",
-      "color": "dim"
-    },
-    {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "☀",
-          "font": "emoji",
-          "size": 36,
-          "color": "warn"
-        },
-        {
-          "type": "text",
-          "text": "🌧",
-          "font": "emoji",
-          "size": 36,
-          "color": "accent"
-        },
-        {
-          "type": "text",
-          "text": "⚡",
-          "font": "emoji",
-          "size": 36,
-          "color": "warn"
-        },
-        {
-          "type": "text",
-          "text": "❄",
-          "font": "emoji",
-          "size": 36,
-          "color": "text"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
-    },
-    {
-      "type": "box",
+      },
       "children": [
         {
           "type": "text",
-          "text": "✅",
-          "font": "emoji",
-          "size": 36,
-          "color": "ok"
+          "text": "EMOJI",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "⚠",
-          "font": "emoji",
-          "size": 36,
-          "color": "warn"
-        },
-        {
-          "type": "text",
-          "text": "❌",
-          "font": "emoji",
-          "size": 36,
-          "color": "bad"
-        },
-        {
-          "type": "text",
-          "text": "❤",
-          "font": "emoji",
-          "size": 36,
-          "color": "bad"
+          "text": "any size, any colour",
+          "align": "right",
+          "color": "#7c8794"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a3a08",
+            "gradient": "#141003"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "☀",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#ffd24a"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#0d3b56",
+            "gradient": "#05121a"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "🌧",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#4fc3f7"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a4208",
+            "gradient": "#141203"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "⚡",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#ffe066"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#1d3a52",
+            "gradient": "#08121a"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "❄",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#e0f2ff"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#0f4a2a",
+            "gradient": "#04140b"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "✅",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#3ddc84"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a3208",
+            "gradient": "#140d03"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "⚠",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#ffb020"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a1212",
+            "gradient": "#140505"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "❌",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#ff5a5a"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a0f1d",
+            "gradient": "#140408"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "❤",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#ff4d6d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#2a2250",
+            "gradient": "#0b0716"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "🚀",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#c9b8ff"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a3a08",
+            "gradient": "#141003"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "⭐",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#ffd24a"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#2a3240",
+            "gradient": "#0b0d11"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "🔒",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#c8d4e2"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 34,
+          "h": 34,
+          "style": {
+            "radius": 9,
+            "background": "#4a4418",
+            "gradient": "#141206"
+          },
+          "children": [
+            {
+              "type": "text",
+              "x": 17,
+              "y": 4,
+              "text": "💡",
+              "font": "emoji",
+              "size": 26,
+              "align": "center",
+              "color": "#fff3a3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10,
+        "padding": 8
+      },
       "children": [
         {
           "type": "text",
-          "text": "🚀",
-          "font": "emoji",
-          "size": 36
+          "text": "bitmap text: ☀ 🏠 🖥 ok"
         },
         {
           "type": "text",
-          "text": "⭐",
-          "font": "emoji",
-          "size": 36,
-          "color": "warn"
+          "text": "Inter + 🏠 {time}",
+          "font": "sans",
+          "size": 18
         },
         {
           "type": "text",
-          "text": "🔒",
-          "font": "emoji",
-          "size": 36
-        },
-        {
-          "type": "text",
-          "text": "💡",
-          "font": "emoji",
-          "size": 36,
-          "color": "warn"
+          "text": "😀 {api.weather.temp}°",
+          "font": "bold",
+          "size": 34,
+          "align": "center",
+          "color": "#ffd24a"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
       "style": {
         "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "bitmap text works too: ☀ 🏠 🖥",
-      "size": 1
-    },
-    {
-      "type": "text",
-      "text": "Inter + emoji: 🏠 {time}",
-      "font": "sans",
-      "size": 20
-    },
-    {
-      "type": "text",
-      "text": "😀 {api.weather.temp}°",
-      "font": "bold",
-      "size": 40,
-      "align": "center"
+        "gap": 10,
+        "align": "end",
+        "justify": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "🌙",
+          "font": "emoji",
+          "size": 12,
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "text": "🌙",
+          "font": "emoji",
+          "size": 18,
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "text": "🌙",
+          "font": "emoji",
+          "size": 26,
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "text": "🌙",
+          "font": "emoji",
+          "size": 36,
+          "color": "#aab8ff"
+        }
+      ]
     }
   ]
 }

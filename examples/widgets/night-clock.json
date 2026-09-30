@@ -5,24 +5,59 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "align": "center",
-    "gap": 8
+    "padding": 8,
+    "justify": "center"
   },
   "elements": [
     {
-      "type": "text",
-      "text": "{time}",
-      "font": "sans",
-      "size": 48,
-      "color": "#5a3a10"
-    },
-    {
-      "type": "text",
-      "text": "{date.day} {date.md}",
-      "font": "sans",
-      "size": 14,
-      "color": "#3a2a10"
+      "type": "box",
+      "w": 154,
+      "h": 154,
+      "children": [
+        {
+          "type": "arc",
+          "x": 2,
+          "y": 2,
+          "w": 150,
+          "value": "{time.min/0.6}",
+          "color": "#5a3608",
+          "style": {
+            "thickness": 2,
+            "background": "#1c1003"
+          }
+        },
+        {
+          "type": "arc",
+          "x": 0,
+          "y": 0,
+          "w": 154,
+          "value": 100,
+          "start": "{time.hour%12*30+time.min/2-4}",
+          "end": "{time.hour%12*30+time.min/2+4}",
+          "color": "#a8660f",
+          "style": {
+            "thickness": 6
+          }
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 50,
+          "text": "{time}",
+          "font": "bold",
+          "size": 46,
+          "align": "center",
+          "color": "#7a4a0c"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 104,
+          "text": "{date.day} {date.md}",
+          "align": "center",
+          "color": "#4a2d07"
+        }
+      ]
     }
   ]
 }
