@@ -230,6 +230,17 @@ static bool loadConfigFile() {
     }
   }
 
+  settings.seriesCount = 0;
+  for (JsonVariantConst v : doc["series"].as<JsonArrayConst>()) {
+    if (settings.seriesCount >= MAX_SERIES) break;
+    char err[96];
+    if (seriesFromJson(settings.series[settings.seriesCount], v, err, sizeof(err))) {
+      settings.seriesCount++;
+    } else {
+      Log.printf("[CFG] Skipping series: %s\n", err);
+    }
+  }
+
   return true;
 }
 
@@ -270,6 +281,14 @@ bool saveSettings() {
   JsonArray sources = doc["sources"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.sourceCount; i++) {
     sourceToJson(settings.sources[i], sources.add<JsonObject>(), true);
+  }
+
+  JsonArray series = doc["series"].to<JsonArray>();
+  for (uint8_t i = 0; i < settings.seriesCount; i++) {
+    JsonObject o = series.add<JsonObject>();
+    o["key"]   = settings.series[i].key;
+    o["every"] = settings.series[i].everyS;
+    o["keep"]  = settings.series[i].keepS;
   }
 
   // Write to a temp file, then rename over the real one so a power loss

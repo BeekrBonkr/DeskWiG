@@ -17,6 +17,7 @@
 #include "net/WifiManager.h"
 #include "net/TimeService.h"
 #include "net/DataSource.h"
+#include "net/Series.h"
 #include "layout/FontService.h"
 #include "layout/ImageService.h"
 #include "app/Log.h"
@@ -190,6 +191,7 @@ void setup() {
   wifiBegin(forceAp);
   timeBegin();
   sourcesBegin();
+  seriesBegin();
 
   builtinsBegin(screens);           // Ping and Clock, unless deleted
   layoutsBegin(screens);            // JSON widgets from /widgets/*.json
@@ -222,6 +224,7 @@ void loop() {
   timeLoop();
   webLoop();
   encoderStep(now);
+  if (wifiState == WifiState::CONNECTED) seriesLoop(now);
 
   // Show the info screen each time we (re)connect.
   static WifiState lastState = WifiState::AP_MODE;
