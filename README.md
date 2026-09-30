@@ -159,7 +159,7 @@ A tactile switch or two exposed pads on the enclosure work equally well.
 
 ## Web interface
 
-Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, data sources and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
+Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, data sources, history and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
 
 <p align="center">
   <img src="docs/images/web-setup.png" alt="Setup page: WiFi network, device name, clock, fonts, images, data sources, account and firmware" width="49%">
@@ -207,6 +207,9 @@ The routes:
 | `POST /api/sources/test?id=<id>`| yes  | Fetch it now; poll `GET /api/sources` for the result           |
 | `POST /api/sources/discover`    | yes  | JSON `{"url","header":{"name","value"}}`. Fetch once and list every JSON path; poll the GET |
 | `GET /api/sources/discover`     | yes  | State of the last discovery and its paths with sample values   |
+| `GET /api/series`               | no   | Sampled keys with their settings and statistics; `?key=<key>` adds that key's samples |
+| `PUT /api/series?key=<key>`     | yes  | JSON `{"every","keep"}` in seconds. Start sampling a key, or change how (see [History](#history)) |
+| `DELETE /api/series?key=<key>`  | yes  | Stop sampling a key and drop its samples                       |
 | `GET /api/widgets`              | no   | JSON list of widgets (`name`, `key`, `builtin`), the active index and deleted built-ins |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
 | `DELETE /api/widgets?key=<key>` | yes  | Remove a widget: a built-in is hidden, a layout is deleted     |
@@ -345,11 +348,39 @@ Values are strings of up to 31 characters; nested objects and arrays are seriali
 
 HTTPS connections are encrypted but the server certificate is **not** verified. Header values are stored in `/config.json` and never returned by the API; `GET /api/config` omits sources entirely. The editor's template picker includes a **Weather** layout built for the Open-Meteo source above.
 
+## History
+
+Any key can be sampled over time, so a screen can show where a value has been, not just where it is: the stock price over the day, the temperature over the last hours, ping latency for the last half hour. Add a key under **History** on the setup page, or with the API:
+
+```bash
+curl -X PUT "http://<device-ip>/api/series?key=api.weather.temp" \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '{"every": 300, "keep": 43200}'
+```
+
+| Field   | Meaning                                                                                           |
+| ------- | ------------------------------------------------------------------------------------------------- |
+| `key`   | Any layout key, written without braces: `api.weather.temp`, `ping.0.ms`, `wifi.rssi`, `heap`. Up to 12 keys |
+| `every` | Seconds between samples, minimum 5, default 60                                                     |
+| `keep`  | Seconds of history to keep, default 3600. At most 720 samples per key, so `keep / every` must be 720 or less |
+
+A sampled key keeps its source polling and its ping running whatever is on screen, so the history has no gaps while the device is up. Samples live in RAM and start over after a reboot. While a key is sampled, every layout can read:
+
+| Key                             | Value                                                         |
+| ------------------------------- | ------------------------------------------------------------- |
+| `<key>.min`, `<key>.max`, `<key>.avg` | Lowest, highest and mean of the kept samples            |
+| `<key>.first`, `<key>.last`     | Oldest and newest sample                                      |
+| `<key>.delta`                   | `last` minus `first`: how much the value moved                |
+| `<key>.count`, `<key>.span`     | Number of samples, and seconds between the first and the last |
+
+So `{round(api.nvda.c.delta, 2)}` is today's move and `{api.weather.temp.max}` the day's high. These work inside math and LED rules like any other key. The chart element below draws the samples themselves.
+
 ## JSON layout widgets
 
 A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
 
-Fifty-two more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole and OctoPrint, each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
+Fifty-five more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole, OctoPrint and charts of values over time, each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
 
 Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack, Signal Meter, Weather and Cards. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 
@@ -383,6 +414,7 @@ The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel bui
 | `triangle` | `points: [[x,y],[x,y],[x,y]]`           | Points are relative to the element's own top-left                           |
 | `polygon`  | `points: [[x,y], ...]`                  | 3 to 8 points                                                               |
 | `image`    | `src`, `w` `h`, `refresh`               | An uploaded image by name or an http(s) URL; see [Images](#images)          |
+| `chart`    | `series`, `window`, `w` `h`             | The samples of a key from [History](#history) as a line, area, bars or dots; see [Charts](#charts) |
 
 ### Flow layout
 
@@ -452,6 +484,46 @@ An image element sizes itself to the picture, or keeps the aspect ratio when onl
 
 Images are decoded once per size into sprites cached in PSRAM, so drawing them each frame is cheap; a full-screen background costs about 108 KB of PSRAM. The editor's preview loads stored images from the device and URLs directly (a GIF shows its first frame there).
 
+### Charts
+
+A `chart` draws the samples of a key that is being recorded under [History](#history). Time runs left to right across the last `window` seconds (or across everything kept), and values are scaled between `style.min` and `style.max`, or to fit the data with a little headroom when they are not given:
+
+```json
+{"type":"chart","series":"api.nvda.c","window":14400,"h":90,"color":"ok","style":{"kind":"area","background":"#0c1016","radius":6}}
+{"type":"chart","series":"ping.0.ms","window":1800,"h":50,"style":{"kind":"dots","min":0,"thickness":2}}
+{"type":"chart","series":"wifi.rssi","h":40,"style":{"kind":"bars","min":-90,"max":-30,"gradient":"#102030"}}
+```
+
+| Property                | Meaning                                                                     |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `series`                | The sampled key, exactly as entered under History                           |
+| `window`                | Seconds of history shown, from the right edge back. Omit for everything kept |
+| `style.kind`            | `line` (default), `area` (line with the space under it filled), `bars`, `dots` |
+| `style.min`, `style.max`| Value range. Either can be omitted to follow the data; they can be templates, e.g. `"{api.nvda.c.min - 1}"` |
+| `style.thickness`       | Line width, or dot radius (default 2)                                       |
+| `style.color`           | The line, bars or dots. `background` fills the plot area, `radius` rounds it |
+| `style.gradient`        | For `area` the fill colour under the line; for `bars` the bars fade into it  |
+
+Until the first sample arrives a chart shows only a dim baseline. In flow layout a chart is as wide as its box and 40 px tall unless `h` is given.
+
+### Live numbers
+
+Every number in a layout can be a template instead, evaluated each frame: `x`, `y`, `w`, `h`, `r`, `x2`, `y2`, `start`, `end`, the entries of `points`, `window`, and the style properties `size`, `thickness`, `radius`, `borderWidth`, `padding`, `gap`, `min` and `max`. That is how shapes and positions follow data rather than just text and colours:
+
+```json
+{"type":"circle","x":"{clamp((api.weather.temp + 10) * 4, 0, 160)}","y":40,"r":5,"color":"accent"}
+{"type":"rect","x":0,"y":60,"w":"{ping.0.ms / 2}","h":6,"fill":true,"color":"{ping.0.color}"}
+{"type":"line","x":0,"y":"{160 - api.weather.temp.delta * 4}","x2":160,"y2":"{160 - api.weather.temp.delta * 4}","color":"dim"}
+{"type":"text","text":"{api.btc.price}","size":"{if(api.btc.change > 5, 4, 3)}"}
+{"type":"polygon","points":[[0,40],["{api.baro.hpa - 950}",0],[80,40]],"color":"warn"}
+```
+
+A template that cannot be resolved counts as 0. Up to 40 numbers per layout can be templates, each up to 55 characters; named `styles` entries take plain numbers only.
+
+Colours can be computed too. `rgb(r, g, b)`, `hsv(h, s, v)` and `mix(c1, c2, t)` in an expression produce a colour any colour property accepts, so `"color":"{if(api.nvda.dp < 0, rgb(255,60,60), rgb(40,220,120))}"` turns red on a down day, and `"color":"{mix(rgb(0,120,255), rgb(255,80,0), clamp((api.weather.temp + 10) / 45, 0, 1))}"` slides from blue to orange with the temperature. The same works for the LED colour.
+
+Boxes, rects and bars can fade between two colours with `style.gradient`: `{"type":"box","style":{"background":"#101820","gradient":"#1c2a3a","radius":8}}` runs from the background at the top to the gradient colour at the bottom; `"gradientDir":"right"` runs it left to right. On a bar the fill fades from `color` to `gradient`.
+
 ### Status LED
 
 Each layout controls the RGB status LED while it is on screen through a top-level `led` object. A layout without one leaves the LED off. System states (setup hotspot, connecting, resetting) still take over, and the device-wide LED enable and brightness on the setup page still apply on top.
@@ -493,10 +565,12 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `fill`                      | rect, shapes              | Fill with `color`                                       |
 | `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
 | `position`                  | any                       | `absolute` positions at `x`/`y` even if one is missing  |
+| `gradient`, `gradientDir`   | box, rect, bar, chart     | Second colour of a gradient fill, and `down` (default) or `right` |
+| `kind`, `min`, `max`        | chart                     | `line`, `area`, `bars` or `dots`, and the value range  |
 | `fit`                       | image                     | `contain`, `cover` or `stretch`                         |
 | `image`                     | box                       | Background image (name or URL), drawn to cover the box  |
 
-`color`, `background` and `border` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
+`color`, `background`, `border` and `gradient` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}` or to a colour computed with `rgb()`, `hsv()` or `mix()` (see [Live numbers](#live-numbers)). That is how a layout changes colour with the data. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
 
 ### Keys
 
@@ -517,6 +591,7 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `ping.N.bars`, `ping.N.trend`                  | Last 8 results as `\|\|.\|\|\|\|\|`; `^`, `v` or `>`            |
 | `api.<id>.<field>`                             | A value from a [data source](#data-sources)                |
 | `api.<id>.status`, `.color`, `.age`, `.updated`| Fetch state of that source                                  |
+| `<key>.min`, `.max`, `.avg`, `.first`, `.last`, `.delta`, `.count`, `.span` | Statistics of a key sampled under [History](#history) |
 
 `N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen, and the same goes for data sources.
 
@@ -540,6 +615,9 @@ A brace that is not a plain key is evaluated as arithmetic, with keys as variabl
 | `< > <= >= == !=`                             | Comparisons give `1` or `0`                                                      |
 | `&&`, `\|\|`, `!`                              | Logic on those                                                                   |
 | `if(cond, a, b)`                              | `a` when `cond` is non-zero, else `b`                                            |
+| `lerp(a, b, t)`                               | `a + (b - a) * t`                                                                |
+| `rgb(r, g, b)`, `hsv(h, s, v)`                | A colour as a number, for colour properties. `h` in degrees, `s` and `v` 0-100  |
+| `mix(c1, c2, t)`                              | Blends two colours, `t` from 0 to 1                                              |
 
 Values are read as numbers, and a leading number is enough, so `{api.weather.age}` reading `12s` gives 12. Without `round`, whole numbers print without decimals and anything else with up to two. Any unknown key, non-numeric value or division by zero makes the whole brace `--`, the same as an unknown key. Put spaces around a minus after a key that contains dashes (`{api.my-source.temp - 3}`), since `my-source` is read as one name first.
 
@@ -588,13 +666,13 @@ src/
   app/                Board pins, Widget interface, ScreenManager, built-in widget registry, log buffer, status LED, system screens
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
-examples/widgets/     52 example layouts with a README of the data sources they use
+examples/widgets/     55 example layouts with a README of the data sources they use
 docs/images/          photos, enclosure renders and web page screenshots used in this README
 tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
 web/                  cm.js.gz, embedded in the firmware
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
 lib/stb/              stb_truetype (public domain) font rasteriser
-  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task)
+  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task), series (keys sampled over time)
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps
 ```

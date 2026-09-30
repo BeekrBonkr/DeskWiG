@@ -714,7 +714,7 @@ void LayoutWidget::updateLed() {
   uint16_t speed = (pick && pick->hasSpeed) ? pick->speed : b.speed;
   int16_t bright = (pick && pick->hasBrightness) ? pick->brightness : b.brightness;
 
-  char buf[24];
+  char buf[32];
   const char* name = color;
   if (strchr(color, '{')) { layoutExpand(color, buf, sizeof(buf)); name = buf; }
   uint8_t r, g, bl;
@@ -787,7 +787,7 @@ void LayoutWidget::update(uint32_t now) {
 uint16_t LayoutWidget::resolveColor(const char* spec, uint16_t fallback, bool* present) {
   if (present) *present = spec[0] != '\0';
   if (!spec[0]) return fallback;
-  char buf[24];
+  char buf[32];
   const char* name = spec;
   if (strchr(spec, '{')) {
     // A template that resolves to no known role (missing target, no data)
