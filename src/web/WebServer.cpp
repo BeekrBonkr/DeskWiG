@@ -600,8 +600,10 @@ static void registerLayouts() {
   // Built-in templates for the editor's picker. Assembled by hand so the
   // stored JSON text is passed through without re-serialising it.
   server.on(AsyncURIMatcher::exact("/api/layouts/templates"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    size_t need = 2;
+    for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) need += strlen(LAYOUT_TEMPLATES[i].json) + 96;
     String out;
-    out.reserve(12288);
+    out.reserve(need);
     out += "[";
     for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) {
       const LayoutTemplate& t = LAYOUT_TEMPLATES[i];
