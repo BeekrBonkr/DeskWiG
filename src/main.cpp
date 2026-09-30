@@ -175,6 +175,11 @@ void setup() {
   tft.setRotation(0);
   tft.invertDisplay(true);
 
+  // The frame buffer is 109 KB. Left to the library it comes out of the
+  // 300 KB of internal RAM, which WiFi, TLS and the web server also need;
+  // PSRAM has megabytes to spare. Without PSRAM the library falls back to
+  // internal RAM by itself.
+  ui.setPsram(true);
   ui.setColorDepth(16);
   ui.createSprite(tft.width(), tft.height());
 
