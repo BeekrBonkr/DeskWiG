@@ -12,68 +12,68 @@ Every layout renders on its own, but the ones marked with a data source show `--
 
 | File | Shows off | Needs |
 | --- | --- | --- |
-| `big-clock.json` | TrueType bold clock, flow layout with `justify: center` | |
-| `flip-clock.json` | 104 px digits in rounded tiles, named style | |
-| `night-clock.json` | Custom hex colours for a dim bedside clock | |
-| `world-clock.json` | Math on `time.hour` with `%` for other time zones | |
-| `day-progress.json` | Bars driven by expressions, minutes-left arithmetic | |
-| `calendar-card.json` | Cards with background and border, big date | |
-| `weather-card.json` | Emoji, data source keys, `.age` and `.color` status keys | `weather` |
-| `weather-rings.json` | Ring gauges with centred labels (absolute text inside a box) | `weather` |
-| `weather-fahrenheit.json` | Unit conversion with `round()` | `weather` |
-| `air-quality.json` | Value-coloured bar using a source's `.color`, `min()` | `aqi` |
-| `sunrise-sunset.json` | Rows of emoji and text, string fields from an API | `sun` |
-| `crypto-ticker.json` | Prices, percent change, large-number math | `btc` |
-| `github-repo.json` | Three stat rows with `justify: between` and emoji | `repo` |
-| `iss-tracker.json` | Fast-refresh source, `round(x, 2)` | `iss` |
-| `home-assistant.json` | A source with an `Authorization` header | `ha` |
-| `server-dots.json` | Ping status circles, nested rows, target count | ping targets |
-| `latency-bars.json` | Bars scaled with `min()`, trend arrows, history | ping targets |
-| `latency-gauges.json` | Partial arcs (`start`/`end`) as gauges | ping targets |
-| `network-panel.json` | WiFi ring, key/value rows, ping by target name | ping target named `Router` |
-| `system-monitor.json` | Card grid from one named style, heap and uptime | |
-| `shapes-showcase.json` | Circle, ellipse, rounded rect, triangle, polygon, arc | |
-| `styles-demo.json` | Classes, inline style precedence, `justify`, `align`, pills | |
-| `emoji-board.json` | Emoji in every font and colour | `weather` (one line) |
-| `typography.json` | Bitmap sizes next to sans and bold pixel sizes | |
-| `photo-frame.json` | URL image as a full-screen background with an overlay | internet |
+| `big-clock.json` | Hero card whose sky shade follows the hour (`hsv()`), a day arc with a marker riding it (templated `start`/`end`), gradient day bar | |
+| `flip-clock.json` | 104 px digits in gradient tiles with a seam and notches, named styles | |
+| `night-clock.json` | Dim custom hex colours, a minute ring with the hour as a marker on it | |
+| `world-clock.json` | Math on `time.hour` with `%` for other time zones; each row's shade and sun or moon dot come from that zone's hour | |
+| `day-progress.json` | Day ring, 24 hour cells coloured by `hsv()` and `if()`, gradient hour bar, minutes-left arithmetic | |
+| `calendar-card.json` | Tear-off calendar built from gradient cards, day bar | |
+| `weather-card.json` | Hero gradient that follows the temperature, a marker on a gradient scale (templated `x`), stat cards with gradient bars, `.updated` and `.color` status keys | `weather` |
+| `weather-rings.json` | Three concentric ring gauges with a colour legend | `weather` |
+| `weather-fahrenheit.json` | Unit conversion with `round()`, a thermometer whose column grows with the temperature (templated `y` and `h`), both scales beside it | `weather` |
+| `air-quality.json` | Zoned gauge made of arc segments with a marker, number coloured by `hsv()`, `min()` | `aqi` |
+| `sunrise-sunset.json` | ISO timestamps cut down to HH:MM by clipping fixed-pitch text in a box, UV bar | `sun` |
+| `crypto-ticker.json` | Card and arrow that turn green or red with `if()`, a triangle with templated points, area chart of the price | `btc`, sampled `api.btc.usd` |
+| `github-repo.json` | Emoji stat tiles, two-line wrap of a long description, ratio bars from division | `repo` |
+| `iss-tracker.json` | World map drawn from polygons, crosshair and marker placed from latitude and longitude, fast-refresh source | `iss` |
+| `home-assistant.json` | Thermostat dial with a comfort band, marker and number coloured by the value, chart of the sensor, a source with an `Authorization` header | `ha`, sampled `api.ha.state` |
+| `server-dots.json` | Up to six targets; rows for targets that are not configured fold away with a templated `h`, latency bar per row | ping targets |
+| `latency-bars.json` | Bars scaled with `min()` whose colour slides from green to red with the latency, trend arrows, history | ping targets |
+| `latency-gauges.json` | Partial arcs (`start`/`end`) as gauges, one large and two small | ping targets |
+| `network-panel.json` | WiFi gauge, signal bars lit by `if()`, marker on a gradient scale, ping by target name | ping target named `Router` |
+| `system-monitor.json` | Card grid from one named style, chart of free heap, uptime | sampled `heap` |
+| `shapes-showcase.json` | Circle, ellipse, rounded rect, triangle, polygon, arc, gradients, and shapes that move with the minute and the signal | |
+| `styles-demo.json` | Classes, inline style precedence, `justify`, `align`, pills, gradients in both directions | |
+| `emoji-board.json` | Emoji in every font, colour and size on gradient tiles | `weather` (one line) |
+| `typography.json` | Bitmap sizes next to sans and bold pixel sizes, a text whose `size` is a template | |
+| `photo-frame.json` | URL image as a full-screen background with a clock overlay | internet |
 | **Finance** | | |
-| `stock-ticker.json` | One stock: price, change, day-range bar, LED on big moves | `stock` |
-| `stock-board.json` | Four stocks with a centred change bar under each, raw Finnhub field names | `nvda` `tsm` `sgdm` `vti` |
-| `crypto-board.json` | Four coins from one CoinGecko call, 24h change bar | `coins` |
-| `fear-greed.json` | Three-quarter arc gauge (`start`/`end` past 360) with the label inside | `fng` |
-| `mempool-fees.json` | A plain-text source (empty path) for the block height, fee tiers | `fees` `tip` |
-| `forex-rates.json` | Exchange rates and a reverse conversion with `/` | `fx` |
-| `power-price.json` | Spot electricity price in ct/kWh, LED by price band | `power` |
+| `stock-ticker.json` | One stock: tinted price card, change pill, chart of the day, day-range bar, LED on big moves | `stock`, sampled `api.stock.last` |
+| `stock-board.json` | Four stocks with a bar that grows left or right of centre with the change (templated `x` and `w`), raw Finnhub field names | `nvda` `tsm` `sgdm` `vti` |
+| `crypto-board.json` | Four coins from one CoinGecko call as tiles shaded by the size and sign of the 24 h move (`hsv()` with `if()` and `abs()`) | `coins` |
+| `fear-greed.json` | Five-zone arc gauge (`start`/`end` past 360) with a marker, number and label coloured by the value | `fng` |
+| `mempool-fees.json` | A plain-text source (empty path) for the block height, fee tiers as gradient bars, chart of the next-block fee | `fees` `tip`, sampled `api.fees.fast` |
+| `forex-rates.json` | Currency tiles with symbols on coloured discs, reverse conversions with `/` | `fx` |
+| `power-price.json` | Spot electricity price coloured by `hsv()`, now and next hour as columns with templated heights, bar chart of the day, LED by price band | `power`, sampled `api.power.price` |
 | **Space and science** | | |
-| `astronauts.json` | Array items by index (`people.0.name`), who is in orbit | `astros` |
-| `next-launch.json` | Nested paths three levels deep, `key`/`is` LED rules on a status string | `launch` |
-| `earthquakes.json` | GeoJSON feed: count plus the latest magnitude and place | `quakes` |
-| `space-weather.json` | Object keys that look like numbers (`0.G.Scale`), aurora alert LED | `swpc` |
-| `space-dashboard.json` | Three sources on one screen with emoji icons in rows | `iss` `astros` `neo` |
+| `astronauts.json` | Array items by index (`people.0.name`), a dot per person lit with `if()`, shapes clipped by their card | `astros` |
+| `next-launch.json` | Nested paths three levels deep, date and time cut out of one ISO string, long names on two lines, `key`/`is` LED rules on a string | `launch` |
+| `earthquakes.json` | GeoJSON feed: rings whose radius follows the latest magnitude (templated `r`), marker on a magnitude scale | `quakes` |
+| `space-weather.json` | Object keys that look like numbers (`0.G.Scale`), three level meters lit by `if()`, a card that changes colour and caption on an aurora watch | `swpc` |
+| `space-dashboard.json` | Three sources on one screen: ISS on a small map, crew dots, near-Earth objects | `iss` `astros` `neo` |
 | **Weather** | | |
 | `weather-hourly.json` | Current conditions: hero card whose gradient follows the temperature (`hsv()`), condition tiles lit by `if()` on rain, snow and `is_day`, gradient rain-chance bar, stat cards | `wx` |
 | `weather-6h.json` | Next six hours in one row: per-hour icon picked by moving the other icons out of view with a templated `x`, column shade from rain chance (`mix()`), a temperature ridge polygon with templated points | `w6` |
-| `rain-next-hours.json` | Six hourly bars from one array (`hourly.x.0` to `.5`), `max()` | `rain` |
-| `forecast-3day.json` | Daily highs, lows and rain chance for three days | `fc` `weather` |
-| `barometer.json` | Gauge over a 950–1050 hPa window with `clamp()` | `baro` |
-| `surf-report.json` | Marine API: wave height, period and direction | `surf` `weather` |
-| `wind-meter.json` | Beaufort number from km/h with `^` (power) | `wind` |
+| `rain-next-hours.json` | Six hourly columns from one array (`hourly.x.0` to `.5`) with templated heights, shade from `mix()`, `max()` | `rain` |
+| `forecast-3day.json` | Three days, each with a range bar placed from its low and high (templated `x` and `w`), rain chance shaded by `mix()` | `fc` `weather` |
+| `barometer.json` | Zoned dial over a 950–1050 hPa window with a marker (`clamp()`), area chart of the last day, `.delta` | `baro`, sampled `api.baro.pressure` |
+| `surf-report.json` | Marine API: swell drawn as polygons whose crests rise with the wave height, compass ring with a direction marker, `^` for wave energy | `surf` `weather` |
+| `wind-meter.json` | Compass ring with a direction marker, speed gauge, Beaufort cells from km/h with `^` (power) | `wind` |
 | **Over time** | | |
-| `stock-chart.json` | Area chart of a sampled price, `.delta`/`.min`/`.max` keys, colours from `rgb()` and `if()`, templated `min`/`max` on a bar chart | `nvda`, sampled `api.nvda.c` |
-| `temp-history.json` | Gradient card, line chart over 12 h, a marker whose `x` is an expression, `mix()` colour by temperature, gradient bar | `weather`, sampled `api.weather.temp` |
+| `stock-chart.json` | Area chart of a sampled price, `.delta`/`.min`/`.max`/`.span` keys, colours from `rgb()` and `if()`, templated `min`/`max` on a bar chart | `nvda`, sampled `api.nvda.c` |
+| `temp-history.json` | Line colour from `hsv()`, area chart over 12 h, the day's range as a rect placed from `.min` and `.max`, gradient bar | `weather`, sampled `api.weather.temp` |
 | `latency-history.json` | Dot chart of ping latency, area chart of signal with fixed range, a rect whose width follows `wifi.pct` | ping targets, sampled `ping.0.ms` and `wifi.rssi` |
-| `daylight-arc.json` | Half-ring sun arc from unix timestamps, minutes to sunset | `sun2` |
+| `daylight-arc.json` | Half-ring sun path from unix timestamps with the sun as a marker on it, sun or moon swapped with a templated `x`, time to sunset | `sun2` |
 | **Home and tech** | | |
-| `pihole.json` | Pi-hole blocked-percentage gauge, `.status` in a rule | `pihole` |
-| `3d-printer.json` | OctoPrint progress ring with an `X-Api-Key` header | `printer` |
-| `steam-players.json` | Live player count scaled with `/ 1000` and a `k` suffix | `steam` |
-| `package-stats.json` | npm and PyPI weekly downloads in millions and thousands | `npm` `pypi` |
-| `github-user.json` | Three stat columns from a user profile plus repo stars | `gh` `repo` |
-| `f1-next-race.json` | Deeply nested Ergast paths, next race and start time | `f1` |
-| `next-holiday.json` | Top-level array (`0.name`, `1.name`), next three days off | `holiday` |
+| `pihole.json` | Blocked-percentage ring, a split bar with a templated `w`, `.status` in a rule | `pihole` |
+| `3d-printer.json` | OctoPrint progress ring, a print that grows on the bed with the nozzle above it (templated `y` and `h`), temperature bars, an `X-Api-Key` header | `printer` |
+| `steam-players.json` | Live player count scaled with `/ 1000` and a `k` suffix, area chart of the day with `.max` | `steam`, sampled `api.steam.players` |
+| `package-stats.json` | npm and PyPI weekly downloads in millions and thousands, yesterday against the daily average | `npm` `pypi` |
+| `github-user.json` | Profile card with an avatar disc, three stat columns, repo card | `gh` `repo` |
+| `f1-next-race.json` | Chequered strip from rects, deeply nested Ergast paths, date and start time cut out of their strings | `f1` |
+| `next-holiday.json` | Top-level array (`0.name`, `1.name`), MM-DD cut out of ISO dates at three sizes | `holiday` |
 | **No API** | | |
-| `binary-clock.json` | Bits as square bars: `floor(time.hour / 16) % 2 * 100` fills or empties a cell | |
+| `binary-clock.json` | Bits as rounded cells: `floor(time.hour / 16) % 2` inside `if()` picks the lit or unlit colour | |
 
 ## Data sources used
 
@@ -160,8 +160,6 @@ fields:   last = c
 
 Quotes update during market hours; outside them the values are the last close. `stock-board.json` uses four sources named after their tickers, **nvda**, **tsm**, **sgdm** and **vti**, each the same URL with its own `symbol=` and the field names exactly as **Discover keys** generates them (`c`, `d`, `dp`, `h`, `l`, `o`, `pc`, `t`); the layout reads `c` and `dp`. For other stocks, name the source after the ticker and change the label and the `api.<id>` keys in that row. No key at all? Yahoo's chart endpoint works without one: `https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1d` with `price = chart.result.0.meta.regularMarketPrice` and `prev = chart.result.0.meta.chartPreviousClose`.
 
-**Sampled keys** for the charts (setup page, **History**, or `PUT /api/series?key=...`): `api.nvda.c` every 120 s keeping 14400 s for `stock-chart.json`; `api.weather.temp` every 300 s keeping 43200 s for `temp-history.json`; `ping.0.ms` and `wifi.rssi` every 10 s keeping 1800 s for `latency-history.json`. A chart shows a dim baseline until the first sample lands.
-
 **coins** (CoinGecko, no key)
 
 ```
@@ -242,10 +240,12 @@ url:      https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1&mode=list
 interval: 900
 fields:   name = results.0.name
           net = results.0.net
-          status = results.0.status.abbrev
+          state = results.0.status.abbrev
           provider = results.0.launch_service_provider.name
           pad = results.0.pad.location.name
 ```
+
+The launch status goes in a field called `state`, not `status`: `api.<id>.status`, `.color`, `.age`, `.updated` and `.error` always mean the source's own fetch state, so a field with one of those names is never read.
 
 **quakes** (USGS, magnitude 4.5+ in the last day, no key)
 
@@ -467,13 +467,34 @@ fields:   state = state
           name = attributes.friendly_name
 ```
 
+## Sampled keys
+
+The charts draw keys that are recorded under **History** on the setup page (or with `PUT /api/series?key=...`). A chart shows a dim baseline until the first sample lands, and the `.min`, `.max`, `.avg` and `.delta` values next to it show `--`. A device keeps up to 12 sampled keys, which is exactly this list:
+
+| Key | Every | Keep | Used by |
+| --- | --- | --- | --- |
+| `api.nvda.c` | 120 s | 14400 s | `stock-chart.json` |
+| `api.stock.last` | 120 s | 14400 s | `stock-ticker.json` |
+| `api.btc.usd` | 300 s | 86400 s | `crypto-ticker.json` |
+| `api.fees.fast` | 120 s | 14400 s | `mempool-fees.json` |
+| `api.power.price` | 900 s | 86400 s | `power-price.json` |
+| `api.weather.temp` | 300 s | 43200 s | `temp-history.json` |
+| `api.baro.pressure` | 600 s | 86400 s | `barometer.json` |
+| `api.ha.state` | 60 s | 21600 s | `home-assistant.json` |
+| `api.steam.players` | 300 s | 86400 s | `steam-players.json` |
+| `ping.0.ms` | 10 s | 1800 s | `latency-history.json` |
+| `wifi.rssi` | 10 s | 1800 s | `latency-history.json` |
+| `heap` | 60 s | 3600 s | `system-monitor.json` |
+
 ## LED behaviour
 
 Every example carries a `led` block, so the RGB LED does something sensible while it is on screen: clocks breathe softly and go dark at night, the ping and network layouts show the worst target's colour and blink red when something is down, weather layouts warn on heat, frost, wind or bad air, the crypto ticker flashes green or red on big moves, and the showcase layouts cycle through a rainbow. Delete the block to keep the LED off, or edit the `rules` to taste.
 
 ## Notes
 
-- The screen is 170 × 320. Text longer than the width is clipped by its box, so keep labels short or drop the font size.
-- `world-clock.json` hard-codes hour offsets from US Eastern; edit the numbers in the four `{(time.hour + N) % 24}` expressions for your zone.
+- The screen is 170 × 320. Text longer than the width is clipped by its box, so keep labels short or drop the font size. Values from a source can be up to 31 characters; the layouts that show long ones (`next-launch`, `earthquakes`, `f1-next-race`, `github-repo`, `3d-printer`) put the same bitmap text in two boxes, the second slid left by one line's width, so it reads as two lines.
+- The same trick cuts a part out of a fixed-format string: `sunrise-sunset`, `next-launch`, `f1-next-race` and `next-holiday` show only the `HH:MM` or `MM-DD` of an ISO timestamp by sliding the text left inside a box just wide enough for those characters. It relies on the bitmap font, where every character is 6 × `size` pixels wide.
+- Layouts that calculate with `time.hour` (`big-clock`, `world-clock`, `day-progress`, `calendar-card`, `night-clock`, `photo-frame`) expect the 24-hour clock setting; in 12-hour mode `time.hour` runs 1 to 12.
+- `world-clock.json` hard-codes hour offsets from US Eastern; edit the four numbers in the `(time.hour+N)%24` expressions for your zone.
 - `photo-frame.json` points at a placeholder PNG on httpbin.org. Put your own image URL there, or upload an image on the setup page and use its name.
 - Every file passes the same validation the editor and the device run, so they load as they are.

@@ -26,96 +26,213 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "gap": 8,
+    "gap": 6,
     "padding": 8
   },
   "elements": [
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
           "text": "BTC / USD",
-          "font": "sans",
-          "size": 16,
-          "color": "dim"
+          "color": "#7c8794"
         },
         {
           "type": "text",
           "text": "{api.btc.age}",
-          "color": "{api.btc.color}",
-          "align": "right"
+          "align": "right",
+          "color": "{api.btc.color}"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 4,
+        "radius": 12,
+        "background": "{if(api.btc.change<0,rgb(84,20,30),rgb(12,66,42))}",
+        "gradient": "#07090c"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "${api.btc.usd}",
+          "font": "bold",
+          "size": 38,
+          "align": "center"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 6,
+            "align": "center",
+            "justify": "center"
+          },
+          "children": [
+            {
+              "type": "triangle",
+              "points": [
+                [
+                  0,
+                  "{if(api.btc.change<0,0,8)}"
+                ],
+                [
+                  5,
+                  "{if(api.btc.change<0,8,0)}"
+                ],
+                [
+                  10,
+                  "{if(api.btc.change<0,0,8)}"
+                ]
+              ],
+              "color": "{if(api.btc.change<0,rgb(255,77,94),rgb(47,211,122))}"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.btc.change,2)}%",
+              "font": "bold",
+              "size": 18,
+              "color": "{if(api.btc.change<0,rgb(255,77,94),rgb(47,211,122))}"
+            },
+            {
+              "type": "text",
+              "text": "24h",
+              "color": "#c4ccd6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
       "style": {
         "direction": "row",
-        "justify": "between",
-        "align": "center"
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LAST 24 H",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.btc.usd.delta)}",
+          "align": "right",
+          "color": "{if(api.btc.usd.delta<0,rgb(255,77,94),rgb(47,211,122))}"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 70,
+      "series": "api.btc.usd",
+      "window": 86400,
+      "color": "{if(api.btc.usd.delta<0,rgb(255,77,94),rgb(47,211,122))}",
+      "style": {
+        "kind": "area",
+        "gradient": "{if(api.btc.usd.delta<0,rgb(52,16,22),rgb(10,42,28))}",
+        "background": "#0c1016",
+        "radius": 6
       }
     },
     {
-      "type": "text",
-      "text": "${api.btc.usd}",
-      "font": "bold",
-      "size": 40,
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "lo {round(api.btc.usd.min)}",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "hi {round(api.btc.usd.max)}",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "ETH",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "${api.btc.eth}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "CAP $B",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.btc.cap/1000000000)}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "{round(api.btc.change, 2)}% 24h",
-      "font": "sans",
-      "size": 20,
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "ETH",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "${api.btc.eth}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "market cap",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "${round(api.btc.cap / 1000000000)} B",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "text",
-      "text": "{time}",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

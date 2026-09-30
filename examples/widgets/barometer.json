@@ -21,149 +21,231 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "align": "center",
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "BAROMETER",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
-      "children": [
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "arc",
-              "w": 120,
-              "value": "{clamp((api.baro.pressure - 950) / 100 * 100, 0, 100)}",
-              "color": "accent",
-              "style": {
-                "thickness": 12
-              },
-              "start": 225,
-              "end": 495,
-              "x": 0,
-              "y": 0
-            },
-            {
-              "type": "text",
-              "text": "{round(api.baro.pressure)}",
-              "x": 60,
-              "y": 44,
-              "align": "center",
-              "font": "bold",
-              "size": 28
-            }
-          ],
-          "w": 120,
-          "h": 120
-        },
-        {
-          "type": "text",
-          "text": "hPa · 950 to 1050",
-          "color": "dim",
-          "align": "center"
-        }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 4,
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "storm",
-          "color": "bad"
-        },
-        {
-          "type": "text",
-          "text": "change",
-          "color": "warn",
-          "align": "center"
-        },
-        {
-          "type": "text",
-          "text": "fair",
-          "color": "ok",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
+      },
       "children": [
         {
           "type": "text",
-          "text": "cloud cover",
-          "color": "dim"
+          "text": "BAROMETER",
+          "color": "#7c8794"
         },
         {
           "type": "text",
+          "text": "{api.baro.age}",
+          "align": "right",
+          "color": "{api.baro.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "w": 154,
+      "h": 128,
+      "children": [
+        {
+          "type": "arc",
+          "x": 12,
+          "y": 0,
+          "w": 130,
+          "value": 100,
+          "start": 225,
+          "end": 331,
+          "color": "#5e1616",
+          "style": {
+            "thickness": 8
+          }
+        },
+        {
+          "type": "arc",
+          "x": 12,
+          "y": 0,
+          "w": 130,
+          "value": 100,
+          "start": 335,
+          "end": 385,
+          "color": "#5c4408",
+          "style": {
+            "thickness": 8
+          }
+        },
+        {
+          "type": "arc",
+          "x": 12,
+          "y": 0,
+          "w": 130,
+          "value": 100,
+          "start": 389,
+          "end": 495,
+          "color": "#124d29",
+          "style": {
+            "thickness": 8
+          }
+        },
+        {
+          "type": "arc",
+          "x": 8,
+          "y": -4,
+          "w": 138,
+          "value": 100,
+          "start": "{221+clamp(api.baro.pressure-950,0,100)*2.7}",
+          "end": "{229+clamp(api.baro.pressure-950,0,100)*2.7}",
+          "color": "text",
+          "style": {
+            "thickness": 16
+          }
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 36,
+          "text": "{round(api.baro.pressure)}",
+          "font": "bold",
+          "size": 40,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 78,
+          "text": "hPa",
+          "align": "center",
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": 20,
+          "y": 118,
+          "text": "storm",
+          "color": "#ff5a5a"
+        },
+        {
+          "type": "text",
+          "x": 134,
+          "y": 118,
+          "text": "fair",
+          "align": "right",
+          "color": "#3ddc84"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LAST 24 H",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.baro.pressure.delta,1)} hPa",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 44,
+      "series": "api.baro.pressure",
+      "window": 86400,
+      "color": "#7fb4ff",
+      "style": {
+        "kind": "area",
+        "gradient": "#15263f",
+        "background": "#0c1016",
+        "radius": 6
+      }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "w": 36,
+          "text": "CLOUD",
+          "color": "#7c8794"
+        },
+        {
+          "type": "bar",
+          "w": 80,
+          "h": 8,
+          "value": "{api.baro.cloud}",
+          "color": "#3a4656",
+          "style": {
+            "gradient": "#c8d4e2",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "text",
+          "w": 30,
           "text": "{api.baro.cloud}%",
           "align": "right"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "bar",
-      "h": 6,
-      "value": "{api.baro.cloud}",
-      "color": "dim",
-      "style": {
-        "background": "#202020",
-        "radius": 3
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 4,
+        "align": "center"
+      },
       "children": [
         {
           "type": "text",
-          "text": "UV index",
-          "color": "dim"
+          "w": 36,
+          "text": "UV",
+          "color": "#7c8794"
+        },
+        {
+          "type": "bar",
+          "w": 80,
+          "h": 8,
+          "value": "{min(api.baro.uv*9,100)}",
+          "color": "#2f9e44",
+          "style": {
+            "gradient": "#ff3b30",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#1a2029"
+          }
         },
         {
           "type": "text",
-          "text": "{round(api.baro.uv, 1)}",
+          "w": 30,
+          "text": "{round(api.baro.uv,1)}",
           "align": "right"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "text",
-      "text": "Open-Meteo · {api.baro.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

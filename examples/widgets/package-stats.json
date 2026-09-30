@@ -7,82 +7,192 @@
   },
   "style": {
     "direction": "column",
-    "gap": 10,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "PACKAGE DOWNLOADS",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "npm · {api.npm.pkg}",
-          "color": "dim"
+          "text": "DOWNLOADS",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{round(api.npm.downloads / 1000000, 1)}M",
-          "font": "bold",
-          "size": 36
-        },
-        {
-          "type": "text",
-          "text": "last week",
-          "color": "dim"
+          "text": "{api.npm.age}",
+          "align": "right",
+          "color": "{api.npm.color}"
         }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 2
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 6,
+        "radius": 12,
+        "background": "#5a1716",
+        "gradient": "#120606",
+        "border": "#7a2524"
+      },
       "children": [
         {
-          "type": "text",
-          "text": "PyPI · {api.pypi.pkg}",
-          "color": "dim"
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "padding": 4,
+                "radius": 5,
+                "background": "#cb3837"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "npm",
+                  "font": "bold",
+                  "size": 14
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{api.npm.pkg}",
+              "color": "#f3d4d3"
+            }
+          ]
         },
         {
           "type": "text",
-          "text": "{round(api.pypi.week / 1000)}k",
+          "text": "{round(api.npm.downloads/1000000,1)}M",
           "font": "bold",
-          "size": 36
+          "size": 42
         },
         {
-          "type": "text",
-          "text": "last week · {round(api.pypi.day / 1000)}k yesterday",
-          "color": "dim"
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "last week",
+              "color": "#f3d4d3"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.npm.downloads/7000)}k / day",
+              "align": "right"
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 2
-      }
+      ]
     },
     {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 6,
+        "radius": 12,
+        "background": "#173250",
+        "gradient": "#060b12",
+        "border": "#25496f"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "padding": 4,
+                "radius": 5,
+                "background": "#3775a9"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "PyPI",
+                  "font": "bold",
+                  "size": 14
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{api.pypi.pkg}",
+              "color": "#d3e4f3"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{round(api.pypi.week/1000,1)}k",
+          "font": "bold",
+          "size": 42
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "last week",
+              "color": "#d3e4f3"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.pypi.day/1000,1)}k today",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{min(api.pypi.day/api.pypi.week*350,100)}",
+          "color": "#3775a9",
+          "style": {
+            "gradient": "#ffd343",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#0e1a26"
+          }
+        },
+        {
+          "type": "text",
+          "text": "today vs daily average",
+          "color": "#8fa3b3"
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "{api.npm.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

@@ -21,115 +21,224 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "gap": 12,
-    "padding": 10
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "SUN TIMES",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.sun.age}",
+          "align": "right",
+          "color": "{api.sun.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 10,
+        "align": "center",
+        "padding": 10,
+        "radius": 12,
+        "background": "#b3541e",
+        "gradient": "#2a1206"
+      },
       "children": [
         {
           "type": "text",
           "text": "🌅",
           "font": "emoji",
-          "size": 40
+          "size": 34
         },
         {
           "type": "box",
+          "style": {
+            "gap": 6
+          },
           "children": [
             {
               "type": "text",
               "text": "SUNRISE",
-              "color": "dim"
+              "color": "#f0e6d8"
             },
             {
-              "type": "text",
-              "text": "{api.sun.sunrise}",
-              "font": "bold",
-              "size": 22
+              "type": "box",
+              "w": 90,
+              "h": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "x": -198,
+                  "y": 0,
+                  "text": "{api.sun.sunrise}",
+                  "size": 3
+                }
+              ]
             }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 10
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 10,
+        "align": "center",
+        "padding": 10,
+        "radius": 12,
+        "background": "#5b2a86",
+        "gradient": "#140a22"
+      },
       "children": [
         {
           "type": "text",
           "text": "🌇",
           "font": "emoji",
-          "size": 40
+          "size": 34
         },
         {
           "type": "box",
+          "style": {
+            "gap": 6
+          },
           "children": [
             {
               "type": "text",
               "text": "SUNSET",
-              "color": "dim"
+              "color": "#f0e6d8"
             },
             {
-              "type": "text",
-              "text": "{api.sun.sunset}",
-              "font": "bold",
-              "size": 22
+              "type": "box",
+              "w": 90,
+              "h": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "x": -198,
+                  "y": 0,
+                  "text": "{api.sun.sunset}",
+                  "size": 3
+                }
+              ]
             }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 10
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "gap": 6,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10,
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "UV INDEX",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.sun.uv}",
+              "font": "bold",
+              "size": 22,
+              "align": "right",
+              "color": "{hsv(clamp(120-api.sun.uv*12,0,120),85,100)}"
+            }
+          ]
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{min(api.sun.uv*9,100)}",
+          "color": "#2f9e44",
+          "style": {
+            "gradient": "#ff3b30",
+            "gradientDir": "right",
+            "radius": 5,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "low",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "extreme",
+              "align": "right",
+              "color": "#7c8794"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 0,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
       "children": [
         {
           "type": "text",
-          "text": "☀",
-          "font": "emoji",
-          "size": 28
+          "text": "NOW",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{api.sun.uv} UV index",
-          "font": "sans",
-          "size": 18
+          "text": "{time}",
+          "font": "bold",
+          "size": 34,
+          "align": "center"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 8
-      }
+      ]
     },
     {
       "type": "text",
-      "text": "now {time}",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{date.dow} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

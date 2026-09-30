@@ -30,150 +30,286 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "align": "center",
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
           "text": "OCTOPRINT",
-          "color": "dim"
+          "color": "#7c8794"
         },
         {
           "type": "text",
           "text": "{api.printer.state}",
-          "color": "{api.printer.color}",
-          "align": "right"
+          "align": "right",
+          "color": "{api.printer.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 8,
+        "align": "center"
+      },
       "children": [
         {
           "type": "box",
+          "w": 72,
+          "h": 72,
           "children": [
             {
               "type": "arc",
-              "w": 120,
-              "value": "{api.printer.progress}",
-              "color": "ok",
-              "style": {
-                "thickness": 12
-              },
               "x": 0,
-              "y": 0
+              "y": 0,
+              "w": 72,
+              "value": "{api.printer.progress}",
+              "color": "#ff9f43",
+              "style": {
+                "thickness": 8,
+                "background": "#1a2029"
+              }
             },
             {
               "type": "text",
-              "text": "{round(api.printer.progress)}%",
-              "x": 60,
-              "y": 42,
-              "align": "center",
+              "x": 36,
+              "y": 20,
+              "text": "{round(api.printer.progress)}",
               "font": "bold",
-              "size": 32
+              "size": 24,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "x": 36,
+              "y": 46,
+              "text": "%",
+              "align": "center",
+              "color": "#c4ccd6"
             }
-          ],
-          "w": 120,
-          "h": 120
+          ]
         },
         {
-          "type": "text",
-          "text": "",
-          "color": "dim",
-          "align": "center"
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "TIME LEFT",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.printer.left/60)} min",
+              "font": "bold",
+              "size": 18
+            },
+            {
+              "type": "text",
+              "text": "ELAPSED",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.printer.elapsed/60)} min",
+              "font": "bold",
+              "size": 18
+            }
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
+      "h": 78,
       "style": {
-        "direction": "column",
+        "padding": 8,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": "{46-api.printer.progress*0.5}",
+          "w": 138,
+          "h": 2,
+          "color": "#4a5668",
+          "fill": true
+        },
+        {
+          "type": "triangle",
+          "x": 63,
+          "y": "{48-api.printer.progress*0.5}",
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              12,
+              0
+            ],
+            [
+              6,
+              8
+            ]
+          ],
+          "color": "#c8d4e2"
+        },
+        {
+          "type": "rect",
+          "x": 44,
+          "y": "{58-api.printer.progress*0.5}",
+          "w": 50,
+          "h": "{api.printer.progress*0.5}",
+          "color": "#ff9f43",
+          "fill": true,
+          "style": {
+            "gradient": "#b3541e"
+          }
+        },
+        {
+          "type": "rect",
+          "x": 8,
+          "y": 58,
+          "w": 122,
+          "h": 4,
+          "color": "#5a6678",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 4
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 150,
+          "h": 8,
+          "children": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "text": "{api.printer.file}",
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 150,
+          "h": 8,
+          "children": [
+            {
+              "type": "text",
+              "x": -150,
+              "y": 0,
+              "text": "{api.printer.file}",
+              "color": "#c4ccd6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
         "gap": 4,
         "align": "center"
-      }
+      },
+      "children": [
+        {
+          "type": "text",
+          "w": 40,
+          "text": "NOZZLE",
+          "color": "#7c8794"
+        },
+        {
+          "type": "bar",
+          "w": 70,
+          "h": 8,
+          "value": "{min(api.printer.tool/2.6,100)}",
+          "color": "#b3541e",
+          "style": {
+            "gradient": "#ff5a3c",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "text",
+          "w": 36,
+          "text": "{round(api.printer.tool)}°",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "w": 40,
+          "text": "BED",
+          "color": "#7c8794"
+        },
+        {
+          "type": "bar",
+          "w": 70,
+          "h": 8,
+          "value": "{min(api.printer.bed/1.1,100)}",
+          "color": "#b3541e",
+          "style": {
+            "gradient": "#ffb020",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "text",
+          "w": 36,
+          "text": "{round(api.printer.bed)}°",
+          "align": "right"
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "{api.printer.file}",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
+      "x": 77,
+      "y": 296,
+      "text": "{api.printer.age} ago · {time}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "time left",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.printer.left / 60)} min",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "elapsed",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.printer.elapsed / 60)} min",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "nozzle",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.printer.tool)}° / {round(api.printer.bed)}° bed",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "text",
-      "text": "{api.printer.age} ago",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

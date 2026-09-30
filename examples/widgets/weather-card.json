@@ -34,112 +34,235 @@
   "elements": [
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
           "text": "WEATHER",
-          "color": "dim"
+          "color": "#7c8794"
         },
         {
           "type": "text",
           "text": "{api.weather.age}",
-          "color": "{api.weather.color}",
-          "align": "right"
+          "align": "right",
+          "color": "{api.weather.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "padding": 12,
+        "radius": 14,
+        "background": "{hsv(clamp(220-(api.weather.temp+10)*5,0,220),70,40)}",
+        "gradient": "{hsv(clamp(220-(api.weather.temp+10)*5,0,220),70,12)}"
+      },
       "children": [
-        {
-          "type": "text",
-          "text": "☀",
-          "font": "emoji",
-          "size": 56
-        },
         {
           "type": "text",
           "text": "{api.weather.temp}°",
           "font": "bold",
-          "size": 56
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 6,
-        "justify": "center"
-      }
-    },
-    {
-      "type": "text",
-      "text": "feels like {api.weather.feels}°",
-      "font": "sans",
-      "size": 16,
-      "align": "center",
-      "color": "dim"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "💧 humidity",
-          "font": "sans",
-          "size": 16
+          "size": 76,
+          "align": "center"
         },
         {
           "type": "text",
-          "text": "{api.weather.humidity}%",
+          "text": "feels like {api.weather.feels}°",
           "font": "sans",
           "size": 16,
-          "align": "right"
+          "align": "center",
+          "color": "#d0d8e0"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "box",
+      "h": 26,
       "children": [
         {
-          "type": "text",
-          "text": "💨 wind",
-          "font": "sans",
-          "size": 16
+          "type": "rect",
+          "x": 0,
+          "y": 4,
+          "w": 154,
+          "h": 6,
+          "color": "#2a6df0",
+          "fill": true,
+          "style": {
+            "radius": 3,
+            "gradient": "#ff5a2a",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "circle",
+          "x": "{clamp((api.weather.temp+10)*3.2,0,144)}",
+          "y": 2,
+          "r": 5,
+          "color": "text",
+          "style": {
+            "border": "bg",
+            "borderWidth": 2
+          }
         },
         {
           "type": "text",
-          "text": "{api.weather.wind} km/h",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
+          "x": 0,
+          "y": 16,
+          "text": "-10°",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 154,
+          "y": 16,
+          "text": "35°",
+          "align": "right",
+          "color": "#7c8794"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
-      "type": "bar",
-      "h": 8,
-      "value": "{api.weather.humidity}",
-      "color": "accent"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 4,
+            "padding": 7,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "HUMIDITY",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.weather.humidity}%",
+              "font": "bold",
+              "size": 22
+            },
+            {
+              "type": "bar",
+              "h": 6,
+              "value": "{api.weather.humidity}",
+              "color": "#1d5fd0",
+              "style": {
+                "gradient": "#40d0ff",
+                "gradientDir": "right",
+                "radius": 3,
+                "background": "#1a2029"
+              }
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 4,
+            "padding": 7,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "WIND km/h",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.weather.wind}",
+              "font": "bold",
+              "size": 22
+            },
+            {
+              "type": "bar",
+              "h": 6,
+              "value": "{min(api.weather.wind*2,100)}",
+              "color": "#1c8a4a",
+              "style": {
+                "gradient": "#ffd24a",
+                "gradientDir": "right",
+                "radius": 3,
+                "background": "#1a2029"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 8,
+        "radius": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "updated",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.weather.updated}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "source",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.weather.status}",
+              "align": "right",
+              "color": "{api.weather.color}"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "text",
+      "x": 77,
+      "y": 296,
       "text": "{time}  {date.day} {date.md}",
       "align": "center",
       "color": "dim"

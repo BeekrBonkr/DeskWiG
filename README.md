@@ -345,6 +345,8 @@ A layout then uses `{api.<id>.<field>}`, for example `{api.weather.temp}`. Every
 | `api.<id>.updated`     | Clock time of the last successful fetch                                                 |
 | `api.<id>.error`       | The last error, e.g. `HTTP 401` or `not JSON: InvalidInput`                             |
 
+Those five names always read the fetch state, so call a field something else: an API's own `status` value goes in a field named `state`, for example.
+
 Values are strings of up to 31 characters; nested objects and arrays are serialised and truncated. Like pings, a source is only fetched while a widget that references it is on screen, so an API quota is not spent on screens nobody is looking at. Saving a source or pressing **Test** on the setup page fetches it immediately and shows the extracted values. Fetches run in a background task, so a slow API never stalls the display, and the response is parsed with a filter that keeps only the requested paths, so large API responses cost little memory. Responses over 64 KB are rejected.
 
 HTTPS connections are encrypted but the server certificate is **not** verified. Header values are stored in `/config.json` and never returned by the API; `GET /api/config` omits sources entirely. The editor's template picker includes a **Weather** layout built for the Open-Meteo source above.

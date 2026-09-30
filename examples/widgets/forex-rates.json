@@ -7,120 +7,381 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "1 USD BUYS",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.fx.age}",
+          "align": "right",
+          "color": "{api.fx.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 8,
+            "padding": 8,
+            "radius": 10,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 6,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "w": 25,
+                  "h": 25,
+                  "children": [
+                    {
+                      "type": "circle",
+                      "x": 0,
+                      "y": 0,
+                      "r": 12,
+                      "color": "#2563eb"
+                    },
+                    {
+                      "type": "text",
+                      "x": 12,
+                      "y": 4,
+                      "text": "€",
+                      "font": "bold",
+                      "size": 16,
+                      "align": "center"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "EUR",
+                  "color": "#c4ccd6"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.fx.eur,3)}",
+              "font": "bold",
+              "size": 22
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 8,
+            "padding": 8,
+            "radius": 10,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 6,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "w": 25,
+                  "h": 25,
+                  "children": [
+                    {
+                      "type": "circle",
+                      "x": 0,
+                      "y": 0,
+                      "r": 12,
+                      "color": "#9333ea"
+                    },
+                    {
+                      "type": "text",
+                      "x": 12,
+                      "y": 4,
+                      "text": "£",
+                      "font": "bold",
+                      "size": 16,
+                      "align": "center"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "GBP",
+                  "color": "#c4ccd6"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.fx.gbp,3)}",
+              "font": "bold",
+              "size": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 8,
+            "padding": 8,
+            "radius": 10,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 6,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "w": 25,
+                  "h": 25,
+                  "children": [
+                    {
+                      "type": "circle",
+                      "x": 0,
+                      "y": 0,
+                      "r": 12,
+                      "color": "#dc2626"
+                    },
+                    {
+                      "type": "text",
+                      "x": 12,
+                      "y": 4,
+                      "text": "¥",
+                      "font": "bold",
+                      "size": 16,
+                      "align": "center"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "JPY",
+                  "color": "#c4ccd6"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.fx.jpy,1)}",
+              "font": "bold",
+              "size": 22
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 8,
+            "padding": 8,
+            "radius": 10,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 6,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "box",
+                  "w": 25,
+                  "h": 25,
+                  "children": [
+                    {
+                      "type": "circle",
+                      "x": 0,
+                      "y": 0,
+                      "r": 12,
+                      "color": "#0d9488"
+                    },
+                    {
+                      "type": "text",
+                      "x": 12,
+                      "y": 4,
+                      "text": "F",
+                      "font": "bold",
+                      "size": 16,
+                      "align": "center"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "CHF",
+                  "color": "#c4ccd6"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.fx.chf,3)}",
+              "font": "bold",
+              "size": 22
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 8,
+        "gap": 8,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "CONVERT",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "100 EUR",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "${round(100/api.fx.eur,2)}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "100 GBP",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "${round(100/api.fx.gbp,2)}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "10000 JPY",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "${round(10000/api.fx.jpy,2)}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "100 CHF",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "${round(100/api.fx.chf,2)}",
+              "align": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "type": "text",
-      "text": "1 USD BUYS",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "EUR €",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.fx.eur, 3)}",
-          "align": "right",
-          "font": "bold",
-          "size": 20
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "GBP £",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.fx.gbp, 3)}",
-          "align": "right",
-          "font": "bold",
-          "size": 20
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "JPY ¥",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.fx.jpy, 1)}",
-          "align": "right",
-          "font": "bold",
-          "size": 20
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "CHF",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.fx.chf, 3)}",
-          "align": "right",
-          "font": "bold",
-          "size": 20
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
+      "x": 77,
+      "y": 296,
+      "text": "ECB rates {api.fx.date}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "100 EUR = ${round(100 / api.fx.eur, 2)}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "ECB via Frankfurter · {api.fx.date}",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

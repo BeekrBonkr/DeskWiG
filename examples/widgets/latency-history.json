@@ -23,23 +23,37 @@
           "type": "text",
           "text": "{ping.0.name}",
           "font": "bold",
-          "size": 16
+          "size": 18
         },
         {
-          "type": "text",
-          "text": "{ping.0.ms} ms",
-          "font": "bold",
-          "size": 16,
-          "align": "right",
-          "color": "{ping.0.color}"
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 3,
+            "align": "end"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.0.ms}",
+              "font": "bold",
+              "size": 22,
+              "color": "{hsv(clamp(130-ping.0.ms*1.3,0,130),85,95)}"
+            },
+            {
+              "type": "text",
+              "text": "ms",
+              "color": "#7c8794"
+            }
+          ]
         }
       ]
     },
     {
       "type": "chart",
+      "h": 84,
       "series": "ping.0.ms",
       "window": 1800,
-      "h": 70,
       "color": "{ping.0.color}",
       "style": {
         "kind": "dots",
@@ -53,82 +67,139 @@
       "type": "box",
       "style": {
         "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "AVERAGE",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(ping.0.ms.avg)}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "WORST",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(ping.0.ms.max)}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
         "justify": "between"
       },
       "children": [
         {
           "type": "text",
-          "text": "avg {round(ping.0.ms.avg)}",
-          "color": "dim"
+          "text": "SIGNAL",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "worst {round(ping.0.ms.max)}",
-          "color": "dim",
-          "align": "right"
-        }
-      ]
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "SIGNAL",
-      "color": "dim"
-    },
-    {
-      "type": "chart",
-      "series": "wifi.rssi",
-      "window": 1800,
-      "h": 50,
-      "style": {
-        "kind": "area",
-        "min": -90,
-        "max": -30,
-        "gradient": "#102030"
-      }
-    },
-    {
-      "type": "box",
-      "h": 30,
-      "children": [
-        {
-          "type": "arc",
-          "x": 0,
-          "y": 0,
-          "w": 30,
-          "value": "{wifi.pct}",
-          "color": "{wifi.color}",
-          "style": {
-            "thickness": 5
-          }
-        },
-        {
-          "type": "text",
-          "x": 38,
-          "y": 4,
           "text": "{wifi.rssi} dBm",
-          "size": 2
-        },
-        {
-          "type": "rect",
-          "x": 38,
-          "y": 24,
-          "w": "{clamp(wifi.pct * 1.16, 2, 116)}",
-          "h": 4,
-          "fill": true,
+          "align": "right",
           "color": "{wifi.color}"
         }
       ]
     },
     {
+      "type": "chart",
+      "h": 50,
+      "series": "wifi.rssi",
+      "window": 1800,
+      "color": "accent",
+      "style": {
+        "kind": "area",
+        "gradient": "#10233a",
+        "min": -90,
+        "max": -30,
+        "background": "#0c1016",
+        "radius": 6
+      }
+    },
+    {
+      "type": "box",
+      "h": 6,
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": 154,
+          "h": 6,
+          "color": "#1a2029",
+          "fill": true,
+          "style": {
+            "radius": 3
+          }
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{clamp(wifi.pct*1.54,3,154)}",
+          "h": 6,
+          "color": "#c0392b",
+          "fill": true,
+          "style": {
+            "radius": 3,
+            "gradient": "#2fd37a",
+            "gradientDir": "right"
+          }
+        }
+      ]
+    },
+    {
       "type": "text",
-      "text": "30 min · {time}",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "last 30 min · {time}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

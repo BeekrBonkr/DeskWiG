@@ -22,132 +22,285 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
+    "gap": 6,
     "padding": 8
-  },
-  "styles": {
-    "stat": {
-      "font": "bold",
-      "size": 30,
-      "align": "right"
-    }
   },
   "elements": [
     {
-      "type": "text",
-      "text": "GITHUB",
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "{api.repo.name}",
-      "font": "bold",
-      "size": 22
-    },
-    {
-      "type": "text",
-      "text": "{api.repo.desc}",
-      "font": "sans",
-      "size": 12,
-      "color": "dim"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "⭐",
-          "font": "emoji",
-          "size": 26
+          "text": "GITHUB",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "stars",
-          "font": "sans",
-          "size": 14,
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.repo.stars}",
-          "class": "stat"
+          "text": "{api.repo.age}",
+          "align": "right",
+          "color": "{api.repo.color}"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 8,
+        "gap": 8,
+        "radius": 12,
+        "background": "#3b2277",
+        "gradient": "#0b0716",
+        "border": "#4c2f96"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "🐙",
+              "font": "emoji",
+              "size": 26,
+              "color": "#c9b8ff"
+            },
+            {
+              "type": "text",
+              "text": "{api.repo.name}",
+              "font": "bold",
+              "size": 22
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "box",
+              "w": 138,
+              "h": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "x": 0,
+                  "y": 0,
+                  "text": "{api.repo.desc}",
+                  "color": "#d6ccf5"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 138,
+              "h": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "x": -138,
+                  "y": 0,
+                  "text": "{api.repo.desc}",
+                  "color": "#d6ccf5"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
       "style": {
         "direction": "row",
-        "align": "center",
-        "gap": 6,
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 47,
+          "style": {
+            "gap": 4,
+            "padding": 5,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "⭐",
+              "font": "emoji",
+              "size": 18,
+              "align": "center",
+              "color": "#ffd24a"
+            },
+            {
+              "type": "text",
+              "text": "{api.repo.stars}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "stars",
+              "align": "center",
+              "color": "#7c8794"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 47,
+          "style": {
+            "gap": 4,
+            "padding": 5,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "🍴",
+              "font": "emoji",
+              "size": 18,
+              "align": "center",
+              "color": "#7fb4ff"
+            },
+            {
+              "type": "text",
+              "text": "{api.repo.forks}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "forks",
+              "align": "center",
+              "color": "#7c8794"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 47,
+          "style": {
+            "gap": 4,
+            "padding": 5,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "⚠",
+              "font": "emoji",
+              "size": 18,
+              "align": "center",
+              "color": "{hsv(clamp(130-api.repo.issues*6,0,130),85,100)}"
+            },
+            {
+              "type": "text",
+              "text": "{api.repo.issues}",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "text": "issues",
+              "align": "center",
+              "color": "#7c8794"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
         "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "STARS PER FORK",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.repo.stars/api.repo.forks,1)}",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "bar",
+      "h": 8,
+      "value": "{api.repo.stars/(api.repo.stars+api.repo.forks)*100}",
+      "color": "#a06a00",
+      "style": {
+        "gradient": "#ffd24a",
+        "gradientDir": "right",
+        "radius": 4,
+        "background": "#16324f"
       }
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "🍴",
-          "font": "emoji",
-          "size": 26
+          "text": "ISSUE LOAD",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "forks",
-          "font": "sans",
-          "size": 14,
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.repo.forks}",
-          "class": "stat"
+          "text": "{api.repo.issues} open",
+          "align": "right"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 6,
-        "justify": "between"
-      }
+      ]
     },
     {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "⚠",
-          "font": "emoji",
-          "size": 26
-        },
-        {
-          "type": "text",
-          "text": "issues",
-          "font": "sans",
-          "size": 14,
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.repo.issues}",
-          "class": "stat"
-        }
-      ],
+      "type": "bar",
+      "h": 8,
+      "value": "{min(api.repo.issues*5,100)}",
+      "color": "#2f9e44",
       "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 6,
-        "justify": "between"
+        "gradient": "#ff3b30",
+        "gradientDir": "right",
+        "radius": 4,
+        "background": "#1a2029"
       }
     },
     {
       "type": "text",
-      "text": "{api.repo.status} {api.repo.age}",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

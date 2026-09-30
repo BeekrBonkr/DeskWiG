@@ -22,182 +22,406 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "NOAA SPACE WEATHER",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
-      "children": [
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "GEO",
-              "color": "dim",
-              "align": "center"
-            },
-            {
-              "type": "text",
-              "text": "{api.swpc.g}",
-              "font": "bold",
-              "size": 40,
-              "align": "center"
-            }
-          ],
-          "style": {
-            "direction": "column",
-            "align": "center",
-            "gap": 2
-          }
-        },
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "SOLAR",
-              "color": "dim",
-              "align": "center"
-            },
-            {
-              "type": "text",
-              "text": "{api.swpc.s}",
-              "font": "bold",
-              "size": 40,
-              "align": "center"
-            }
-          ],
-          "style": {
-            "direction": "column",
-            "align": "center",
-            "gap": 2
-          }
-        },
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "RADIO",
-              "color": "dim",
-              "align": "center"
-            },
-            {
-              "type": "text",
-              "text": "{api.swpc.r}",
-              "font": "bold",
-              "size": 40,
-              "align": "center"
-            }
-          ],
-          "style": {
-            "direction": "column",
-            "align": "center",
-            "gap": 2
-          }
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "SPACE WEATHER",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.swpc.age}",
+          "align": "right",
+          "color": "{api.swpc.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 0,
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "box",
+              "w": 46,
+              "style": {
+                "gap": 6
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "G{api.swpc.g}",
+                  "font": "bold",
+                  "size": 26,
+                  "align": "center"
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "gap": 3,
+                    "align": "center"
+                  },
+                  "children": [
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.g>=5,hsv(0,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.g>=4,hsv(28,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.g>=3,hsv(56,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.g>=2,hsv(84,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.g>=1,hsv(112,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "storm",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 46,
+              "style": {
+                "gap": 6
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "S{api.swpc.s}",
+                  "font": "bold",
+                  "size": 26,
+                  "align": "center"
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "gap": 3,
+                    "align": "center"
+                  },
+                  "children": [
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.s>=5,hsv(0,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.s>=4,hsv(28,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.s>=3,hsv(56,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.s>=2,hsv(84,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.s>=1,hsv(112,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "solar",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 46,
+              "style": {
+                "gap": 6
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "R{api.swpc.r}",
+                  "font": "bold",
+                  "size": 26,
+                  "align": "center"
+                },
+                {
+                  "type": "box",
+                  "style": {
+                    "gap": 3,
+                    "align": "center"
+                  },
+                  "children": [
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.r>=5,hsv(0,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.r>=4,hsv(28,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.r>=3,hsv(56,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.r>=2,hsv(84,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    },
+                    {
+                      "type": "rect",
+                      "w": 38,
+                      "h": 9,
+                      "color": "{if(api.swpc.r>=1,hsv(112,85,95),1712169)}",
+                      "fill": true,
+                      "style": {
+                        "radius": 3
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "text": "radio",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 8,
+        "radius": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "geomagnetic",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.swpc.gtext}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "radiation",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.swpc.stext}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "blackout",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.swpc.rtext}",
+              "align": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 54,
+      "style": {
+        "padding": 10,
+        "radius": 12,
+        "background": "{if(api.swpc.g>0,rgb(16,120,90),rgb(22,28,36))}",
+        "gradient": "{if(api.swpc.g>0,rgb(70,30,120),rgb(10,12,16))}"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "AURORA",
+          "color": "#d8fff0"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.swpc.g>0,0,-500)}",
+          "y": 14,
+          "text": "watch the sky",
+          "font": "bold",
+          "size": 18
+        },
+        {
+          "type": "text",
+          "x": "{if(api.swpc.g>0,-500,0)}",
+          "y": 14,
+          "text": "quiet",
+          "font": "bold",
+          "size": 18,
+          "color": "#c4ccd6"
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "storm scales 0–5",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
+      "x": 77,
+      "y": 296,
+      "text": "NOAA scales 0-5 · {time}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "geomagnetic",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.swpc.gtext}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "radiation",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.swpc.stext}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "blackout",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.swpc.rtext}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "G ≥ 1 : aurora may reach mid-latitudes",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "SWPC · {api.swpc.age} ago",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

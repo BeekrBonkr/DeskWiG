@@ -7,91 +7,500 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "🏁",
-      "font": "emoji",
-      "size": 40,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "ROUND {api.f1.round}",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.f1.race}",
-      "font": "bold",
-      "size": 18,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.f1.circuit}",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "date",
-          "color": "dim"
+          "text": "FORMULA 1",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{api.f1.date}",
-          "align": "right"
+          "text": "{api.f1.age}",
+          "align": "right",
+          "color": "{api.f1.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "h": 14,
       "children": [
         {
-          "type": "text",
-          "text": "lights out",
-          "color": "dim"
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 14,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 28,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 42,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 56,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 70,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 84,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 98,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 112,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 126,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 140,
+          "y": 0,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 14,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 28,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 42,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 56,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 70,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 84,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 98,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 112,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 126,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "text",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 140,
+          "y": 7,
+          "w": 14,
+          "h": 7,
+          "color": "#15151e",
+          "fill": true
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 8,
+        "gap": 8,
+        "radius": 12,
+        "background": "#e10600",
+        "gradient": "#4a0200"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "padding": 4,
+                "radius": 6,
+                "background": "#15151e"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "ROUND {api.f1.round}",
+                  "color": "text"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 54,
+              "style": {
+                "direction": "row",
+                "gap": 2
+              },
+              "children": [
+                {
+                  "type": "circle",
+                  "r": 4,
+                  "color": "#ff1e00"
+                },
+                {
+                  "type": "circle",
+                  "r": 4,
+                  "color": "#ff1e00"
+                },
+                {
+                  "type": "circle",
+                  "r": 4,
+                  "color": "#ff1e00"
+                },
+                {
+                  "type": "circle",
+                  "r": 4,
+                  "color": "#ff1e00"
+                },
+                {
+                  "type": "circle",
+                  "r": 4,
+                  "color": "#ff1e00"
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "text",
-          "text": "{api.f1.time}",
-          "align": "right"
+          "text": "{api.f1.race}",
+          "font": "sans",
+          "size": 15
+        },
+        {
+          "type": "box",
+          "style": {
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "box",
+              "w": 138,
+              "h": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "x": 0,
+                  "y": 0,
+                  "text": "{api.f1.circuit}",
+                  "color": "#ffd0c8"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 138,
+              "h": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "x": -138,
+                  "y": 0,
+                  "text": "{api.f1.circuit}",
+                  "color": "#ffd0c8"
+                }
+              ]
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 6,
+            "padding": 7,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "RACE DAY",
+              "color": "#7c8794"
+            },
+            {
+              "type": "box",
+              "w": 60,
+              "h": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "x": -60,
+                  "y": 0,
+                  "text": "{api.f1.date}",
+                  "size": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 6,
+            "padding": 7,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "LIGHTS OUT",
+              "color": "#7c8794"
+            },
+            {
+              "type": "box",
+              "w": 60,
+              "h": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "x": 0,
+                  "y": 0,
+                  "text": "{api.f1.time}",
+                  "size": 2
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 8,
+        "radius": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "season",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{date.year}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "time zone",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "UTC",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "today",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{date}",
+              "align": "right"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "Ergast via Jolpica · {api.f1.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

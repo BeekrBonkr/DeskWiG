@@ -1,7 +1,7 @@
 {
   "name": "Temp Today",
   "led": {
-    "color": "{mix(rgb(0,120,255), rgb(255,80,0), clamp((api.weather.temp + 10) / 45, 0, 1))}",
+    "color": "{hsv(clamp(220-(api.weather.temp+10)*4.8,0,220),90,100)}",
     "mode": "breathe",
     "speed": 4000,
     "brightness": 40
@@ -11,119 +11,220 @@
     "gap": 6,
     "padding": 8
   },
-  "styles": {
-    "label": {
-      "color": "dim"
-    }
-  },
   "elements": [
     {
       "type": "box",
       "style": {
-        "background": "#101820",
-        "gradient": "#1c2a3a",
-        "radius": 8,
-        "padding": 8,
-        "gap": 2
+        "direction": "row",
+        "justify": "between"
       },
       "children": [
         {
           "type": "text",
-          "class": "label",
-          "text": "OUTSIDE"
+          "text": "OUTSIDE",
+          "color": "#7c8794"
         },
+        {
+          "type": "text",
+          "text": "{api.weather.age}",
+          "align": "right",
+          "color": "{api.weather.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 8,
+        "radius": 12,
+        "background": "#16202c",
+        "gradient": "#0a0d12",
+        "border": "#252d38"
+      },
+      "children": [
         {
           "type": "box",
           "style": {
             "direction": "row",
-            "align": "end",
-            "justify": "between"
+            "justify": "between",
+            "align": "center"
           },
           "children": [
             {
               "type": "text",
               "text": "{round(api.weather.temp)}°",
               "font": "bold",
-              "size": 44,
-              "color": "{mix(rgb(80,160,255), rgb(255,120,40), clamp((api.weather.temp + 10) / 45, 0, 1))}"
+              "size": 48,
+              "color": "{hsv(clamp(220-(api.weather.temp+10)*4.8,0,220),80,100)}"
             },
             {
-              "type": "text",
-              "text": "{round(api.weather.temp.min)}° / {round(api.weather.temp.max)}°",
-              "color": "dim",
-              "align": "right"
+              "type": "box",
+              "style": {
+                "gap": 6
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "HIGH {round(api.weather.temp.max)}°",
+                  "align": "right",
+                  "color": "#ffb070"
+                },
+                {
+                  "type": "text",
+                  "text": "LOW {round(api.weather.temp.min)}°",
+                  "align": "right",
+                  "color": "#6fb1ff"
+                },
+                {
+                  "type": "text",
+                  "text": "AVG {round(api.weather.temp.avg)}°",
+                  "align": "right",
+                  "color": "#c4ccd6"
+                }
+              ]
             }
           ]
         }
       ]
     },
     {
-      "type": "text",
-      "class": "label",
-      "text": "LAST 12 HOURS"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LAST 12 HOURS",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.weather.temp.delta,1)}°",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
     },
     {
       "type": "chart",
+      "h": 90,
       "series": "api.weather.temp",
       "window": 43200,
-      "h": 90,
-      "color": "{mix(rgb(80,160,255), rgb(255,120,40), clamp((api.weather.temp.avg + 10) / 45, 0, 1))}",
+      "color": "{hsv(clamp(220-(api.weather.temp+10)*4.8,0,220),80,100)}",
       "style": {
-        "kind": "line",
-        "thickness": 3,
+        "kind": "area",
+        "gradient": "#121c28",
+        "thickness": 2,
         "background": "#0c1016",
         "radius": 6
       }
     },
     {
       "type": "box",
-      "h": 14,
+      "h": 26,
       "children": [
         {
+          "type": "rect",
+          "x": 0,
+          "y": 5,
+          "w": 154,
+          "h": 4,
+          "color": "#1a2029",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "x": "{clamp((api.weather.temp.min+10)*3.4,0,154)}",
+          "y": 5,
+          "w": "{(api.weather.temp.max-api.weather.temp.min)*3.4}",
+          "h": 4,
+          "color": "#3b82f6",
+          "fill": true,
+          "style": {
+            "radius": 2,
+            "gradient": "#ff9f43",
+            "gradientDir": "right"
+          }
+        },
+        {
           "type": "circle",
-          "x": "{clamp((api.weather.temp - api.weather.temp.min) / max(api.weather.temp.max - api.weather.temp.min, 1) * 146, 0, 146)}",
-          "y": 3,
-          "r": 4,
-          "color": "accent"
+          "x": "{clamp((api.weather.temp+10)*3.4,0,146)}",
+          "y": 2,
+          "r": 5,
+          "color": "text",
+          "style": {
+            "border": "bg",
+            "borderWidth": 2
+          }
         },
         {
           "type": "text",
           "x": 0,
-          "y": 3,
-          "text": "min",
-          "color": "dim"
+          "y": 16,
+          "text": "-10°",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 16,
+          "text": "today's range",
+          "align": "center",
+          "color": "#7c8794"
         },
         {
           "type": "text",
           "x": 154,
-          "y": 3,
-          "text": "max",
-          "color": "dim",
+          "y": 16,
+          "text": "35°",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "HUMIDITY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.humidity}%",
           "align": "right"
         }
       ]
     },
     {
-      "type": "text",
-      "class": "label",
-      "text": "HUMIDITY {api.weather.humidity}%"
-    },
-    {
       "type": "bar",
       "h": 8,
       "value": "{api.weather.humidity}",
-      "color": "#3070c0",
+      "color": "#1d5fd0",
       "style": {
         "gradient": "#40d0ff",
         "gradientDir": "right",
-        "radius": 4
+        "radius": 4,
+        "background": "#1a2029"
       }
     },
     {
       "type": "text",
-      "text": "{api.weather.age} ago · {time}",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

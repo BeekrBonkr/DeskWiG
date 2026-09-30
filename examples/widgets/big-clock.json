@@ -8,62 +8,169 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "align": "center",
     "gap": 6,
-    "padding": 6
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "{time}",
-      "font": "bold",
-      "size": 52
-    },
-    {
-      "type": "text",
-      "text": "{time.ampm}",
-      "font": "sans",
-      "size": 18,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "{date.dow}",
-      "font": "sans",
-      "size": 20
-    },
-    {
-      "type": "text",
-      "text": "{date.md} {date.year}",
-      "font": "sans",
-      "size": 16,
-      "color": "dim"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "{wifi.ssid}",
-          "color": "dim"
+          "text": "{date.dow}",
+          "color": "#7c8794"
         },
         {
           "type": "text",
           "text": "{wifi.bars}",
-          "color": "{wifi.color}",
-          "align": "right"
+          "align": "right",
+          "color": "{wifi.color}"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
+      "h": 206,
+      "style": {
+        "padding": 8,
+        "radius": 14,
+        "background": "{hsv(215,70,8+26*clamp(1-abs(time.hour-13)/7,0,1))}",
+        "gradient": "#05070a",
+        "border": "#1c2535"
+      },
+      "children": [
+        {
+          "type": "arc",
+          "x": 0,
+          "y": 8,
+          "w": 138,
+          "value": "{(time.hour*60+time.min)/14.4}",
+          "start": 270,
+          "end": 450,
+          "color": "#7f9fd8",
+          "style": {
+            "thickness": 3,
+            "background": "#2a3850"
+          }
+        },
+        {
+          "type": "arc",
+          "x": -3,
+          "y": 5,
+          "w": 144,
+          "value": 100,
+          "start": "{265+(time.hour*60+time.min)/8}",
+          "end": "{275+(time.hour*60+time.min)/8}",
+          "color": "{if(abs(time.hour-12.5)<6,rgb(255,190,60),rgb(150,170,255))}",
+          "style": {
+            "thickness": 9
+          }
+        },
+        {
+          "type": "text",
+          "x": 69,
+          "y": 46,
+          "text": "{time}",
+          "font": "bold",
+          "size": 52,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 69,
+          "y": 102,
+          "text": "{time.ampm}",
+          "align": "center",
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "line",
+          "x": 30,
+          "y": 124,
+          "x2": 108,
+          "y2": 124,
+          "color": "#2a3850"
+        },
+        {
+          "type": "text",
+          "x": 69,
+          "y": 138,
+          "text": "{date.md}",
+          "font": "bold",
+          "size": 28,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 69,
+          "y": 172,
+          "text": "{date.year}",
+          "align": "center",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "box",
       "style": {
         "direction": "row",
         "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "DAY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round((time.hour*60+time.min)/14.4)}%",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "bar",
+      "h": 10,
+      "value": "{(time.hour*60+time.min)/14.4}",
+      "color": "#1d4ed8",
+      "style": {
+        "gradient": "#7fb4ff",
+        "gradientDir": "right",
+        "radius": 5,
+        "background": "#1a2029"
       }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "to midnight",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{1440-(time.hour*60+time.min)} min",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "{wifi.ssid}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }
