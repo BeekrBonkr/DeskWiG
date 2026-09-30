@@ -49,6 +49,9 @@ ImgType imageSniff(const uint8_t* data, size_t len);
 // Removes a stored image.
 bool imageDelete(const char* name, char* err, size_t errLen);
 
+// Renames a stored image. Layouts that use the old name are not touched.
+bool imageRename(const char* from, const char* to, char* err, size_t errLen);
+
 // Every stored image with name, type and size.
 void imagesToJson(JsonArray arr);
 
