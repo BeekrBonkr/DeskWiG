@@ -293,6 +293,22 @@ function lookup(key, strict) {
 function isExpr(b) { return /[()+\-*\/%^ <>=!&|]/.test(b) || /^[0-9]/.test(b); }
 function evalNumber(body) { const r = evalExpr(body); return r === '--' ? null : parseFloat(r); }
 
+// Colours in expressions are numbers 0xRRGGBB; see rgb(), hsv() and mix().
+const clamp255 = v => Math.max(0, Math.min(255, v));
+const packRgb = (r, g, b) => (Math.round(clamp255(r)) << 16) + (Math.round(clamp255(g)) << 8) + Math.round(clamp255(b));
+function hsvToRgb(h, s, v) {
+  if (s > 1) s /= 100;
+  if (v > 1) v /= 100;
+  s = Math.max(0, Math.min(1, s)); v = Math.max(0, Math.min(1, v));
+  h = ((h % 360) + 360) % 360;
+  const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; } else if (h < 180) { g = c; b = x; }
+  else if (h < 240) { g = x; b = c; } else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+  return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+}
+const numToHex = n => '#' + (n & 0xFFFFFF).toString(16).padStart(6, '0');
+
 function evalExpr(body) {
   let p = 0, err = false, depth = 0;
   const s = body;
@@ -346,6 +362,15 @@ function evalExpr(body) {
       case 'min': case 'max': { if (n < 1) return bad(); let r = a[0]; for (let i = 1; i < n; i++) if (name === 'min' ? a[i].v < r.v : a[i].v > r.v) r = a[i]; return r; }
       case 'clamp': { if (n !== 3) return bad(); return { v: Math.min(Math.max(a[0].v, a[1].v), a[2].v), d: a[0].d }; }
       case 'if': { if (n !== 3) return bad(); return a[0].v !== 0 ? a[1] : a[2]; }
+      case 'lerp': { if (n !== 3) return bad(); return { v: a[0].v + (a[1].v - a[0].v) * a[2].v, d: -1 }; }
+      case 'rgb': { if (n !== 3) return bad(); return { v: packRgb(a[0].v, a[1].v, a[2].v), d: 0 }; }
+      case 'hsv': { if (n !== 3) return bad(); const c = hsvToRgb(a[0].v, a[1].v, a[2].v); return { v: packRgb(c[0], c[1], c[2]), d: 0 }; }
+      case 'mix': {
+        if (n !== 3) return bad();
+        const t = Math.max(0, Math.min(1, a[2].v)), c0 = a[0].v >>> 0, c1 = a[1].v >>> 0;
+        const ch = sh => ((c0 >> sh) & 255) + (((c1 >> sh) & 255) - ((c0 >> sh) & 255)) * t;
+        return { v: packRgb(ch(16), ch(8), ch(0)), d: 0 };
+      }
       default: return bad();
     }
   }
@@ -444,7 +469,7 @@ function expandKey(k) {
 const expand = t => String(t ?? '').replace(/\{([^}]+)\}/g, (m, k) => expandKey(k));
 
 const AUTO = null;
-const TYPES = ['text', 'line', 'rect', 'bar', 'box', 'circle', 'ellipse', 'arc', 'triangle', 'polygon', 'image'];
+const TYPES = ['text', 'line', 'rect', 'bar', 'box', 'circle', 'ellipse', 'arc', 'triangle', 'polygon', 'image', 'chart'];
 
 // ---------- images ----------
 // Stored images come from the device; URLs load directly. Animated GIFs
@@ -492,6 +517,7 @@ function color(spec, fallback) {
   if (templated) { n = expand(n); fb = COLORS.dim; }
   if (COLORS[n]) return { c: COLORS[n], present: true };
   if (/^#[0-9a-f]{6}$/i.test(n)) return { c: n, present: true };
+  if (/^\d+$/.test(n) && parseInt(n, 10) <= 0xFFFFFF) return { c: numToHex(parseInt(n, 10)), present: true };
   return { c: fb, present: true };
 }
 
@@ -500,15 +526,34 @@ const at = path => (/^(style|led|root)/.test(path) ? path : 'element ' + path);
 
 function checkColor(spec, path, what) {
   const c = String(spec ?? '');
+  if (c.length > 63) throw new Error(at(path) + ': ' + what + ' too long');
   if (c && !c.includes('{') && !COLORS[c] && !/^#[0-9a-f]{6}$/i.test(c)) throw new Error(at(path) + ': unknown ' + what + ' (use a role name or #rrggbb)');
 }
 
 function defaultStyle() {
   return { font: '', image: '', fit: 'contain', color: 'text', bg: '', border: '', size: 1, borderW: 0, radius: 0, pad: 0, gap: 0, thick: 0,
-           align: 'stretch', justify: 'start', row: false, fill: false, absolute: false };
+           align: 'stretch', justify: 'start', row: false, fill: false, absolute: false,
+           gradient: '', gradientRight: false, kind: 'line', vmin: 0, vmax: 0, hasMin: false, hasMax: false };
 }
 
 const ALIGNS = { left: 'start', start: 'start', top: 'start', center: 'center', right: 'end', end: 'end', bottom: 'end', stretch: 'stretch' };
+
+// A number that may also be a "{template}", evaluated now (the preview
+// re-parses on every render, so this is the device's per-frame binding).
+let bindCount = 0;
+function num(v, path, what) {
+  if (typeof v === 'string') {
+    if (!v.includes('{')) throw new Error(at(path) + ': ' + what + ' must be a number or a {template}');
+    if (/^style "/.test(path)) throw new Error(at(path) + ': ' + what + ' cannot be a template in a named style');
+    if (v.length > 55) throw new Error(at(path) + ': ' + what + ' template longer than 55 characters');
+    if (++bindCount > 40) throw new Error('too many templated numbers (max 40)');
+    const d = parseFloat(expand(v));
+    return isFinite(d) ? d : 0;
+  }
+  if (typeof v !== 'number' || !isFinite(v)) throw new Error(at(path) + ': ' + what + ' must be a number or a {template}');
+  return v;
+}
+const numI = (v, path, what) => Math.trunc(num(v, path, what));
 
 function parseStyle(st, obj, path) {
   for (const k of Object.keys(obj)) {
@@ -517,12 +562,25 @@ function parseStyle(st, obj, path) {
       case 'color': checkColor(v, path, 'color'); st.color = String(v ?? 'text'); break;
       case 'background': case 'bg': checkColor(v, path, 'background'); st.bg = String(v ?? ''); break;
       case 'border': checkColor(v, path, 'border'); st.border = String(v ?? ''); if (st.border && !st.borderW) st.borderW = 1; break;
-      case 'borderWidth': st.borderW = Math.max(0, Math.min(20, v | 0)); break;
-      case 'radius': st.radius = Math.max(0, Math.min(80, v | 0)); break;
-      case 'padding': st.pad = Math.max(0, Math.min(80, v | 0)); break;
-      case 'gap': st.gap = Math.max(0, Math.min(200, v | 0)); break;
-      case 'thickness': case 'width': st.thick = Math.max(1, Math.min(80, v | 0)); break;
-      case 'size': if (!Number.isInteger(v) || v < 1 || v > 160) throw new Error(at(path) + ': size must be 1-40 (bitmap font) or 6-160 (TrueType font)'); st.size = v; break;
+      case 'borderWidth': st.borderW = Math.max(0, Math.min(20, numI(v, path, 'borderWidth'))); break;
+      case 'radius': st.radius = Math.max(0, Math.min(80, numI(v, path, 'radius'))); break;
+      case 'padding': st.pad = Math.max(0, Math.min(80, numI(v, path, 'padding'))); break;
+      case 'gap': st.gap = Math.max(0, Math.min(200, numI(v, path, 'gap'))); break;
+      case 'thickness': case 'width': st.thick = Math.max(1, Math.min(80, numI(v, path, 'thickness'))); break;
+      case 'size': {
+        const templ = typeof v === 'string';
+        const sz = numI(v, path, 'size');
+        if (!templ && (!Number.isInteger(v) || v < 1 || v > 160)) throw new Error(at(path) + ': size must be 1-40 (bitmap font) or 6-160 (TrueType font)');
+        st.size = templ ? Math.max(1, Math.min(st.font ? 160 : 40, sz)) : v;
+        break;
+      }
+      case 'gradient': checkColor(v, path, 'gradient'); st.gradient = String(v ?? ''); break;
+      case 'gradientDir':
+        if (!['down', 'vertical', 'right', 'horizontal'].includes(v)) throw new Error(at(path) + ': gradientDir must be down or right');
+        st.gradientRight = v === 'right' || v === 'horizontal'; break;
+      case 'kind': if (!['line', 'area', 'bars', 'dots'].includes(v)) throw new Error(at(path) + ': kind must be line, area, bars or dots'); st.kind = v; break;
+      case 'min': st.vmin = num(v, path, 'min'); st.hasMin = true; break;
+      case 'max': st.vmax = num(v, path, 'max'); st.hasMax = true; break;
       case 'font': if (v && !fontNames.includes(v)) throw new Error(at(path) + ': unknown font (see the setup page for the list)'); st.font = String(v ?? ''); break;
       case 'align': if (!ALIGNS[v]) throw new Error(at(path) + ': align must be left/start, center, right/end or stretch'); st.align = ALIGNS[v]; break;
       case 'justify': if (!['start', 'center', 'end', 'between'].includes(v)) throw new Error(at(path) + ': justify must be start, center, end or between'); st.justify = v; break;
@@ -549,6 +607,7 @@ function buildNode(e, path, styles, depth) {
   if (shape) st.fill = true;
   if (e.type === 'arc') { st.thick = 8; st.bg = 'dim'; }
   if (e.type === 'line') st.thick = 1;
+  if (e.type === 'chart') { st.thick = 2; st.color = 'accent'; }
 
   const cls = e.class ?? (typeof e.style === 'string' ? e.style : '');
   if (cls) {
@@ -558,10 +617,15 @@ function buildNode(e, path, styles, depth) {
     if (e.type === 'arc' && !m.thick) m.thick = 8;
     if (e.type === 'arc' && !m.bg) m.bg = 'dim';
     if (e.type === 'line' && !m.thick) m.thick = 1;
+    if (e.type === 'chart' && !m.thick) m.thick = 2;
     Object.assign(st, m);
   }
   if (e.color !== undefined) { checkColor(e.color, path, 'color'); st.color = String(e.color); }
-  if (e.size !== undefined) { if (!Number.isInteger(e.size) || e.size < 1 || e.size > 160) throw new Error(at(path) + ': size must be 1-40 (bitmap font) or 6-160 (TrueType font)'); st.size = e.size; }
+  if (e.size !== undefined) {
+    const sz = numI(e.size, path, 'size');
+    if (typeof e.size !== 'string' && (!Number.isInteger(e.size) || e.size < 1 || e.size > 160)) throw new Error(at(path) + ': size must be 1-40 (bitmap font) or 6-160 (TrueType font)');
+    st.size = typeof e.size === 'string' ? Math.max(1, Math.min(st.font ? 160 : 40, sz)) : e.size;
+  }
   if (e.font !== undefined) { if (e.font && !fontNames.includes(e.font)) throw new Error(at(path) + ': unknown font (see the setup page for the list)'); st.font = String(e.font ?? ''); }
   if (e.align !== undefined) { if (!ALIGNS[e.align]) throw new Error(at(path) + ': align must be left, center or right'); st.align = ALIGNS[e.align]; }
   if (e.fill !== undefined) st.fill = !!e.fill;
@@ -572,22 +636,32 @@ function buildNode(e, path, styles, depth) {
   }
   n.st = st;
 
-  if (e.x !== undefined) n.x = e.x | 0;
-  if (e.y !== undefined) n.y = e.y | 0;
-  if (e.w !== undefined) n.w = e.w | 0;
-  if (e.h !== undefined) n.h = e.h | 0;
-  if (e.r !== undefined) n.w = n.h = (e.r | 0) * 2;
-  if (e.x2 !== undefined) n.x2 = e.x2 | 0;
-  if (e.y2 !== undefined) n.y2 = e.y2 | 0;
-  n.hasXY = (n.x !== AUTO && n.y !== AUTO) || st.absolute;
+  if (e.x !== undefined) n.x = numI(e.x, path, 'x');
+  if (e.y !== undefined) n.y = numI(e.y, path, 'y');
+  if (e.w !== undefined) n.w = numI(e.w, path, 'w');
+  if (e.h !== undefined) n.h = numI(e.h, path, 'h');
+  if (e.r !== undefined) n.w = n.h = numI(e.r, path, 'r') * 2;
+  if (e.x2 !== undefined) n.x2 = numI(e.x2, path, 'x2');
+  if (e.y2 !== undefined) n.y2 = numI(e.y2, path, 'y2');
+  n.hasXY = (e.x !== undefined && e.y !== undefined) || st.absolute;
   if (n.hasXY) { if (n.x === AUTO) n.x = 0; if (n.y === AUTO) n.y = 0; }
-  if (e.type === 'arc') { n.a0 = e.start ?? 0; n.a1 = e.end ?? 360; }
+  if (e.type === 'arc') {
+    if (e.start !== undefined) n.a0 = numI(e.start, path, 'start');
+    if (e.end !== undefined) n.a1 = numI(e.end, path, 'end');
+  }
+  if (e.type === 'chart') {
+    const key = String(e.series ?? '');
+    if (!key) throw new Error(at(path) + ': chart needs "series": a key sampled on the setup page under History');
+    if (!/^[A-Za-z0-9_.\-]{1,47}$/.test(key) || key.startsWith('.') || key.endsWith('.')) throw new Error(at(path) + ': "series" is not a valid key');
+    n.series = key;
+    n.window = e.window !== undefined ? Math.max(0, numI(e.window, path, 'window')) : 0;
+  }
   if (e.type === 'triangle' || e.type === 'polygon') {
     if (!Array.isArray(e.points)) throw new Error(at(path) + ': "points" must be an array of [x,y] pairs');
     if (e.points.length > 8) throw new Error(at(path) + ': too many points (max 8)');
     for (const p of e.points) {
       if (!Array.isArray(p) || p.length !== 2) throw new Error(at(path) + ': each point must be [x,y]');
-      n.pts.push([p[0] | 0, p[1] | 0]);
+      n.pts.push([numI(p[0], path, 'point x'), numI(p[1], path, 'point y')]);
     }
     if (e.type === 'triangle' && n.pts.length !== 3) throw new Error(at(path) + ': triangle needs exactly 3 points');
     if (n.pts.length < 3) throw new Error(at(path) + ': polygon needs at least 3 points');
@@ -603,7 +677,7 @@ function buildNode(e, path, styles, depth) {
   if (e.type === 'bar' || e.type === 'arc') text = String(e.value ?? '0');
   else if (e.type === 'text') text = String(e.text ?? '');
   if (text.length > 63) throw new Error(at(path) + ': text longer than 63 characters');
-  n.text = text;
+  n.text = e.type === 'chart' ? n.series : text;
 
   if (e.children !== undefined) {
     if (e.type !== 'box') throw new Error(at(path) + ': only a box can have children');
@@ -635,6 +709,7 @@ function validate(j) {
   }
   if (j.led !== undefined) parseLed(j.led);
   nodeCount = 0;
+  bindCount = 0;
   const root = { type: 'box', x: 0, y: 0, w: 170, h: 320, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: true, st: defaultStyle(), el: j, path: 'root' };
   if (j.style && typeof j.style === 'object') parseStyle(root.st, j.style, 'root');
   j.elements.forEach((e, i) => root.children.push(buildNode(e, String(i), styles, 1)));
@@ -751,7 +826,7 @@ function ledState(cfg) {
   const mode = pick && pick.mode ? pick.mode : b.mode;
   const speed = pick && pick.speed ? pick.speed : b.speed;
   let n = color.includes('{') ? expand(color) : color;
-  let rgb = LED_RGB[n] || (/^#[0-9a-f]{6}$/i.test(n) ? n : null);
+  let rgb = LED_RGB[n] || (/^#[0-9a-f]{6}$/i.test(n) ? n : /^\d+$/.test(n) && parseInt(n, 10) <= 0xFFFFFF ? numToHex(parseInt(n, 10)) : null);
   if (mode === 'rainbow') return { rgb: '#ff40ff', mode, speed };
   return { rgb: rgb || '#000000', mode: rgb ? mode : 'off', speed };
 }
@@ -778,6 +853,7 @@ function measure(n) {
       else h = n.st.thick;
       break;
     case 'bar': n.txt = expand(n.text); h = 8; break;
+    case 'chart': h = 40; break;
     case 'arc': n.txt = expand(n.text); // fall through
     case 'circle':
       if (n.w !== AUTO && n.h === AUTO) h = n.w;
@@ -858,7 +934,7 @@ function place(n, x, y, w, h) {
     const stretch = n.st.align === 'stretch';
     const crossExplicit = (n.st.row ? k.h : k.w) !== AUTO;
     if (crossSize === AUTO) crossSize = stretch ? crossAvail : 0;
-    else if (stretch && !crossExplicit && ['text', 'bar', 'box', 'line'].includes(k.type)) crossSize = crossAvail;
+    else if (stretch && !crossExplicit && ['text', 'bar', 'box', 'line', 'chart'].includes(k.type)) crossSize = crossAvail;
     let crossOff = 0;
     if (n.st.align === 'center') crossOff = Math.trunc((crossAvail - crossSize) / 2);
     else if (n.st.align === 'end') crossOff = crossAvail - crossSize;
@@ -936,6 +1012,94 @@ function fillRectR(x, y, w, h, r, col) {
   rrPath(x, y, w, h, r); ctx.fill();
 }
 
+// Two-colour gradient inside a (rounded) rectangle, like fillGradient on the device.
+function fillGradientR(x, y, w, h, r, c0, c1, right) {
+  if (w <= 0 || h <= 0) return;
+  const g = right ? ctx.createLinearGradient(x * S, 0, (x + w) * S, 0) : ctx.createLinearGradient(0, y * S, 0, (y + h) * S);
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.fillStyle = g;
+  if (!r) { ctx.fillRect(x * S, y * S, w * S, h * S); return; }
+  rrPath(x, y, w, h, r); ctx.fill();
+}
+
+// Samples for chart elements come from the device; each key is refreshed
+// every few seconds while a chart uses it.
+const seriesCache = {};
+function seriesGet(key) {
+  const c = seriesCache[key];
+  const now = Date.now();
+  if (!c || (now - c.at > 5000 && !c.busy)) {
+    const entry = seriesCache[key] = c || { at: 0, samples: null, busy: false };
+    entry.busy = true;
+    fetch('/api/series?key=' + encodeURIComponent(key)).then(r => r.json()).then(j => {
+      const s = (j.series || []).find(x => x.key === key);
+      entry.samples = s && s.samples ? s.samples : null;
+      entry.at = Date.now();
+      entry.busy = false;
+      if (s && s.samples) render();
+    }).catch(() => { entry.at = Date.now(); entry.busy = false; });
+  }
+  return seriesCache[key].samples;
+}
+
+function drawChart(n, x, y, w, h, col, bg, grad) {
+  if (w <= 1 || h <= 1) return;
+  if (bg.present) fillRectR(x, y, w, h, n.st.radius, bg.c);
+  let samples = seriesGet(n.series) || [];
+  if (n.window) samples = samples.filter(p => p[0] <= n.window);
+  if (!samples.length) { ctx.fillStyle = COLORS.dim; ctx.fillRect(x * S, (y + h - 1) * S, w * S, S); return; }
+  let span = n.window || samples[0][0];
+  if (!span) span = 1;
+  const st = n.st;
+  let lo = st.hasMin ? st.vmin : samples[0][1], hi = st.hasMax ? st.vmax : samples[0][1];
+  for (const p of samples) { if (!st.hasMin) lo = Math.min(lo, p[1]); if (!st.hasMax) hi = Math.max(hi, p[1]); }
+  if (!st.hasMin && !st.hasMax) { const pad = (hi - lo) * 0.05; lo -= pad; hi += pad; }
+  if (hi <= lo) { hi = lo + 1; lo -= 1; }
+  const bottom = y + h - 1;
+  const px = samples.map(p => x + Math.round((p[0] > span ? 0 : (span - p[0]) / span) * (w - 1)));
+  const py = samples.map(p => bottom - Math.round(Math.max(0, Math.min(1, (p[1] - lo) / (hi - lo))) * (h - 1)));
+  const n2 = samples.length, half = st.thick / 2;
+  const dot = (cx, cy) => { ctx.fillStyle = col; ctx.beginPath(); ctx.arc((cx + 0.5) * S, (cy + 0.5) * S, Math.max(1, half) * S, 0, Math.PI * 2); ctx.fill(); };
+  switch (st.kind) {
+    case 'area': {
+      const fillc = grad.present ? grad.c : mixHex(col, bg.present ? bg.c : COLORS.bg, 170 / 255);
+      ctx.fillStyle = fillc;
+      ctx.beginPath();
+      ctx.moveTo((px[0] + 0.5) * S, (bottom + 1) * S);
+      for (let i = 0; i < n2; i++) ctx.lineTo((px[i] + 0.5) * S, (py[i] + 0.5) * S);
+      ctx.lineTo((px[n2 - 1] + 0.5) * S, (bottom + 1) * S);
+      ctx.closePath(); ctx.fill();
+    }
+    // fall through
+    case 'line':
+      if (n2 === 1) { dot(px[0], py[0]); break; }
+      for (let i = 0; i + 1 < n2; i++) drawLine(px[i], py[i], px[i + 1], py[i + 1], col, st.thick);
+      break;
+    case 'bars': {
+      let base = bottom;
+      if (lo < 0 && hi > 0) base = bottom - Math.round((0 - lo) / (hi - lo) * (h - 1));
+      let bwid = Math.max(1, Math.trunc(w / n2) - 1);
+      for (let i = 0; i < n2; i++) {
+        const top = Math.min(py[i], base), bh = Math.abs(py[i] - base) + 1;
+        let bx = Math.max(x, px[i] - Math.trunc(bwid / 2));
+        const bw2 = Math.min(bwid, x + w - bx);
+        if (grad.present) fillGradientR(bx, top, bw2, bh, 0, col, grad.c, st.gradientRight);
+        else fillRectR(bx, top, bw2, bh, 0, col);
+      }
+      break;
+    }
+    case 'dots':
+      for (let i = 0; i < n2; i++) dot(px[i], py[i]);
+      break;
+  }
+}
+
+function mixHex(a, b, t) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ch = sh => Math.round(((pa >> sh) & 255) + (((pb >> sh) & 255) - ((pa >> sh) & 255)) * t);
+  return numToHex((ch(16) << 16) + (ch(8) << 8) + ch(0));
+}
+
 function strokeRectR(x, y, w, h, r, col) {
   if (w <= 0 || h <= 0) return;
   if (!r) {
@@ -954,16 +1118,23 @@ function drawNode(n) {
   const col = color(n.st.color, COLORS.text).c;
   const bg = color(n.st.bg, COLORS.bg);
   const border = color(n.st.border, COLORS.dim);
+  const grad = color(n.st.gradient, COLORS.bg);
   const bw = border.present ? (n.st.borderW || 1) : 0;
 
   switch (n.type) {
     case 'box': case 'rect': {
-      const fillIt = bg.present || (n.type === 'rect' && n.st.fill);
+      const fillIt = bg.present || grad.present || (n.type === 'rect' && n.st.fill);
       const fillColor = bg.present ? bg.c : col;
-      const outline = bw > 0 || (n.type === 'rect' && !n.st.fill && !bg.present);
+      const outline = bw > 0 || (n.type === 'rect' && !n.st.fill && !bg.present && !grad.present);
       const oc = bw > 0 ? border.c : col;
       const ow = bw > 0 ? bw : 1;
-      if (fillIt) fillRectR(x, y, w, h, n.st.radius, fillColor);
+      if (fillIt) {
+        if (grad.present) {
+          if (outline) fillRectR(x, y, w, h, n.st.radius, oc);
+          const i = outline ? ow : 0;
+          fillGradientR(x + i, y + i, w - 2 * i, h - 2 * i, Math.max(0, n.st.radius - i), fillColor, grad.c, n.st.gradientRight);
+        } else fillRectR(x, y, w, h, n.st.radius, fillColor);
+      }
       if (outline) for (let k = 0; k < ow && k * 2 < w && k * 2 < h; k++) strokeRectR(x + k, y + k, w - 2 * k, h - 2 * k, Math.max(0, n.st.radius - k), oc);
       if (n.type === 'box') {
         ctx.save();
@@ -1003,9 +1174,13 @@ function drawNode(n) {
       if (w <= 0 || h <= 0) break;
       strokeRectR(x, y, w, h, n.st.radius, bg.present ? bg.c : COLORS.dim);
       const fw = Math.floor(Math.max(0, w - 2) * v / 100);
-      if (fw > 0 && h > 2) fillRectR(x + 1, y + 1, fw, h - 2, Math.max(0, n.st.radius - 1), col);
+      if (fw > 0 && h > 2) {
+        if (grad.present) fillGradientR(x + 1, y + 1, fw, h - 2, Math.max(0, n.st.radius - 1), col, grad.c, n.st.gradientRight);
+        else fillRectR(x + 1, y + 1, fw, h - 2, Math.max(0, n.st.radius - 1), col);
+      }
       break;
     }
+    case 'chart': drawChart(n, x, y, w, h, col, bg, grad); break;
     case 'circle': case 'ellipse': {
       let rx = Math.trunc(w / 2), ry = Math.trunc(h / 2);
       if (n.type === 'circle') rx = ry = Math.trunc(Math.min(w, h) / 2);
