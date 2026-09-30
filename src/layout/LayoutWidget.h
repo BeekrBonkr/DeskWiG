@@ -65,11 +65,14 @@ enum class ElJustify : uint8_t { START, CENTER, END, BETWEEN };
 
 constexpr int16_t EL_AUTO = INT16_MIN;
 
+// Room for a colour expression such as {mix(rgb(0,0,255), rgb(255,0,0), api.w.temp / 40)}.
+constexpr uint8_t COLOR_LEN = 64;
+
 struct LayoutStyle {
   char font[24];       // TrueType font name; "" = built-in 6x8 bitmap font
-  char color[24];      // text colour, fill colour (fill=true) or outline colour
-  char bg[24];         // background (box, rect, shapes) or arc track; "" = none
-  char border[24];     // border colour; "" = none
+  char color[COLOR_LEN];   // text colour, fill colour (fill=true) or outline colour
+  char bg[COLOR_LEN];      // background (box, rect, shapes) or arc track; "" = none
+  char border[COLOR_LEN];  // border colour; "" = none
   uint8_t size;        // bitmap text scale 1-40, or pixel line height 6-160 with a font
   uint8_t borderW;     // border width in px
   uint8_t radius;      // corner radius (box, rect)
@@ -83,7 +86,7 @@ struct LayoutStyle {
   bool absolute;       // forced absolute positioning
   ImgFit fit;          // image scaling: contain (default), cover, stretch
   char image[IMAGE_SRC_LEN + 1];   // background image for a box (name or URL)
-  char gradient[24];   // second colour of a gradient fill; "" = flat
+  char gradient[COLOR_LEN];   // second colour of a gradient fill; "" = flat
   bool gradientRight;  // gradient runs left to right instead of top to bottom
   ChartKind kind;      // chart: line (default), area, bars, dots
   float vmin, vmax;    // chart value range; used when hasMin/hasMax
@@ -128,7 +131,7 @@ struct LedRule {
   char when[64];
   char key[40];
   char is[24];
-  char color[24];
+  char color[COLOR_LEN];
   LedMode mode;
   uint16_t speed;
   int16_t brightness;

@@ -1,6 +1,6 @@
 # Example widgets
 
-Fifty-two layouts that show what DeskWiG layouts can do. They are not preloaded on the device: open `http://deskwig.local/editor`, paste one into the editor, and press **Save**, or push it from a shell:
+Fifty-five layouts that show what DeskWiG layouts can do. They are not preloaded on the device: open `http://deskwig.local/editor`, paste one into the editor, and press **Save**, or push it from a shell:
 
 ```bash
 curl -X PUT "http://deskwig.local/api/layouts?id=big-clock" \
@@ -58,6 +58,10 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `barometer.json` | Gauge over a 950–1050 hPa window with `clamp()` | `baro` |
 | `surf-report.json` | Marine API: wave height, period and direction | `surf` `weather` |
 | `wind-meter.json` | Beaufort number from km/h with `^` (power) | `wind` |
+| **Over time** | | |
+| `stock-chart.json` | Area chart of a sampled price, `.delta`/`.min`/`.max` keys, colours from `rgb()` and `if()`, templated `min`/`max` on a bar chart | `nvda`, sampled `api.nvda.c` |
+| `temp-history.json` | Gradient card, line chart over 12 h, a marker whose `x` is an expression, `mix()` colour by temperature, gradient bar | `weather`, sampled `api.weather.temp` |
+| `latency-history.json` | Dot chart of ping latency, area chart of signal with fixed range, a rect whose width follows `wifi.pct` | ping targets, sampled `ping.0.ms` and `wifi.rssi` |
 | `daylight-arc.json` | Half-ring sun arc from unix timestamps, minutes to sunset | `sun2` |
 | **Home and tech** | | |
 | `pihole.json` | Pi-hole blocked-percentage gauge, `.status` in a rule | `pihole` |
@@ -154,6 +158,8 @@ fields:   last = c
 ```
 
 Quotes update during market hours; outside them the values are the last close. `stock-board.json` uses four sources named after their tickers, **nvda**, **tsm**, **sgdm** and **vti**, each the same URL with its own `symbol=` and the field names exactly as **Discover keys** generates them (`c`, `d`, `dp`, `h`, `l`, `o`, `pc`, `t`); the layout reads `c` and `dp`. For other stocks, name the source after the ticker and change the label and the `api.<id>` keys in that row. No key at all? Yahoo's chart endpoint works without one: `https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1d` with `price = chart.result.0.meta.regularMarketPrice` and `prev = chart.result.0.meta.chartPreviousClose`.
+
+**Sampled keys** for the charts (setup page, **History**, or `PUT /api/series?key=...`): `api.nvda.c` every 120 s keeping 14400 s for `stock-chart.json`; `api.weather.temp` every 300 s keeping 43200 s for `temp-history.json`; `ping.0.ms` and `wifi.rssi` every 10 s keeping 1800 s for `latency-history.json`. A chart shows a dim baseline until the first sample lands.
 
 **coins** (CoinGecko, no key)
 
