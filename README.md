@@ -389,7 +389,7 @@ Eight layouts are preloaded on first boot so the device is useful out of the box
 
 ```json
 {
-  "name": "Big Clock",
+  "name": "Simple Clock",
   "elements": [
     {"type":"text","x":85,"y":96,"size":4,"align":"center","color":"text","text":"{time}"},
     {"type":"text","x":85,"y":176,"size":2,"align":"center","color":"text","text":"{date.day} {date.md}"},
