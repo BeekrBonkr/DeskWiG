@@ -6,6 +6,8 @@
 #include "FontService.h"
 #include "../net/PingService.h"
 #include "../net/DataSource.h"
+#include "../net/Series.h"
+#include <math.h>
 
 static const uint16_t COLOR_BG     = 0x0000;
 static const uint16_t COLOR_TEXT   = 0xFFFF;
@@ -45,7 +47,50 @@ static bool roleColor(const char* name, uint16_t& out) {
       return true;
     }
   }
+  // A number 0xRRGGBB, as rgb(), hsv() and mix() in an expression produce.
+  if (name[0] >= '0' && name[0] <= '9') {
+    char* end;
+    unsigned long v = strtoul(name, &end, 10);
+    if (*end == '\0' && v <= 0xFFFFFF) {
+      out = lgfx::color565((v >> 16) & 0xFF, (v >> 8) & 0xFF, v & 0xFF);
+      return true;
+    }
+  }
   return false;
+}
+
+static uint16_t blend565(uint16_t a, uint16_t b, uint8_t t) {   // t: 0 = a, 255 = b
+  int ar = (a >> 11) & 0x1F, ag = (a >> 5) & 0x3F, ab = a & 0x1F;
+  int br = (b >> 11) & 0x1F, bg = (b >> 5) & 0x3F, bb = b & 0x1F;
+  int r = ar + (br - ar) * t / 255, g = ag + (bg - ag) * t / 255, bl = ab + (bb - ab) * t / 255;
+  return (uint16_t)((r << 11) | (g << 5) | bl);
+}
+
+// Fills a (rounded) rectangle with a two-colour gradient, line by line.
+static void fillGradient(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_t h, int16_t radius, uint16_t c0, uint16_t c1, bool right) {
+  if (w <= 0 || h <= 0) return;
+  int16_t r = radius;
+  if (r * 2 > w) r = w / 2;
+  if (r * 2 > h) r = h / 2;
+  int16_t len = right ? w : h;
+  for (int16_t i = 0; i < len; i++) {
+    uint8_t t = len > 1 ? (uint8_t)((int32_t)i * 255 / (len - 1)) : 0;
+    uint16_t c = blend565(c0, c1, t);
+    int16_t inset = 0;
+    if (r > 0) {
+      // Distance from this line to the nearer edge, inside the corner radius.
+      int16_t d = i < r ? r - i : (i >= len - r ? i - (len - r) + 1 : 0);
+      if (d > 0) {
+        float dd = d - 0.5f;
+        float in = r - sqrtf((float)r * r - dd * dd);
+        inset = (int16_t)(in + 0.5f);
+      }
+    }
+    int16_t span = (right ? h : w) - 2 * inset;
+    if (span <= 0) continue;
+    if (right) ui.drawFastVLine(x + i, y + inset, span, c);
+    else       ui.drawFastHLine(x + inset, y + i, span, c);
+  }
 }
 
 static void defaultStyle(LayoutStyle& st) {
@@ -65,19 +110,22 @@ LayoutWidget::~LayoutWidget() {
   free(_n);
   free(_txt);
   free(_led);
+  free(_bind);
 }
 
 bool LayoutWidget::alloc() {
   if (!_led) _led = (LedConfig*)heap_caps_malloc(sizeof(LedConfig), MALLOC_CAP_SPIRAM);
   if (!_led) _led = (LedConfig*)malloc(sizeof(LedConfig));
-  if (_n && _txt && _led) return true;
+  if (!_bind) _bind = (LayoutBinding*)heap_caps_malloc(sizeof(LayoutBinding) * MAX_BINDINGS, MALLOC_CAP_SPIRAM);
+  if (!_bind) _bind = (LayoutBinding*)malloc(sizeof(LayoutBinding) * MAX_BINDINGS);
+  if (_n && _txt && _led && _bind) return true;
   size_t nBytes = sizeof(LayoutNode) * MAX_NODES;
   size_t tBytes = TEXT_BUF * MAX_NODES;
   if (!_n)   _n   = (LayoutNode*)heap_caps_malloc(nBytes, MALLOC_CAP_SPIRAM);
   if (!_n)   _n   = (LayoutNode*)malloc(nBytes);
   if (!_txt) _txt = (char (*)[TEXT_BUF])heap_caps_malloc(tBytes, MALLOC_CAP_SPIRAM);
   if (!_txt) _txt = (char (*)[TEXT_BUF])malloc(tBytes);
-  return _n && _txt && _led;
+  return _n && _txt && _led && _bind;
 }
 
 void LayoutWidget::clear() {
@@ -88,6 +136,7 @@ void LayoutWidget::clear() {
   _hasLed = false;
   _ledSpec = LedSpec();
   _count = 0;
+  _bindCount = 0;
   _name[0] = '\0';
 }
 
@@ -145,7 +194,53 @@ static uint8_t clampU8(int v, int lo, int hi) {
   return (uint8_t)v;
 }
 
-bool LayoutWidget::parseStyle(LayoutStyle& st, JsonObjectConst obj, const char* path, char* err, size_t errLen) {
+// Remembers which live data a template refers to, so update() keeps it fed.
+void LayoutWidget::noteKeys(const char* s) {
+  if (strstr(s, "ping.")) _usesPing = true;
+  if (strstr(s, "api."))  _usesApi = true;
+}
+
+// A number that may also be a "{template}". Numbers land in out at once;
+// a template is recorded as a binding and out is 0 until the first frame.
+bool LayoutWidget::bindNumber(JsonVariantConst v, uint8_t node, uint8_t field, double& out, const char* path, const char* what, char* err, size_t errLen) {
+  if (v.is<const char*>()) {
+    const char* t = v.as<const char*>();
+    char m[80];
+    if (!strchr(t, '{')) {
+      snprintf(m, sizeof(m), "%s must be a number or a {template}", what);
+      return fail(err, errLen, path, m);
+    }
+    if (node == NONE) {
+      snprintf(m, sizeof(m), "%s cannot be a template in a named style", what);
+      return fail(err, errLen, path, m);
+    }
+    if (strlen(t) >= sizeof(_bind[0].tpl)) {
+      snprintf(m, sizeof(m), "%s template longer than %u characters", what, (unsigned)(sizeof(_bind[0].tpl) - 1));
+      return fail(err, errLen, path, m);
+    }
+    if (_bindCount >= MAX_BINDINGS) {
+      snprintf(err, errLen, "too many templated numbers (max %u)", MAX_BINDINGS);
+      return false;
+    }
+    LayoutBinding& b = _bind[_bindCount++];
+    b.node = node;
+    b.field = field;
+    strlcpy(b.tpl, t, sizeof(b.tpl));
+    noteKeys(t);
+    out = 0;
+    return true;
+  }
+  if (!v.is<float>() && !v.is<int>() && !v.is<double>() && !v.is<long>()) {
+    char m[80];
+    snprintf(m, sizeof(m), "%s must be a number or a {template}", what);
+    return fail(err, errLen, path, m);
+  }
+  out = v.as<double>();
+  return true;
+}
+
+bool LayoutWidget::parseStyle(LayoutStyle& st, JsonObjectConst obj, uint8_t node, const char* path, char* err, size_t errLen) {
+  double d;
   for (JsonPairConst kv : obj) {
     const char* k = kv.key().c_str();
     JsonVariantConst v = kv.value();
@@ -157,19 +252,47 @@ bool LayoutWidget::parseStyle(LayoutStyle& st, JsonObjectConst obj, const char* 
       if (!copyColor(st.border, sizeof(st.border), v | "", path, "border", err, errLen)) return false;
       if (st.border[0] && st.borderW == 0) st.borderW = 1;
     } else if (!strcmp(k, "borderWidth")) {
-      st.borderW = clampU8(v | 1, 0, 20);
+      if (!bindNumber(v, node, BF_BORDERW, d, path, "borderWidth", err, errLen)) return false;
+      st.borderW = clampU8((int)d, 0, 20);
     } else if (!strcmp(k, "radius")) {
-      st.radius = clampU8(v | 0, 0, 80);
+      if (!bindNumber(v, node, BF_RADIUS, d, path, "radius", err, errLen)) return false;
+      st.radius = clampU8((int)d, 0, 80);
     } else if (!strcmp(k, "padding")) {
-      st.pad = clampU8(v | 0, 0, 80);
+      if (!bindNumber(v, node, BF_PAD, d, path, "padding", err, errLen)) return false;
+      st.pad = clampU8((int)d, 0, 80);
     } else if (!strcmp(k, "gap")) {
-      st.gap = clampU8(v | 0, 0, 200);
+      if (!bindNumber(v, node, BF_GAP, d, path, "gap", err, errLen)) return false;
+      st.gap = clampU8((int)d, 0, 200);
     } else if (!strcmp(k, "thickness") || !strcmp(k, "width")) {
-      st.thick = clampU8(v | 1, 1, 80);
+      if (!bindNumber(v, node, BF_THICK, d, path, "thickness", err, errLen)) return false;
+      st.thick = clampU8((int)d, 1, 80);
     } else if (!strcmp(k, "size")) {
-      int size = v | 1;
+      if (!bindNumber(v, node, BF_SIZE, d, path, "size", err, errLen)) return false;
+      int size = v.is<const char*>() ? 1 : (int)d;
       if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-40 (bitmap font) or 6-160 (TrueType font)");
       st.size = size;
+    } else if (!strcmp(k, "gradient")) {
+      if (!copyColor(st.gradient, sizeof(st.gradient), v | "", path, "gradient", err, errLen)) return false;
+    } else if (!strcmp(k, "gradientDir")) {
+      const char* g = v | "down";
+      if (!strcmp(g, "right") || !strcmp(g, "horizontal")) st.gradientRight = true;
+      else if (!strcmp(g, "down") || !strcmp(g, "vertical")) st.gradientRight = false;
+      else return fail(err, errLen, path, "gradientDir must be down or right");
+    } else if (!strcmp(k, "kind")) {
+      const char* g = v | "line";
+      if (!strcmp(g, "line")) st.kind = ChartKind::LINE;
+      else if (!strcmp(g, "area")) st.kind = ChartKind::AREA;
+      else if (!strcmp(g, "bars")) st.kind = ChartKind::BARS;
+      else if (!strcmp(g, "dots")) st.kind = ChartKind::DOTS;
+      else return fail(err, errLen, path, "kind must be line, area, bars or dots");
+    } else if (!strcmp(k, "min")) {
+      if (!bindNumber(v, node, BF_MIN, d, path, "min", err, errLen)) return false;
+      st.vmin = (float)d;
+      st.hasMin = true;
+    } else if (!strcmp(k, "max")) {
+      if (!bindNumber(v, node, BF_MAX, d, path, "max", err, errLen)) return false;
+      st.vmax = (float)d;
+      st.hasMax = true;
     } else if (!strcmp(k, "font")) {
       const char* f = v | "";
       if (strlen(f) >= sizeof(st.font)) return fail(err, errLen, path, "font name too long");
@@ -242,7 +365,8 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     else if (!strcmp(type, "triangle")) e.type = ElType::TRIANGLE;
     else if (!strcmp(type, "polygon"))  e.type = ElType::POLYGON;
     else if (!strcmp(type, "image"))    e.type = ElType::IMAGE;
-    else return fail(err, errLen, path, "unknown type (text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon, image)");
+    else if (!strcmp(type, "chart"))    e.type = ElType::CHART;
+    else return fail(err, errLen, path, "unknown type (text, line, rect, bar, box, circle, ellipse, arc, triangle, polygon, image, chart)");
 
     // ---- style: defaults, class, flat fields, style object ----
     defaultStyle(e.st);
@@ -250,6 +374,7 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     if (shape) e.st.fill = true;
     if (e.type == ElType::ARC) { e.st.thick = 8; strlcpy(e.st.bg, "dim", sizeof(e.st.bg)); }
     if (e.type == ElType::LINE) e.st.thick = 1;
+    if (e.type == ElType::CHART) { e.st.thick = 2; strlcpy(e.st.color, "accent", sizeof(e.st.color)); }
 
     const char* cls = v["class"] | (v["style"].is<const char*>() ? (const char*)v["style"] : "");
     if (*cls) {
@@ -261,6 +386,7 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
           if (e.type == ElType::ARC && merged.thick == 0) merged.thick = 8;
           if (e.type == ElType::ARC && !merged.bg[0]) strlcpy(merged.bg, "dim", sizeof(merged.bg));
           if (e.type == ElType::LINE && merged.thick == 0) merged.thick = 1;
+          if (e.type == ElType::CHART && merged.thick == 0) merged.thick = 2;
           e.st = merged;
           found = true;
           break;
@@ -273,7 +399,9 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
       if (!copyColor(e.st.color, sizeof(e.st.color), v["color"] | "text", path, "color", err, errLen)) return false;
     }
     if (!v["size"].isNull()) {
-      int size = v["size"] | 1;
+      double d;
+      if (!bindNumber(v["size"], idx, BF_SIZE, d, path, "size", err, errLen)) return false;
+      int size = v["size"].is<const char*>() ? 1 : (int)d;
       if (size < 1 || size > FONT_MAX_PX) return fail(err, errLen, path, "size must be 1-40 (bitmap font) or 6-160 (TrueType font)");
       e.st.size = size;
     }
@@ -289,30 +417,43 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     if (!v["fill"].isNull()) e.st.fill = v["fill"] | false;
 
     if (v["style"].is<JsonObjectConst>()) {
-      if (!parseStyle(e.st, v["style"].as<JsonObjectConst>(), path, err, errLen)) return false;
+      if (!parseStyle(e.st, v["style"].as<JsonObjectConst>(), idx, path, err, errLen)) return false;
     }
     if (e.type == ElType::TEXT) {
       if (!e.st.font[0] && e.st.size > BITMAP_MAX_SCALE) return fail(err, errLen, path, "size must be 1-40 with the bitmap font; set \"font\" for pixel sizes");
       if (e.st.font[0] && e.st.size < FONT_MIN_PX) return fail(err, errLen, path, "size must be at least 6 with a TrueType font");
     }
 
-    // ---- geometry ----
-    if (!v["x"].isNull()) e.x = v["x"] | 0;
-    if (!v["y"].isNull()) e.y = v["y"] | 0;
-    if (!v["w"].isNull()) e.w = v["w"] | 0;
-    if (!v["h"].isNull()) e.h = v["h"] | 0;
-    if (!v["r"].isNull()) { int r = v["r"] | 0; e.w = e.h = r * 2; }
-    if (!v["x2"].isNull()) e.x2 = v["x2"] | 0;
-    if (!v["y2"].isNull()) e.y2 = v["y2"] | 0;
-    e.hasXY = (e.x != EL_AUTO && e.y != EL_AUTO) || e.st.absolute;
+    // ---- geometry (numbers or templates) ----
+    double d;
+    if (!v["x"].isNull())  { if (!bindNumber(v["x"],  idx, BF_X,  d, path, "x",  err, errLen)) return false; e.x  = (int16_t)d; }
+    if (!v["y"].isNull())  { if (!bindNumber(v["y"],  idx, BF_Y,  d, path, "y",  err, errLen)) return false; e.y  = (int16_t)d; }
+    if (!v["w"].isNull())  { if (!bindNumber(v["w"],  idx, BF_W,  d, path, "w",  err, errLen)) return false; e.w  = (int16_t)d; }
+    if (!v["h"].isNull())  { if (!bindNumber(v["h"],  idx, BF_H,  d, path, "h",  err, errLen)) return false; e.h  = (int16_t)d; }
+    if (!v["r"].isNull())  { if (!bindNumber(v["r"],  idx, BF_R,  d, path, "r",  err, errLen)) return false; e.w = e.h = (int16_t)d * 2; }
+    if (!v["x2"].isNull()) { if (!bindNumber(v["x2"], idx, BF_X2, d, path, "x2", err, errLen)) return false; e.x2 = (int16_t)d; }
+    if (!v["y2"].isNull()) { if (!bindNumber(v["y2"], idx, BF_Y2, d, path, "y2", err, errLen)) return false; e.y2 = (int16_t)d; }
+    e.hasXY = (!v["x"].isNull() && !v["y"].isNull()) || e.st.absolute;
     if (e.hasXY) {
       if (e.x == EL_AUTO) e.x = 0;
       if (e.y == EL_AUTO) e.y = 0;
     }
 
     if (e.type == ElType::ARC) {
-      e.a0 = v["start"] | 0;
-      e.a1 = v["end"] | 360;
+      if (!v["start"].isNull()) { if (!bindNumber(v["start"], idx, BF_A0, d, path, "start", err, errLen)) return false; e.a0 = (int16_t)d; }
+      if (!v["end"].isNull())   { if (!bindNumber(v["end"],   idx, BF_A1, d, path, "end",   err, errLen)) return false; e.a1 = (int16_t)d; }
+    }
+
+    if (e.type == ElType::CHART) {
+      const char* key = v["series"] | "";
+      if (!*key) return fail(err, errLen, path, "chart needs \"series\": a key sampled on the setup page under History");
+      if (!seriesValidKey(key) || strlen(key) >= sizeof(e.text)) return fail(err, errLen, path, "\"series\" is not a valid key");
+      strlcpy(e.text, key, sizeof(e.text));
+      noteKeys(key);
+      if (!v["window"].isNull()) {
+        if (!bindNumber(v["window"], idx, BF_WINDOW, d, path, "window", err, errLen)) return false;
+        e.window = d < 0 ? 0 : (uint32_t)d;
+      }
     }
 
     if (e.type == ElType::TRIANGLE || e.type == ElType::POLYGON) {
@@ -322,8 +463,10 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
       for (JsonVariantConst p : pts) {
         if (n >= 8) return fail(err, errLen, path, "too many points (max 8)");
         if (!p.is<JsonArrayConst>() || p.size() != 2) return fail(err, errLen, path, "each point must be [x,y]");
-        e.pts[n * 2]     = p[0] | 0;
-        e.pts[n * 2 + 1] = p[1] | 0;
+        if (!bindNumber(p[0], idx, BF_PT0 + n * 2,     d, path, "point x", err, errLen)) return false;
+        e.pts[n * 2] = (int16_t)d;
+        if (!bindNumber(p[1], idx, BF_PT0 + n * 2 + 1, d, path, "point y", err, errLen)) return false;
+        e.pts[n * 2 + 1] = (int16_t)d;
         n++;
       }
       if (e.type == ElType::TRIANGLE && n != 3) return fail(err, errLen, path, "triangle needs exactly 3 points");
@@ -345,22 +488,21 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
     }
 
     // ---- text / value ----
-    const char* text = "";
-    if (e.type == ElType::BAR || e.type == ElType::ARC) text = v["value"] | "0";
-    else if (e.type == ElType::TEXT) text = v["text"] | "";
-    if (strlen(text) >= sizeof(e.text)) {
-      char m[64];
-      snprintf(m, sizeof(m), "text longer than %u characters", (unsigned)(sizeof(e.text) - 1));
-      return fail(err, errLen, path, m);
+    if (e.type != ElType::CHART) {
+      const char* text = "";
+      if (e.type == ElType::BAR || e.type == ElType::ARC) text = v["value"] | "0";
+      else if (e.type == ElType::TEXT) text = v["text"] | "";
+      if (strlen(text) >= sizeof(e.text)) {
+        char m[64];
+        snprintf(m, sizeof(m), "text longer than %u characters", (unsigned)(sizeof(e.text) - 1));
+        return fail(err, errLen, path, m);
+      }
+      strlcpy(e.text, text, sizeof(e.text));
     }
-    strlcpy(e.text, text, sizeof(e.text));
 
     // Keys may sit inside an expression, so look for the prefix anywhere.
-    const char* scan[4] = { e.text, e.st.color, e.st.bg, e.st.border };
-    for (const char* s : scan) {
-      if (strstr(s, "ping.")) _usesPing = true;
-      if (strstr(s, "api."))  _usesApi = true;
-    }
+    const char* scan[5] = { e.text, e.st.color, e.st.bg, e.st.border, e.st.gradient };
+    for (const char* s : scan) noteKeys(s);
     if (e.type == ElType::IMAGE || e.st.image[0]) _usesImages = true;
   }
 
@@ -412,7 +554,7 @@ bool LayoutWidget::load(JsonVariantConst doc, char* err, size_t errLen) {
       char spath[32];
       snprintf(spath, sizeof(spath), "style \"%.16s\"", ns.name);
       if (!kv.value().is<JsonObjectConst>()) { free(styles); return fail(err, errLen, spath, "must be an object"); }
-      if (!parseStyle(ns.st, kv.value().as<JsonObjectConst>(), spath, err, errLen)) { free(styles); return false; }
+      if (!parseStyle(ns.st, kv.value().as<JsonObjectConst>(), NONE, spath, err, errLen)) { free(styles); return false; }
       styleCount++;
     }
   }
@@ -430,7 +572,7 @@ bool LayoutWidget::load(JsonVariantConst doc, char* err, size_t errLen) {
   defaultStyle(root.st);
   _count = 1;
   if (doc["style"].is<JsonObjectConst>()) {
-    if (!parseStyle(root.st, doc["style"].as<JsonObjectConst>(), "root", err, errLen)) { free(styles); return false; }
+    if (!parseStyle(root.st, doc["style"].as<JsonObjectConst>(), 0, "root", err, errLen)) { free(styles); return false; }
   }
 
   uint8_t last = NONE;
@@ -468,6 +610,11 @@ static bool roleRgb(const char* name, uint8_t& r, uint8_t& g, uint8_t& b) {
     char* end;
     long v = strtol(name + 1, &end, 16);
     if (*end == '\0') { r = (v >> 16) & 0xFF; g = (v >> 8) & 0xFF; b = v & 0xFF; return true; }
+  }
+  if (name[0] >= '0' && name[0] <= '9') {
+    char* end;
+    unsigned long v = strtoul(name, &end, 10);
+    if (*end == '\0' && v <= 0xFFFFFF) { r = (v >> 16) & 0xFF; g = (v >> 8) & 0xFF; b = v & 0xFF; return true; }
   }
   return false;
 }
@@ -567,7 +714,7 @@ void LayoutWidget::updateLed() {
   uint16_t speed = (pick && pick->hasSpeed) ? pick->speed : b.speed;
   int16_t bright = (pick && pick->hasBrightness) ? pick->brightness : b.brightness;
 
-  char buf[24];
+  char buf[32];
   const char* name = color;
   if (strchr(color, '{')) { layoutExpand(color, buf, sizeof(buf)); name = buf; }
   uint8_t r, g, bl;
@@ -599,9 +746,7 @@ void LayoutWidget::touchSources() {
   if (now - _lastTouch < 500 && _lastTouch != 0) return;
   _lastTouch = now;
 
-  for (uint8_t i = 1; i < _count; i++) {
-    const char* fields[4] = { _n[i].text, _n[i].st.color, _n[i].st.bg, _n[i].st.border };
-    for (const char* f : fields) {
+  auto touchIn = [&](const char* f) {
       for (const char* p = strstr(f, "api."); p; p = strstr(p + 1, "api.")) {
         if (p > f) {
           char b = p[-1];
@@ -618,8 +763,12 @@ void LayoutWidget::touchSources() {
         id[len] = '\0';
         sourceTouch(id, now);
       }
-    }
+  };
+  for (uint8_t i = 1; i < _count; i++) {
+    const char* fields[5] = { _n[i].text, _n[i].st.color, _n[i].st.bg, _n[i].st.border, _n[i].st.gradient };
+    for (const char* f : fields) touchIn(f);
   }
+  for (uint8_t b = 0; b < _bindCount; b++) touchIn(_bind[b].tpl);
 }
 
 void LayoutWidget::update(uint32_t now) {
@@ -638,7 +787,7 @@ void LayoutWidget::update(uint32_t now) {
 uint16_t LayoutWidget::resolveColor(const char* spec, uint16_t fallback, bool* present) {
   if (present) *present = spec[0] != '\0';
   if (!spec[0]) return fallback;
-  char buf[24];
+  char buf[32];
   const char* name = spec;
   if (strchr(spec, '{')) {
     // A template that resolves to no known role (missing target, no data)
@@ -654,7 +803,48 @@ uint16_t LayoutWidget::resolveColor(const char* spec, uint16_t fallback, bool* p
 // =====================
 // LAYOUT
 // =====================
+// Evaluates every templated number and writes it into its node. An
+// unresolvable template counts as 0, like an unknown key in a bar's value.
+void LayoutWidget::applyBindings() {
+  char buf[32];
+  for (uint8_t k = 0; k < _bindCount; k++) {
+    const LayoutBinding& b = _bind[k];
+    layoutExpand(b.tpl, buf, sizeof(buf));
+    char* end;
+    double d = strtod(buf, &end);
+    if (end == buf || isnan(d) || isinf(d)) d = 0;
+    LayoutNode& e = _n[b.node];
+    long v = lround(d);
+    if (v < INT16_MIN + 1) v = INT16_MIN + 1;
+    if (v > INT16_MAX) v = INT16_MAX;
+    switch (b.field) {
+      case BF_X:  e.x = (int16_t)v; break;
+      case BF_Y:  e.y = (int16_t)v; break;
+      case BF_W:  e.w = (int16_t)v; break;
+      case BF_H:  e.h = (int16_t)v; break;
+      case BF_R:  e.w = e.h = (int16_t)(v * 2); break;
+      case BF_X2: e.x2 = (int16_t)v; break;
+      case BF_Y2: e.y2 = (int16_t)v; break;
+      case BF_A0: e.a0 = (int16_t)v; break;
+      case BF_A1: e.a1 = (int16_t)v; break;
+      case BF_WINDOW: e.window = v < 0 ? 0 : (uint32_t)v; break;
+      case BF_SIZE: e.st.size = clampU8((int)v, 1, e.st.font[0] ? FONT_MAX_PX : BITMAP_MAX_SCALE); break;
+      case BF_THICK: e.st.thick = clampU8((int)v, 1, 80); break;
+      case BF_RADIUS: e.st.radius = clampU8((int)v, 0, 80); break;
+      case BF_BORDERW: e.st.borderW = clampU8((int)v, 0, 20); break;
+      case BF_PAD: e.st.pad = clampU8((int)v, 0, 80); break;
+      case BF_GAP: e.st.gap = clampU8((int)v, 0, 200); break;
+      case BF_MIN: e.st.vmin = (float)d; break;
+      case BF_MAX: e.st.vmax = (float)d; break;
+      default:
+        if (b.field >= BF_PT0 && b.field < BF_PT0 + 16) e.pts[b.field - BF_PT0] = (int16_t)v;
+        break;
+    }
+  }
+}
+
 void LayoutWidget::expandAll() {
+  applyBindings();
   for (uint8_t i = 1; i < _count; i++) {
     if (_n[i].type == ElType::TEXT || _n[i].type == ElType::BAR || _n[i].type == ElType::ARC) {
       layoutExpand(_n[i].text, _txt[i], TEXT_BUF);
@@ -729,6 +919,9 @@ void LayoutWidget::measure(uint8_t i) {
       break;
     case ElType::BAR:
       h = 8;
+      break;
+    case ElType::CHART:
+      h = 40;
       break;
     case ElType::RECT:
     case ElType::ELLIPSE:
@@ -845,7 +1038,7 @@ void LayoutWidget::place(uint8_t i, int16_t x, int16_t y, int16_t w, int16_t h) 
     bool crossExplicit = (e.st.row ? k.h : k.w) != EL_AUTO;
     if (crossSize == EL_AUTO) crossSize = stretch ? crossAvail : 0;
     else if (stretch && !crossExplicit &&
-             (k.type == ElType::TEXT || k.type == ElType::BAR || k.type == ElType::BOX || k.type == ElType::LINE)) {
+             (k.type == ElType::TEXT || k.type == ElType::BAR || k.type == ElType::BOX || k.type == ElType::LINE || k.type == ElType::CHART)) {
       crossSize = crossAvail;
     }
     int16_t crossOff = 0;
@@ -980,10 +1173,11 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
   if (w < 0) w = 0;
   if (h < 0) h = 0;
 
-  bool hasBg, hasBorder;
+  bool hasBg, hasBorder, hasGrad;
   uint16_t color  = resolveColor(e.st.color, COLOR_TEXT);
   uint16_t bg     = resolveColor(e.st.bg, COLOR_BG, &hasBg);
   uint16_t border = resolveColor(e.st.border, COLOR_DIM, &hasBorder);
+  uint16_t grad   = resolveColor(e.st.gradient, COLOR_BG, &hasGrad);
   uint8_t bw = hasBorder ? (e.st.borderW ? e.st.borderW : 1) : 0;
 
   switch (e.type) {
@@ -995,6 +1189,13 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       bool outline = bw > 0 || (e.type == ElType::RECT && !e.st.fill && !hasBg);
       uint16_t outlineColor = bw > 0 ? border : color;
       uint8_t ow = bw > 0 ? bw : 1;
+      // A gradient fades from the fill colour to style.gradient.
+      auto fillArea = [&](int16_t fx, int16_t fy, int16_t fw, int16_t fh, int16_t fr) {
+        if (hasGrad) fillGradient(ui, fx, fy, fw, fh, fr, fillColor, grad, e.st.gradientRight);
+        else if (fr) ui.fillSmoothRoundRect(fx, fy, fw, fh, fr, fillColor);
+        else ui.fillRect(fx, fy, fw, fh, fillColor);
+      };
+      if (hasGrad) fillIt = true;
       if (w > 0 && h > 0) {
         if (e.st.radius) {
           // Rounded: smooth fill; a border is a smooth outer fill with the
@@ -1003,15 +1204,15 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
             ui.fillSmoothRoundRect(x, y, w, h, e.st.radius, outlineColor);
             if (w > 2 * ow && h > 2 * ow) {
               int16_t ir = e.st.radius > ow ? e.st.radius - ow : 0;
-              ui.fillSmoothRoundRect(x + ow, y + ow, w - 2 * ow, h - 2 * ow, ir, fillColor);
+              fillArea(x + ow, y + ow, w - 2 * ow, h - 2 * ow, ir);
             }
           } else if (fillIt) {
-            ui.fillSmoothRoundRect(x, y, w, h, e.st.radius, fillColor);
+            fillArea(x, y, w, h, e.st.radius);
           } else if (outline) {
             smoothRoundRectOutline(ui, x, y, w, h, e.st.radius, ow, outlineColor);
           }
         } else {
-          if (fillIt) ui.fillRect(x, y, w, h, fillColor);
+          if (fillIt) fillArea(x, y, w, h, 0);
           if (outline) {
             for (uint8_t k = 0; k < ow && k * 2 < w && k * 2 < h; k++) ui.drawRect(x + k, y + k, w - 2 * k, h - 2 * k, outlineColor);
           }
@@ -1076,8 +1277,104 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       int inner = w > 2 ? w - 2 : 0;
       int fillW = inner * v / 100;
       if (fillW > 0 && h > 2) {
-        if (e.st.radius) ui.fillSmoothRoundRect(x + 1, y + 1, fillW, h - 2, e.st.radius > 1 ? e.st.radius - 1 : 0, color);
-        else             ui.fillRect(x + 1, y + 1, fillW, h - 2, color);
+        int16_t fr = e.st.radius > 1 ? e.st.radius - 1 : 0;
+        if (hasGrad)          fillGradient(ui, x + 1, y + 1, fillW, h - 2, fr, color, grad, e.st.gradientRight);
+        else if (e.st.radius) ui.fillSmoothRoundRect(x + 1, y + 1, fillW, h - 2, fr, color);
+        else                  ui.fillRect(x + 1, y + 1, fillW, h - 2, color);
+      }
+      break;
+    }
+    case ElType::CHART: {
+      if (w <= 1 || h <= 1) break;
+      if (hasBg) {
+        if (e.st.radius) ui.fillSmoothRoundRect(x, y, w, h, e.st.radius, bg);
+        else ui.fillRect(x, y, w, h, bg);
+      }
+      static float* sv = nullptr;
+      static uint32_t* sa = nullptr;
+      static int16_t* px = nullptr;
+      static int16_t* py = nullptr;
+      if (!sv) {
+        sv = (float*)heap_caps_malloc(sizeof(float) * SERIES_MAX_SAMPLES, MALLOC_CAP_SPIRAM);
+        sa = (uint32_t*)heap_caps_malloc(sizeof(uint32_t) * SERIES_MAX_SAMPLES, MALLOC_CAP_SPIRAM);
+        px = (int16_t*)heap_caps_malloc(sizeof(int16_t) * SERIES_MAX_SAMPLES, MALLOC_CAP_SPIRAM);
+        py = (int16_t*)heap_caps_malloc(sizeof(int16_t) * SERIES_MAX_SAMPLES, MALLOC_CAP_SPIRAM);
+        if (!sv || !sa || !px || !py) { sv = nullptr; break; }
+      }
+      int idx = seriesFind(e.text);
+      uint16_t n = idx >= 0 ? seriesSamples(idx, e.window, sv, sa, SERIES_MAX_SAMPLES) : 0;
+      if (n == 0) {
+        // Nothing sampled yet: a dim baseline shows where the chart is.
+        ui.drawFastHLine(x, y + h - 1, w, COLOR_DIM);
+        break;
+      }
+      // Time runs left to right across the window; without one the oldest
+      // sample sits at the left edge.
+      uint32_t span = e.window ? e.window : sa[0];
+      if (span == 0) span = 1;
+      float lo = e.st.hasMin ? e.st.vmin : sv[0], hi = e.st.hasMax ? e.st.vmax : sv[0];
+      for (uint16_t i = 0; i < n; i++) {
+        if (!e.st.hasMin && sv[i] < lo) lo = sv[i];
+        if (!e.st.hasMax && sv[i] > hi) hi = sv[i];
+      }
+      if (!e.st.hasMin && !e.st.hasMax) {
+        float pad = (hi - lo) * 0.05f;
+        lo -= pad;
+        hi += pad;
+      }
+      if (hi <= lo) { hi = lo + 1; lo -= 1; }
+      int16_t bottom = y + h - 1;
+      for (uint16_t i = 0; i < n; i++) {
+        float tx = sa[i] > span ? 0 : (float)(span - sa[i]) / span;
+        px[i] = x + (int16_t)lroundf(tx * (w - 1));
+        float ty = (sv[i] - lo) / (hi - lo);
+        if (ty < 0) ty = 0;
+        if (ty > 1) ty = 1;
+        py[i] = bottom - (int16_t)lroundf(ty * (h - 1));
+      }
+      float half = e.st.thick / 2.0f;
+      switch (e.st.kind) {
+        case ChartKind::AREA: {
+          // The area is the line colour faded towards the background.
+          uint16_t fillc = hasGrad ? grad : blend565(color, hasBg ? bg : COLOR_BG, 170);
+          for (uint16_t i = 0; i + 1 < n; i++) {
+            int16_t x0 = px[i], x1 = px[i + 1];
+            if (x1 <= x0) { ui.drawFastVLine(x1, py[i + 1], bottom - py[i + 1] + 1, fillc); continue; }
+            for (int16_t cx2 = x0; cx2 <= x1; cx2++) {
+              int16_t yy = py[i] + (int32_t)(cx2 - x0) * (py[i + 1] - py[i]) / (x1 - x0);
+              ui.drawFastVLine(cx2, yy, bottom - yy + 1, fillc);
+            }
+          }
+          if (n == 1) ui.drawFastVLine(px[0], py[0], bottom - py[0] + 1, fillc);
+        }
+        // fall through: the line goes on top
+        case ChartKind::LINE:
+          if (n == 1) ui.fillSmoothCircle(px[0], py[0], half < 1 ? 1 : half, color);
+          for (uint16_t i = 0; i + 1 < n; i++) {
+            if (e.st.thick <= 1) ui.drawLine(px[i], py[i], px[i + 1], py[i + 1], color);
+            else ui.drawWideLine(px[i], py[i], px[i + 1], py[i + 1], half, color);
+          }
+          break;
+        case ChartKind::BARS: {
+          // Bars stand on zero when it is in range, else on the bottom.
+          int16_t base = bottom;
+          if (lo < 0 && hi > 0) base = bottom - (int16_t)lroundf((0 - lo) / (hi - lo) * (h - 1));
+          int16_t bwid = n > 0 ? (w / n) - 1 : 1;
+          if (bwid < 1) bwid = 1;
+          for (uint16_t i = 0; i < n; i++) {
+            int16_t top = py[i] < base ? py[i] : base;
+            int16_t bh = abs(py[i] - base) + 1;
+            int16_t bx = px[i] - bwid / 2;
+            if (bx < x) bx = x;
+            if (bx + bwid > x + w) bwid = x + w - bx;
+            if (hasGrad) fillGradient(ui, bx, top, bwid, bh, 0, color, grad, e.st.gradientRight);
+            else ui.fillRect(bx, top, bwid, bh, color);
+          }
+          break;
+        }
+        case ChartKind::DOTS:
+          for (uint16_t i = 0; i < n; i++) ui.fillSmoothCircle(px[i], py[i], half < 1 ? 1 : half, color);
+          break;
       }
       break;
     }

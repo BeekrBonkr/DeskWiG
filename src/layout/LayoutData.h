@@ -11,6 +11,8 @@
 //   ping.count
 //   ping.<N|name>.name, .host, .ms, .status, .color, .bars, .trend
 //   api.<source>.<field>, .status, .color, .age, .updated, .error
+//   <series key>.min, .max, .avg, .first, .last, .delta, .count, .span
+//     for keys sampled over time (see Series.h)
 //
 // Colour keys resolve to a colour role name (ok, warn, bad, dim, text).
 //

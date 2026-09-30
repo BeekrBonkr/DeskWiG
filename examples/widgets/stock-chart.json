@@ -1,0 +1,111 @@
+{
+  "name": "NVDA Today",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.nvda.c.delta < 0",
+        "color": "bad",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "NVDA",
+          "font": "bold",
+          "size": 18
+        },
+        {
+          "type": "text",
+          "text": "{round(api.nvda.c, 2)}",
+          "font": "bold",
+          "size": 18,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "{round(api.nvda.c.delta, 2)} since {round(api.nvda.c.span / 60)} min ago",
+      "color": "{if(api.nvda.c.delta < 0, rgb(255,60,60), rgb(40,220,120))}"
+    },
+    {
+      "type": "chart",
+      "series": "api.nvda.c",
+      "window": 14400,
+      "h": 120,
+      "color": "{if(api.nvda.c.delta < 0, rgb(255,60,60), rgb(40,220,120))}",
+      "style": {
+        "kind": "area",
+        "background": "#0c1016",
+        "radius": 6,
+        "thickness": 2
+      }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "lo {round(api.nvda.c.min, 2)}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "hi {round(api.nvda.c.max, 2)}",
+          "color": "dim",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "4 h · every 2 min",
+      "color": "dim"
+    },
+    {
+      "type": "chart",
+      "series": "api.nvda.c",
+      "window": 14400,
+      "h": 28,
+      "color": "accent",
+      "style": {
+        "kind": "bars",
+        "min": "{api.nvda.c.min - 1}",
+        "max": "{api.nvda.c.max + 1}"
+      }
+    },
+    {
+      "type": "text",
+      "text": "{api.nvda.age} ago · {time}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}
