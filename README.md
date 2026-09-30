@@ -381,7 +381,7 @@ So `{round(api.nvda.c.delta, 2)}` is today's move and `{api.weather.temp.max}` t
 
 A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
 
-Fifty-five more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole, OctoPrint and charts of values over time, each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
+Fifty-six more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole, OctoPrint and charts of values over time, each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
 
 Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack, Signal Meter, Weather and Cards. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 
@@ -669,7 +669,7 @@ src/
   app/                Board pins, Widget interface, ScreenManager, built-in widget registry, log buffer, status LED, system screens
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
-examples/widgets/     55 example layouts with a README of the data sources they use
+examples/widgets/     56 example layouts with a README of the data sources they use
 docs/images/          photos, enclosure renders and web page screenshots used in this README
 tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
 web/                  cm.js.gz, embedded in the firmware

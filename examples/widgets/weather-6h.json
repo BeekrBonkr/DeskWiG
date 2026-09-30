@@ -1,0 +1,530 @@
+{
+  "name": "Next 6 Hours",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "brightness": 30,
+    "rules": [
+      {
+        "key": "api.w6.status",
+        "is": "error",
+        "color": "warn",
+        "mode": "blink",
+        "speed": 800
+      },
+      {
+        "when": "max(api.w6.r0,api.w6.r1,api.w6.r2,api.w6.r3)>=60",
+        "color": "accent",
+        "mode": "pulse",
+        "speed": 1000
+      },
+      {
+        "when": "max(api.w6.r4,api.w6.r5)>=60",
+        "color": "accent",
+        "mode": "pulse",
+        "speed": 1000
+      },
+      {
+        "when": "api.w6.c0>=71&&api.w6.c0<80",
+        "color": "#40a0ff",
+        "mode": "breathe",
+        "speed": 2500
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 8,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "NEXT 6 HOURS · {api.w6.age}",
+      "color": "dim"
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 2,
+        "justify": "center"
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 24,
+          "style": {
+            "direction": "column",
+            "gap": 3,
+            "padding": 2,
+            "align": "center",
+            "radius": 6,
+            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r0/100)}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "now",
+              "color": "dim"
+            },
+            {
+              "type": "box",
+              "w": 20,
+              "h": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c0<3&&api.w6.d0==1,2,99)}",
+                  "y": 1,
+                  "text": "☀",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c0<3&&api.w6.d0==0,2,99)}",
+                  "y": 1,
+                  "text": "🌙",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c0>=3&&api.w6.c0<51,2,99)}",
+                  "y": 1,
+                  "text": "☁",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c0>=51&&api.w6.c0<71||api.w6.c0>=80,2,99)}",
+                  "y": 1,
+                  "text": "🌧",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c0>=71&&api.w6.c0<80,2,99)}",
+                  "y": 1,
+                  "text": "❄",
+                  "font": "emoji",
+                  "size": 16
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.w6.t0)}°",
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "style": {
+            "direction": "column",
+            "gap": 3,
+            "padding": 2,
+            "align": "center",
+            "radius": 6,
+            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r1/100)}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "+1h",
+              "color": "dim"
+            },
+            {
+              "type": "box",
+              "w": 20,
+              "h": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c1<3&&api.w6.d1==1,2,99)}",
+                  "y": 1,
+                  "text": "☀",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c1<3&&api.w6.d1==0,2,99)}",
+                  "y": 1,
+                  "text": "🌙",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c1>=3&&api.w6.c1<51,2,99)}",
+                  "y": 1,
+                  "text": "☁",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c1>=51&&api.w6.c1<71||api.w6.c1>=80,2,99)}",
+                  "y": 1,
+                  "text": "🌧",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c1>=71&&api.w6.c1<80,2,99)}",
+                  "y": 1,
+                  "text": "❄",
+                  "font": "emoji",
+                  "size": 16
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.w6.t1)}°",
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "style": {
+            "direction": "column",
+            "gap": 3,
+            "padding": 2,
+            "align": "center",
+            "radius": 6,
+            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r2/100)}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "+2h",
+              "color": "dim"
+            },
+            {
+              "type": "box",
+              "w": 20,
+              "h": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c2<3&&api.w6.d2==1,2,99)}",
+                  "y": 1,
+                  "text": "☀",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c2<3&&api.w6.d2==0,2,99)}",
+                  "y": 1,
+                  "text": "🌙",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c2>=3&&api.w6.c2<51,2,99)}",
+                  "y": 1,
+                  "text": "☁",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c2>=51&&api.w6.c2<71||api.w6.c2>=80,2,99)}",
+                  "y": 1,
+                  "text": "🌧",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c2>=71&&api.w6.c2<80,2,99)}",
+                  "y": 1,
+                  "text": "❄",
+                  "font": "emoji",
+                  "size": 16
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.w6.t2)}°",
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "style": {
+            "direction": "column",
+            "gap": 3,
+            "padding": 2,
+            "align": "center",
+            "radius": 6,
+            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r3/100)}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "+3h",
+              "color": "dim"
+            },
+            {
+              "type": "box",
+              "w": 20,
+              "h": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c3<3&&api.w6.d3==1,2,99)}",
+                  "y": 1,
+                  "text": "☀",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c3<3&&api.w6.d3==0,2,99)}",
+                  "y": 1,
+                  "text": "🌙",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c3>=3&&api.w6.c3<51,2,99)}",
+                  "y": 1,
+                  "text": "☁",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c3>=51&&api.w6.c3<71||api.w6.c3>=80,2,99)}",
+                  "y": 1,
+                  "text": "🌧",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c3>=71&&api.w6.c3<80,2,99)}",
+                  "y": 1,
+                  "text": "❄",
+                  "font": "emoji",
+                  "size": 16
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.w6.t3)}°",
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "style": {
+            "direction": "column",
+            "gap": 3,
+            "padding": 2,
+            "align": "center",
+            "radius": 6,
+            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r4/100)}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "+4h",
+              "color": "dim"
+            },
+            {
+              "type": "box",
+              "w": 20,
+              "h": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c4<3&&api.w6.d4==1,2,99)}",
+                  "y": 1,
+                  "text": "☀",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c4<3&&api.w6.d4==0,2,99)}",
+                  "y": 1,
+                  "text": "🌙",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c4>=3&&api.w6.c4<51,2,99)}",
+                  "y": 1,
+                  "text": "☁",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c4>=51&&api.w6.c4<71||api.w6.c4>=80,2,99)}",
+                  "y": 1,
+                  "text": "🌧",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c4>=71&&api.w6.c4<80,2,99)}",
+                  "y": 1,
+                  "text": "❄",
+                  "font": "emoji",
+                  "size": 16
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.w6.t4)}°",
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 24,
+          "style": {
+            "direction": "column",
+            "gap": 3,
+            "padding": 2,
+            "align": "center",
+            "radius": 6,
+            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r5/100)}"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "+5h",
+              "color": "dim"
+            },
+            {
+              "type": "box",
+              "w": 20,
+              "h": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c5<3&&api.w6.d5==1,2,99)}",
+                  "y": 1,
+                  "text": "☀",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c5<3&&api.w6.d5==0,2,99)}",
+                  "y": 1,
+                  "text": "🌙",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c5>=3&&api.w6.c5<51,2,99)}",
+                  "y": 1,
+                  "text": "☁",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c5>=51&&api.w6.c5<71||api.w6.c5>=80,2,99)}",
+                  "y": 1,
+                  "text": "🌧",
+                  "font": "emoji",
+                  "size": 16
+                },
+                {
+                  "type": "text",
+                  "x": "{if(api.w6.c5>=71&&api.w6.c5<80,2,99)}",
+                  "y": 1,
+                  "text": "❄",
+                  "font": "emoji",
+                  "size": 16
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "text": "{round(api.w6.t5)}°",
+              "align": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "polygon",
+      "w": 154,
+      "h": 44,
+      "points": [
+        [
+          0,
+          44
+        ],
+        [
+          12,
+          22
+        ],
+        [
+          38,
+          "{clamp(22-(api.w6.t1-api.w6.t0)*3,2,42)}"
+        ],
+        [
+          64,
+          "{clamp(22-(api.w6.t2-api.w6.t0)*3,2,42)}"
+        ],
+        [
+          90,
+          "{clamp(22-(api.w6.t3-api.w6.t0)*3,2,42)}"
+        ],
+        [
+          116,
+          "{clamp(22-(api.w6.t4-api.w6.t0)*3,2,42)}"
+        ],
+        [
+          142,
+          "{clamp(22-(api.w6.t5-api.w6.t0)*3,2,42)}"
+        ],
+        [
+          154,
+          44
+        ]
+      ],
+      "color": "{hsv(clamp(220-(api.w6.t0-30)*3.5,0,220),70,60)}"
+    },
+    {
+      "type": "text",
+      "text": "shade = chance of rain · ridge = temp vs now",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}
