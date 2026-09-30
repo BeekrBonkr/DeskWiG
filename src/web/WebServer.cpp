@@ -95,7 +95,7 @@ static bool isAuthed(AsyncWebServerRequest* req) {
   return sessionAuthed(req) || bearerAuthed(req);
 }
 
-// Returns true if the request is authorised. On failure it has already
+// Returns true if the request is authorized. On failure it has already
 // sent a 401, so callers just return.
 static bool requireAuth(AsyncWebServerRequest* req) {
   if (isAuthed(req)) return true;
@@ -598,7 +598,7 @@ static void registerLayouts() {
   });
 
   // Built-in templates for the editor's picker. Assembled by hand so the
-  // stored JSON text is passed through without re-serialising it.
+  // stored JSON text is passed through without re-serializing it.
   server.on(AsyncURIMatcher::exact("/api/layouts/templates"), HTTP_GET, [](AsyncWebServerRequest* req) {
     size_t need = 2;
     for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) need += strlen(LAYOUT_TEMPLATES[i].json) + 96;

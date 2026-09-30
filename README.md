@@ -86,7 +86,7 @@ If clockwise goes the wrong way, swap CLK and DT or set `ENC_REVERSE` in `src/ap
 Every [release](https://github.com/BeekrBonkr/DeskWiG/releases/latest) includes `deskwig-vX.Y.Z-factory.bin`, one image with the bootloader, partition table and firmware. Flashing it needs nothing installed, only Chrome or Edge (Firefox and Safari don't support Web Serial):
 
 1. Download `deskwig-vX.Y.Z-factory.bin` from the latest release.
-2. Connect the DevKitC's **UART** USB port to the computer (the board has two; the other, labelled **USB**, works too but needs the BOOT button more often).
+2. Connect the DevKitC's **UART** USB port to the computer (the board has two; the other, labeled **USB**, works too but needs the BOOT button more often).
 3. Open [espressif.github.io/esptool-js](https://espressif.github.io/esptool-js/), leave the baud rate as it is, and click **Connect**. Pick the serial port the browser offers (CP210x or USB JTAG/serial). If nothing shows up, hold **BOOT**, tap **RESET**, release **BOOT** and try again. On Linux, add your user to the `dialout` (or `uucp`) group if the port is missing.
 4. Set **Flash Address** to `0x0`, choose the downloaded file and click **Program**. It takes about a minute at the default speed.
 5. Click **Disconnect** and press **RESET**. The screen lights up in setup mode; continue at [First boot and WiFi setup](#first-boot-and-wifi-setup).
@@ -231,7 +231,7 @@ The routes:
 
 Authenticated routes accept either the session cookie the login page sets or an `Authorization: Bearer <key>` header, except when the request comes in over the setup hotspot. Neither works until a username and password have been created. The key is 8 characters from the device screen; the setup page shows it again to a logged-in user. Five wrong passwords or keys in a row lock logins for a minute.
 
-Forgot the password? The **Forgot your password?** link on the login page puts the key on the device screen for a minute. Enter it with a new username and password; the key is replaced afterwards, so update any scripts that use it.
+Forgot the password? The **Forgot your password?** link on the login page puts the key on the device screen for a minute. Enter it with a new username and password; the key is replaced afterward, so update any scripts that use it.
 
 ```bash
 curl -X POST http://<device-ip>/api/widgets \
@@ -340,14 +340,14 @@ A layout then uses `{api.<id>.<field>}`, for example `{api.weather.temp}`. Every
 | Key                    | Value                                                                                   |
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `api.<id>.status`      | `ok`, `stale` (last fetch failed or is overdue, old values still shown), `error`, `wait` |
-| `api.<id>.color`       | `ok`, `warn`, `bad` or `dim` for the same states, so a colour can track the fetch state  |
+| `api.<id>.color`       | `ok`, `warn`, `bad` or `dim` for the same states, so a color can track the fetch state  |
 | `api.<id>.age`         | Time since the last successful fetch: `12s`, `5m`, `2h`                                 |
 | `api.<id>.updated`     | Clock time of the last successful fetch                                                 |
 | `api.<id>.error`       | The last error, e.g. `HTTP 401` or `not JSON: InvalidInput`                             |
 
 Those five names always read the fetch state, so call a field something else: an API's own `status` value goes in a field named `state`, for example.
 
-Values are strings of up to 31 characters; nested objects and arrays are serialised and truncated. Like pings, a source is only fetched while a widget that references it is on screen, so an API quota is not spent on screens nobody is looking at. Saving a source or pressing **Test** on the setup page fetches it immediately and shows the extracted values. Fetches run in a background task, so a slow API never stalls the display, and the response is parsed with a filter that keeps only the requested paths, so large API responses cost little memory. Responses over 64 KB are rejected.
+Values are strings of up to 31 characters; nested objects and arrays are serialized and truncated. Like pings, a source is only fetched while a widget that references it is on screen, so an API quota is not spent on screens nobody is looking at. Saving a source or pressing **Test** on the setup page fetches it immediately and shows the extracted values. Fetches run in a background task, so a slow API never stalls the display, and the response is parsed with a filter that keeps only the requested paths, so large API responses cost little memory. Responses over 64 KB are rejected.
 
 HTTPS connections are encrypted but the server certificate is **not** verified. Header values are stored in `/config.json` and never returned by the API; `GET /api/config` omits sources entirely. The editor's template picker includes a **Weather** layout built for the Open-Meteo source above.
 
@@ -383,7 +383,7 @@ So `{round(api.nvda.c.delta, 2)}` is today's move and `{api.weather.temp.max}` t
 
 A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
 
-Fifty-six more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole, OctoPrint and charts of values over time, each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
+Fifty-six more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole, OctoPrint and charts of values over time, each showing a different feature and a matching LED behavior, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
 
 Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack, Signal Meter, Weather and Cards. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 
@@ -444,7 +444,7 @@ Elements are laid out like blocks in HTML: the screen is a column, and each elem
 }
 ```
 
-An element with both `x` and `y` is positioned absolutely inside its parent's content box instead of flowing, which is how every layout written before this model still renders unchanged. Absolute text without `w` keeps its old anchor semantics: `x` is the left, centre or right edge according to `align`.
+An element with both `x` and `y` is positioned absolutely inside its parent's content box instead of flowing, which is how every layout written before this model still renders unchanged. Absolute text without `w` keeps its old anchor semantics: `x` is the left, center or right edge according to `align`.
 
 Box properties, all in `style`:
 
@@ -469,7 +469,7 @@ Text uses the built-in 6 × 8 bitmap font scaled by `size` (1–40) unless `font
 
 Three fonts are built into the firmware: **sans** and **bold** (Inter, Latin subset) and **emoji** (Noto Emoji, monochrome, about 1,300 common emoji). Upload more `.ttf` files (up to 2 MB each, 12 fonts total) under **Fonts** on the setup page or with `POST /api/fonts?name=<name>` as a multipart form with a `file` field. Uploaded fonts live in `/fonts` on the filesystem and are loaded into PSRAM the first time a layout uses them.
 
-Any character a font lacks falls back to the emoji font and then to sans, so emoji work in every font, including the bitmap one, and render in the element's colour. Glyphs are rasterised on the device with [stb_truetype](https://github.com/nothings/stb) into a cache in PSRAM. That library does no bounds checking on the font file, so only upload fonts you trust. The editor loads the same font files from the device, so the preview matches. Built-in fonts are subset with `tools/make_fonts.py`; regenerate them from the full fonts if you want a different character set.
+Any character a font lacks falls back to the emoji font and then to sans, so emoji work in every font, including the bitmap one, and render in the element's color. Glyphs are rasterized on the device with [stb_truetype](https://github.com/nothings/stb) into a cache in PSRAM. That library does no bounds checking on the font file, so only upload fonts you trust. The editor loads the same font files from the device, so the preview matches. Built-in fonts are subset with `tools/make_fonts.py`; regenerate them from the full fonts if you want a different character set.
 
 ### Images
 
@@ -507,13 +507,13 @@ A `chart` draws the samples of a key that is being recorded under [History](#his
 | `style.min`, `style.max`| Value range. Either can be omitted to follow the data; they can be templates, e.g. `"{api.nvda.c.min - 1}"` |
 | `style.thickness`       | Line width, or dot radius (default 2)                                       |
 | `style.color`           | The line, bars or dots. `background` fills the plot area, `radius` rounds it |
-| `style.gradient`        | For `area` the fill colour under the line; for `bars` the bars fade into it  |
+| `style.gradient`        | For `area` the fill color under the line; for `bars` the bars fade into it  |
 
 Until the first sample arrives a chart shows only a dim baseline. In flow layout a chart is as wide as its box and 40 px tall unless `h` is given.
 
 ### Live numbers
 
-Every number in a layout can be a template instead, evaluated each frame: `x`, `y`, `w`, `h`, `r`, `x2`, `y2`, `start`, `end`, the entries of `points`, `window`, and the style properties `size`, `thickness`, `radius`, `borderWidth`, `padding`, `gap`, `min` and `max`. That is how shapes and positions follow data rather than just text and colours:
+Every number in a layout can be a template instead, evaluated each frame: `x`, `y`, `w`, `h`, `r`, `x2`, `y2`, `start`, `end`, the entries of `points`, `window`, and the style properties `size`, `thickness`, `radius`, `borderWidth`, `padding`, `gap`, `min` and `max`. That is how shapes and positions follow data rather than just text and colors:
 
 ```json
 {"type":"circle","x":"{clamp((api.weather.temp + 10) * 4, 0, 160)}","y":40,"r":5,"color":"accent"}
@@ -525,9 +525,9 @@ Every number in a layout can be a template instead, evaluated each frame: `x`, `
 
 A template that cannot be resolved counts as 0. Up to 40 numbers per layout can be templates, each up to 55 characters; named `styles` entries take plain numbers only.
 
-Colours can be computed too. `rgb(r, g, b)`, `hsv(h, s, v)` and `mix(c1, c2, t)` in an expression produce a colour any colour property accepts, so `"color":"{if(api.nvda.dp < 0, rgb(255,60,60), rgb(40,220,120))}"` turns red on a down day, and `"color":"{mix(rgb(0,120,255), rgb(255,80,0), clamp((api.weather.temp + 10) / 45, 0, 1))}"` slides from blue to orange with the temperature. The same works for the LED colour.
+Colors can be computed too. `rgb(r, g, b)`, `hsv(h, s, v)` and `mix(c1, c2, t)` in an expression produce a color any color property accepts, so `"color":"{if(api.nvda.dp < 0, rgb(255,60,60), rgb(40,220,120))}"` turns red on a down day, and `"color":"{mix(rgb(0,120,255), rgb(255,80,0), clamp((api.weather.temp + 10) / 45, 0, 1))}"` slides from blue to orange with the temperature. The same works for the LED color.
 
-Boxes, rects and bars can fade between two colours with `style.gradient`: `{"type":"box","style":{"background":"#101820","gradient":"#1c2a3a","radius":8}}` runs from the background at the top to the gradient colour at the bottom; `"gradientDir":"right"` runs it left to right. On a bar the fill fades from `color` to `gradient`.
+Boxes, rects and bars can fade between two colors with `style.gradient`: `{"type":"box","style":{"background":"#101820","gradient":"#1c2a3a","radius":8}}` runs from the background at the top to the gradient color at the bottom; `"gradientDir":"right"` runs it left to right. On a bar the fill fades from `color` to `gradient`.
 
 ### Status LED
 
@@ -560,9 +560,9 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 
 | Property                    | Applies to                | Meaning                                                 |
 | --------------------------- | ------------------------- | ------------------------------------------------------- |
-| `color`                     | all                       | Text, fill or outline colour                            |
+| `color`                     | all                       | Text, fill or outline color                            |
 | `background` (or `bg`)      | box, rect, text, shapes, bar, arc | Fill behind the element; the track for bar and arc |
-| `border`, `borderWidth`     | box, rect, shapes         | Outline colour and width                                |
+| `border`, `borderWidth`     | box, rect, shapes         | Outline color and width                                |
 | `radius`                    | box, rect, bar            | Corner radius                                           |
 | `font`                      | text                      | TrueType font name; empty for the bitmap font           |
 | `size`                      | text                      | Bitmap scale 1–40, or pixel line height 6–160 with a font |
@@ -570,12 +570,12 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `fill`                      | rect, shapes              | Fill with `color`                                       |
 | `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
 | `position`                  | any                       | `absolute` positions at `x`/`y` even if one is missing  |
-| `gradient`, `gradientDir`   | box, rect, bar, chart     | Second colour of a gradient fill, and `down` (default) or `right` |
+| `gradient`, `gradientDir`   | box, rect, bar, chart     | Second color of a gradient fill, and `down` (default) or `right` |
 | `kind`, `min`, `max`        | chart                     | `line`, `area`, `bars` or `dots`, and the value range  |
 | `fit`                       | image                     | `contain`, `cover` or `stretch`                         |
 | `image`                     | box                       | Background image (name or URL), drawn to cover the box  |
 
-`color`, `background`, `border` and `gradient` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}` or to a colour computed with `rgb()`, `hsv()` or `mix()` (see [Live numbers](#live-numbers)). That is how a layout changes colour with the data. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
+`color`, `background`, `border` and `gradient` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}` or to a color computed with `rgb()`, `hsv()` or `mix()` (see [Live numbers](#live-numbers)). That is how a layout changes color with the data. A color template that can't be resolved (for example a ping target that isn't configured) renders dim.
 
 ### Keys
 
@@ -592,7 +592,7 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `hostname`, `uptime`, `heap`                   | Device name, `3d 4h`, free heap in KB                       |
 | `ping.count`                                   | Number of configured targets                                |
 | `ping.N.name`, `ping.N.host`                   | Target N (0-based) as configured                            |
-| `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; colour role            |
+| `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; color role            |
 | `ping.N.bars`, `ping.N.trend`                  | Last 8 results as `\|\|.\|\|\|\|\|`; `^`, `v` or `>`            |
 | `api.<id>.<field>`                             | A value from a [data source](#data-sources)                |
 | `api.<id>.status`, `.color`, `.age`, `.updated`| Fetch state of that source                                  |
@@ -621,14 +621,14 @@ A brace that is not a plain key is evaluated as arithmetic, with keys as variabl
 | `&&`, `\|\|`, `!`                              | Logic on those                                                                   |
 | `if(cond, a, b)`                              | `a` when `cond` is non-zero, else `b`                                            |
 | `lerp(a, b, t)`                               | `a + (b - a) * t`                                                                |
-| `rgb(r, g, b)`, `hsv(h, s, v)`                | A colour as a number, for colour properties. `h` in degrees, `s` and `v` 0-100  |
-| `mix(c1, c2, t)`                              | Blends two colours, `t` from 0 to 1                                              |
+| `rgb(r, g, b)`, `hsv(h, s, v)`                | A color as a number, for color properties. `h` in degrees, `s` and `v` 0-100  |
+| `mix(c1, c2, t)`                              | Blends two colors, `t` from 0 to 1                                              |
 
 Values are read as numbers, and a leading number is enough, so `{api.weather.age}` reading `12s` gives 12. Without `round`, whole numbers print without decimals and anything else with up to two. Any unknown key, non-numeric value or division by zero makes the whole brace `--`, the same as an unknown key. Put spaces around a minus after a key that contains dashes (`{api.my-source.temp - 3}`), since `my-source` is read as one name first.
 
-The editor page has a **Design** panel next to the code: click an element on the preview or in the element tree to select it, edit its properties in the inspector (type, text, font, colours with a picker, size, alignment, fill, radius, borders, flow settings, image, points, arc angles), drag fixed-position elements on the preview, and drag rows in the tree to reorder them or drop them into a box. The toolbar adds, duplicates, moves and deletes elements, and the widget's own entry edits the name, root layout and the LED rules. Every change is written into the JSON, and typing in the JSON updates the tree, so both views always agree and undo covers both.
+The editor page has a **Design** panel next to the code: click an element on the preview or in the element tree to select it, edit its properties in the inspector (type, text, font, colors with a picker, size, alignment, fill, radius, borders, flow settings, image, points, arc angles), drag fixed-position elements on the preview, and drag rows in the tree to reorder them or drop them into a box. The toolbar adds, duplicates, moves and deletes elements, and the widget's own entry edits the name, root layout and the LED rules. Every change is written into the JSON, and typing in the JSON updates the tree, so both views always agree and undo covers both.
 
-The code side is a real code editor: JSON highlighting, bracket matching and auto-closing, folding, search and replace (Ctrl+F), undo and redo that work anywhere on the page (Ctrl+Z, Ctrl+Y, also for changes made in the Design panel), a Format button, Ctrl+S to save, and validation errors underlined on the exact element, style or LED rule they refer to. It is CodeMirror, bundled by `tools/editor` and served gzipped from the firmware at `/cm.js`, so it works with no internet. It lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
+The code side is a real code editor: JSON highlighting, bracket matching and auto-closing, folding, search and replace (Ctrl+F), undo and redo that work anywhere on the page (Ctrl+Z, Ctrl+Y, also for changes made in the Design panel), a Format button, Ctrl+S to save, and validation errors underlined on the exact element, style or LED rule they refer to. It is CodeMirror, bundled by `tools/editor` and served gzipped from the firmware at `/cm.js`, so it works with no internet. It lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colors as the device, so what you see is what you get. Layouts can also be pushed from a script:
 
 ```bash
 curl -X PUT "http://<device-ip>/api/layouts?id=clock" \
@@ -676,7 +676,7 @@ docs/images/          photos, enclosure renders and web page screenshots used in
 tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
 web/                  cm.js.gz, embedded in the firmware
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
-lib/stb/              stb_truetype (public domain) font rasteriser
+lib/stb/              stb_truetype (public domain) font rasterizer
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task), series (keys sampled over time)
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps

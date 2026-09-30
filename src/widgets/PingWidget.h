@@ -11,7 +11,7 @@ public:
   void render(lgfx::LGFX_Sprite& ui) override;
   const char* name() const override { return "Ping"; }
 
-  // Solid LED in the colour of the worst target: red if any is down,
+  // Solid LED in the color of the worst target: red if any is down,
   // amber if any is waiting or slow, green otherwise.
   bool ledSpec(LedSpec& out) override;
 

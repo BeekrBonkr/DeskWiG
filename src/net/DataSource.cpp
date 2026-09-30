@@ -458,7 +458,7 @@ static struct {
   char error[SOURCE_ERROR_LEN + 1];
   bool isJson;
   bool truncated;
-  String keys;            // serialised [{path, value}, ...]
+  String keys;            // serialized [{path, value}, ...]
 } disc;
 static String discScratch;  // built on the fetch task, swapped in under the lock
 
@@ -541,7 +541,7 @@ void sourceDiscoverToJson(JsonObject obj) {
   obj["url"] = disc.url;
   if (disc.state == SourceState::ERROR) obj["error"] = disc.error;
   if (disc.state == SourceState::OK && disc.keys.length()) {
-    // Already serialised; splice it in as raw JSON.
+    // Already serialized; splice it in as raw JSON.
     obj["result"] = serialized(disc.keys);  // String overload copies, so the lock can go
   }
   sourcesUnlock();

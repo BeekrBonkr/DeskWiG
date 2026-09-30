@@ -55,7 +55,7 @@ static void hsvToRgb(uint16_t h, uint8_t& r, uint8_t& g, uint8_t& b) {
   }
 }
 
-// Colour for the widget-controlled state at this instant.
+// Color for the widget-controlled state at this instant.
 static uint32_t widgetColor(uint32_t now) {
   if (!haveWidgetSpec || widgetSpec.mode == LedMode::OFF) return 0;
   const LedSpec& s = widgetSpec;
@@ -128,7 +128,7 @@ void ledLoop() {
   if (!enabled) {
     color = 0;
   } else if (pattern == LedPattern::NORMAL) {
-    // Widget colours are already scaled by the spec's own brightness;
+    // Widget colors are already scaled by the spec's own brightness;
     // the device brightness setting applies on top via setBrightness().
     color = widgetColor(now);
   } else {

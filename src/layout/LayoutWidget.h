@@ -47,11 +47,11 @@
 // as a line, area, bars or dots (style.kind), scaled between style.min
 // and style.max or to the data.
 //
-// Colours are role names (bg, text, dim, ok, warn, bad, accent), "#rrggbb",
+// Colors are role names (bg, text, dim, ok, warn, bad, accent), "#rrggbb",
 // or a template that resolves to a role name or to a number 0xRRGGBB, e.g.
 // "{ping.0.color}" or "{if(api.w.temp > 30, rgb(255,80,0), rgb(0,120,255))}".
 // A box, rect or bar with style.gradient fades from its background (or
-// colour) to that second colour, top to bottom or left to right.
+// color) to that second color, top to bottom or left to right.
 //
 // Any number (x, y, w, h, r, x2, y2, start, end, points, window, size,
 // thickness, radius, borderWidth, padding, gap, min, max) can instead be
@@ -65,14 +65,14 @@ enum class ElJustify : uint8_t { START, CENTER, END, BETWEEN };
 
 constexpr int16_t EL_AUTO = INT16_MIN;
 
-// Room for a colour expression such as {mix(rgb(0,0,255), rgb(255,0,0), api.w.temp / 40)}.
+// Room for a color expression such as {mix(rgb(0,0,255), rgb(255,0,0), api.w.temp / 40)}.
 constexpr uint8_t COLOR_LEN = 64;
 
 struct LayoutStyle {
   char font[24];       // TrueType font name; "" = built-in 6x8 bitmap font
-  char color[COLOR_LEN];   // text colour, fill colour (fill=true) or outline colour
+  char color[COLOR_LEN];   // text color, fill color (fill=true) or outline color
   char bg[COLOR_LEN];      // background (box, rect, shapes) or arc track; "" = none
-  char border[COLOR_LEN];  // border colour; "" = none
+  char border[COLOR_LEN];  // border color; "" = none
   uint8_t size;        // bitmap text scale 1-40, or pixel line height 6-160 with a font
   uint8_t borderW;     // border width in px
   uint8_t radius;      // corner radius (box, rect)
@@ -82,11 +82,11 @@ struct LayoutStyle {
   ElAlign align;       // text alignment, or cross-axis alignment of a box's children
   ElJustify justify;   // main-axis distribution of a box's children
   bool row;            // box direction: row instead of column
-  bool fill;           // shapes: fill with colour instead of outline
+  bool fill;           // shapes: fill with color instead of outline
   bool absolute;       // forced absolute positioning
   ImgFit fit;          // image scaling: contain (default), cover, stretch
   char image[IMAGE_SRC_LEN + 1];   // background image for a box (name or URL)
-  char gradient[COLOR_LEN];   // second colour of a gradient fill; "" = flat
+  char gradient[COLOR_LEN];   // second color of a gradient fill; "" = flat
   bool gradientRight;  // gradient runs left to right instead of top to bottom
   ChartKind kind;      // chart: line (default), area, bars, dots
   float vmin, vmax;    // chart value range; used when hasMin/hasMax
@@ -125,7 +125,7 @@ struct LayoutNode {
 //
 // The first matching rule wins ("when" is an expression that is true when
 // non-zero, "key"/"is" compares a key's text); otherwise the top-level
-// colour and mode apply. A rule only overrides the fields it sets. Colour
+// color and mode apply. A rule only overrides the fields it sets. Color
 // is a role name, #rrggbb or a template. No "led" means the LED stays off.
 struct LedRule {
   char when[64];

@@ -66,7 +66,7 @@ static uint16_t blend565(uint16_t a, uint16_t b, uint8_t t) {   // t: 0 = a, 255
   return (uint16_t)((r << 11) | (g << 5) | bl);
 }
 
-// Fills a (rounded) rectangle with a two-colour gradient, line by line.
+// Fills a (rounded) rectangle with a two-color gradient, line by line.
 static void fillGradient(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_t h, int16_t radius, uint16_t c0, uint16_t c1, bool right) {
   if (w <= 0 || h <= 0) return;
   int16_t r = radius;
@@ -720,7 +720,7 @@ void LayoutWidget::updateLed() {
   uint8_t r, g, bl;
   if (!name[0] || !roleRgb(name, r, g, bl)) {
     r = g = bl = 0;
-    if (mode != LedMode::RAINBOW) mode = LedMode::OFF;   // rainbow needs no colour
+    if (mode != LedMode::RAINBOW) mode = LedMode::OFF;   // rainbow needs no color
   }
   _ledSpec.mode = mode;
   _ledSpec.r = r;
@@ -1023,7 +1023,7 @@ void LayoutWidget::place(uint8_t i, int16_t x, int16_t y, int16_t w, int16_t h) 
       int16_t kh = k.lh == EL_AUTO ? 0 : k.lh;
       int16_t kx = cx + k.x;
       // Absolute text with no width keeps the old anchor semantics: x is
-      // the left, centre or right edge depending on align.
+      // the left, center or right edge depending on align.
       if (k.type == ElType::TEXT && k.w == EL_AUTO) {
         if (k.st.align == ElAlign::CENTER) kx -= kw / 2;
         else if (k.st.align == ElAlign::END) kx -= kw;
@@ -1081,7 +1081,7 @@ static lgfx::LGFX_Sprite* ssBegin(int16_t w, int16_t h) {
 }
 
 // Downsamples the 2x scratch into ui at (x, y): each output pixel gets the
-// average colour of its drawn samples and their count as alpha.
+// average color of its drawn samples and their count as alpha.
 static void ssEnd(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_t h) {
   if (!ssSprite) return;
   size_t need = (size_t)w * h * 4;
@@ -1093,7 +1093,7 @@ static void ssEnd(lgfx::LGFX_Sprite& ui, int16_t x, int16_t y, int16_t w, int16_
     if (!ssArgb) return;
   }
   // Typed as rgb565_t: the uint16_t overload of readRect hands back
-  // byte-swapped pixels, which flipped every colour and hid the key.
+  // byte-swapped pixels, which flipped every color and hid the key.
   static lgfx::rgb565_t row0[SCREEN_W * 2], row1[SCREEN_W * 2];
   lgfx::argb8888_t* out = (lgfx::argb8888_t*)ssArgb;
   for (int16_t oy = 0; oy < h; oy++) {
@@ -1183,13 +1183,13 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
   switch (e.type) {
     case ElType::BOX:
     case ElType::RECT: {
-      // rect keeps its old meaning: fill=true fills with colour, else outlines with colour.
+      // rect keeps its old meaning: fill=true fills with color, else outlines with color.
       bool fillIt = hasBg || (e.type == ElType::RECT && e.st.fill);
       uint16_t fillColor = hasBg ? bg : color;
       bool outline = bw > 0 || (e.type == ElType::RECT && !e.st.fill && !hasBg);
       uint16_t outlineColor = bw > 0 ? border : color;
       uint8_t ow = bw > 0 ? bw : 1;
-      // A gradient fades from the fill colour to style.gradient.
+      // A gradient fades from the fill color to style.gradient.
       auto fillArea = [&](int16_t fx, int16_t fy, int16_t fw, int16_t fh, int16_t fr) {
         if (hasGrad) fillGradient(ui, fx, fy, fw, fh, fr, fillColor, grad, e.st.gradientRight);
         else if (fr) ui.fillSmoothRoundRect(fx, fy, fw, fh, fr, fillColor);
@@ -1335,7 +1335,7 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       float half = e.st.thick / 2.0f;
       switch (e.st.kind) {
         case ChartKind::AREA: {
-          // The area is the line colour faded towards the background.
+          // The area is the line color faded toward the background.
           uint16_t fillc = hasGrad ? grad : blend565(color, hasBg ? bg : COLOR_BG, 170);
           for (uint16_t i = 0; i + 1 < n; i++) {
             int16_t x0 = px[i], x1 = px[i + 1];
@@ -1390,7 +1390,7 @@ void LayoutWidget::draw(lgfx::LGFX_Sprite& ui, uint8_t i, int16_t cx, int16_t cy
       uint8_t ow = bw > 0 ? bw : 1;
       bool hollow = bw > 0 || !fillIt;
       if (e.type == ElType::CIRCLE && fillIt && (!hollow || rx > ow)) {
-        // Native smooth circle; a border is an outer disc with the inner disc refilled.
+        // Native smooth circle; a border is an outer disk with the inner disk refilled.
         if (hollow) { ui.fillSmoothCircle(mx, my, rx, oc); ui.fillSmoothCircle(mx, my, rx - ow, fillColor); }
         else ui.fillSmoothCircle(mx, my, rx, fillColor);
       } else {

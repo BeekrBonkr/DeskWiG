@@ -76,7 +76,7 @@ void regenerateApiToken();
 // Returns false and leaves the setting untouched if invalid.
 bool setHostname(const char* name);
 
-// Erases the filesystem and NVS. Caller should restart afterwards.
+// Erases the filesystem and NVS. Caller should restart afterward.
 void factoryReset();
 
 void loadDefaultTargets();
