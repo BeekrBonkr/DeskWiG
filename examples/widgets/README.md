@@ -53,7 +53,7 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `space-dashboard.json` | Three sources on one screen: ISS on a small map, crew dots, near-Earth objects | `iss` `astros` `neo` |
 | **Weather** | | |
 | `weather-hourly.json` | Current conditions: hero card whose gradient follows the temperature (`hsv()`), condition tiles lit by `if()` on rain, snow and `is_day`, gradient rain-chance bar, stat cards | `wx` |
-| `weather-6h.json` | Next six hours in one row: per-hour icon picked by moving the other icons out of view with a templated `x`, column shade from rain chance (`mix()`), a temperature ridge polygon with templated points | `w6` |
+| `weather-6h.json` | Next six hours as six full-width rows: per-hour icon picked by moving the other icons out of view with a templated `x`, a fill as wide as the chance of rain (templated `w`), temperature colored by `hsv()` | `w6` |
 | `rain-next-hours.json` | Six hourly columns from one array (`hourly.x.0` to `.5`) with templated heights, shade from `mix()`, `max()` | `rain` |
 | `forecast-3day.json` | Three days, each with a range bar placed from its low and high (templated `x` and `w`), rain chance shaded by `mix()` | `fc` `weather` |
 | `barometer.json` | Zoned dial over a 950–1050 hPa window with a marker (`clamp()`), area chart of the last day, `.delta` | `baro`, sampled `api.baro.pressure` |

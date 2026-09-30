@@ -35,496 +35,620 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
+    "gap": 5,
     "padding": 8
   },
   "elements": [
     {
       "type": "text",
       "text": "NEXT 6 HOURS · {api.w6.age}",
-      "color": "dim"
+      "color": "#7c8794"
     },
     {
       "type": "box",
+      "h": 44,
       "style": {
-        "direction": "row",
-        "gap": 2,
-        "justify": "center"
+        "radius": 8,
+        "background": "#161b22",
+        "gradient": "#0d1015"
       },
       "children": [
         {
-          "type": "box",
-          "w": 24,
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{api.w6.r0*1.54}",
+          "h": 44,
           "style": {
-            "direction": "column",
-            "gap": 3,
-            "padding": 2,
-            "align": "center",
-            "radius": 6,
-            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r0/100)}"
-          },
-          "children": [
-            {
-              "type": "text",
-              "text": "now",
-              "color": "dim"
-            },
-            {
-              "type": "box",
-              "w": 20,
-              "h": 20,
-              "children": [
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c0<3&&api.w6.d0==1,2,99)}",
-                  "y": 1,
-                  "text": "☀",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c0<3&&api.w6.d0==0,2,99)}",
-                  "y": 1,
-                  "text": "🌙",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c0>=3&&api.w6.c0<51,2,99)}",
-                  "y": 1,
-                  "text": "☁",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c0>=51&&api.w6.c0<71||api.w6.c0>=80,2,99)}",
-                  "y": 1,
-                  "text": "🌧",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c0>=71&&api.w6.c0<80,2,99)}",
-                  "y": 1,
-                  "text": "❄",
-                  "font": "emoji",
-                  "size": 16
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "text": "{round(api.w6.t0)}°",
-              "align": "center"
-            }
-          ]
+            "radius": 8,
+            "background": "#0c2038",
+            "gradient": "#184f8c",
+            "gradientDir": "right"
+          }
         },
         {
-          "type": "box",
-          "w": 24,
-          "style": {
-            "direction": "column",
-            "gap": 3,
-            "padding": 2,
-            "align": "center",
-            "radius": 6,
-            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r1/100)}"
-          },
-          "children": [
-            {
-              "type": "text",
-              "text": "+1h",
-              "color": "dim"
-            },
-            {
-              "type": "box",
-              "w": 20,
-              "h": 20,
-              "children": [
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c1<3&&api.w6.d1==1,2,99)}",
-                  "y": 1,
-                  "text": "☀",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c1<3&&api.w6.d1==0,2,99)}",
-                  "y": 1,
-                  "text": "🌙",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c1>=3&&api.w6.c1<51,2,99)}",
-                  "y": 1,
-                  "text": "☁",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c1>=51&&api.w6.c1<71||api.w6.c1>=80,2,99)}",
-                  "y": 1,
-                  "text": "🌧",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c1>=71&&api.w6.c1<80,2,99)}",
-                  "y": 1,
-                  "text": "❄",
-                  "font": "emoji",
-                  "size": 16
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "text": "{round(api.w6.t1)}°",
-              "align": "center"
-            }
-          ]
+          "type": "text",
+          "x": 9,
+          "y": 15,
+          "text": "now",
+          "font": "sans",
+          "size": 14,
+          "color": "#c4ccd6"
         },
         {
-          "type": "box",
-          "w": 24,
-          "style": {
-            "direction": "column",
-            "gap": 3,
-            "padding": 2,
-            "align": "center",
-            "radius": 6,
-            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r2/100)}"
-          },
-          "children": [
-            {
-              "type": "text",
-              "text": "+2h",
-              "color": "dim"
-            },
-            {
-              "type": "box",
-              "w": 20,
-              "h": 20,
-              "children": [
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c2<3&&api.w6.d2==1,2,99)}",
-                  "y": 1,
-                  "text": "☀",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c2<3&&api.w6.d2==0,2,99)}",
-                  "y": 1,
-                  "text": "🌙",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c2>=3&&api.w6.c2<51,2,99)}",
-                  "y": 1,
-                  "text": "☁",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c2>=51&&api.w6.c2<71||api.w6.c2>=80,2,99)}",
-                  "y": 1,
-                  "text": "🌧",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c2>=71&&api.w6.c2<80,2,99)}",
-                  "y": 1,
-                  "text": "❄",
-                  "font": "emoji",
-                  "size": 16
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "text": "{round(api.w6.t2)}°",
-              "align": "center"
-            }
-          ]
+          "type": "text",
+          "x": "{if(api.w6.c0<3&&api.w6.d0==1,68,0)}",
+          "y": 10,
+          "text": "☀",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#ffd24a"
         },
         {
-          "type": "box",
-          "w": 24,
-          "style": {
-            "direction": "column",
-            "gap": 3,
-            "padding": 2,
-            "align": "center",
-            "radius": 6,
-            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r3/100)}"
-          },
-          "children": [
-            {
-              "type": "text",
-              "text": "+3h",
-              "color": "dim"
-            },
-            {
-              "type": "box",
-              "w": 20,
-              "h": 20,
-              "children": [
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c3<3&&api.w6.d3==1,2,99)}",
-                  "y": 1,
-                  "text": "☀",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c3<3&&api.w6.d3==0,2,99)}",
-                  "y": 1,
-                  "text": "🌙",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c3>=3&&api.w6.c3<51,2,99)}",
-                  "y": 1,
-                  "text": "☁",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c3>=51&&api.w6.c3<71||api.w6.c3>=80,2,99)}",
-                  "y": 1,
-                  "text": "🌧",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c3>=71&&api.w6.c3<80,2,99)}",
-                  "y": 1,
-                  "text": "❄",
-                  "font": "emoji",
-                  "size": 16
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "text": "{round(api.w6.t3)}°",
-              "align": "center"
-            }
-          ]
+          "type": "text",
+          "x": "{if(api.w6.c0<3&&api.w6.d0==0,68,0)}",
+          "y": 10,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#aab8ff"
         },
         {
-          "type": "box",
-          "w": 24,
-          "style": {
-            "direction": "column",
-            "gap": 3,
-            "padding": 2,
-            "align": "center",
-            "radius": 6,
-            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r4/100)}"
-          },
-          "children": [
-            {
-              "type": "text",
-              "text": "+4h",
-              "color": "dim"
-            },
-            {
-              "type": "box",
-              "w": 20,
-              "h": 20,
-              "children": [
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c4<3&&api.w6.d4==1,2,99)}",
-                  "y": 1,
-                  "text": "☀",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c4<3&&api.w6.d4==0,2,99)}",
-                  "y": 1,
-                  "text": "🌙",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c4>=3&&api.w6.c4<51,2,99)}",
-                  "y": 1,
-                  "text": "☁",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c4>=51&&api.w6.c4<71||api.w6.c4>=80,2,99)}",
-                  "y": 1,
-                  "text": "🌧",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c4>=71&&api.w6.c4<80,2,99)}",
-                  "y": 1,
-                  "text": "❄",
-                  "font": "emoji",
-                  "size": 16
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "text": "{round(api.w6.t4)}°",
-              "align": "center"
-            }
-          ]
+          "type": "text",
+          "x": "{if(api.w6.c0>=3&&api.w6.c0<51,68,0)}",
+          "y": 10,
+          "text": "☁",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#c8d4e2"
         },
         {
-          "type": "box",
-          "w": 24,
-          "style": {
-            "direction": "column",
-            "gap": 3,
-            "padding": 2,
-            "align": "center",
-            "radius": 6,
-            "background": "{mix(rgb(24,26,32),rgb(20,90,170),api.w6.r5/100)}"
-          },
-          "children": [
-            {
-              "type": "text",
-              "text": "+5h",
-              "color": "dim"
-            },
-            {
-              "type": "box",
-              "w": 20,
-              "h": 20,
-              "children": [
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c5<3&&api.w6.d5==1,2,99)}",
-                  "y": 1,
-                  "text": "☀",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c5<3&&api.w6.d5==0,2,99)}",
-                  "y": 1,
-                  "text": "🌙",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c5>=3&&api.w6.c5<51,2,99)}",
-                  "y": 1,
-                  "text": "☁",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c5>=51&&api.w6.c5<71||api.w6.c5>=80,2,99)}",
-                  "y": 1,
-                  "text": "🌧",
-                  "font": "emoji",
-                  "size": 16
-                },
-                {
-                  "type": "text",
-                  "x": "{if(api.w6.c5>=71&&api.w6.c5<80,2,99)}",
-                  "y": 1,
-                  "text": "❄",
-                  "font": "emoji",
-                  "size": 16
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "text": "{round(api.w6.t5)}°",
-              "align": "center"
-            }
-          ]
+          "type": "text",
+          "x": "{if(api.w6.c0>=51&&api.w6.c0<71||api.w6.c0>=80,68,0)}",
+          "y": 10,
+          "text": "🌧",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#6fc3ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c0>=71&&api.w6.c0<80,68,0)}",
+          "y": 10,
+          "text": "❄",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "text"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 11,
+          "text": "{round(api.w6.t0)}°",
+          "font": "bold",
+          "size": 22,
+          "align": "right",
+          "color": "{hsv(clamp(220-(api.w6.t0-30)*3.5,0,220),45,100)}"
+        },
+        {
+          "type": "text",
+          "x": 148,
+          "y": 18,
+          "text": "{api.w6.r0}%",
+          "align": "right",
+          "color": "#cfe6ff"
         }
       ]
     },
     {
-      "type": "polygon",
-      "w": 154,
-      "h": 96,
-      "points": [
-        [
-          0,
-          96
-        ],
-        [
-          12,
-          48
-        ],
-        [
-          38,
-          "{clamp(48-(api.w6.t1-api.w6.t0)*6,4,92)}"
-        ],
-        [
-          64,
-          "{clamp(48-(api.w6.t2-api.w6.t0)*6,4,92)}"
-        ],
-        [
-          90,
-          "{clamp(48-(api.w6.t3-api.w6.t0)*6,4,92)}"
-        ],
-        [
-          116,
-          "{clamp(48-(api.w6.t4-api.w6.t0)*6,4,92)}"
-        ],
-        [
-          142,
-          "{clamp(48-(api.w6.t5-api.w6.t0)*6,4,92)}"
-        ],
-        [
-          154,
-          96
-        ]
-      ],
-      "color": "{hsv(clamp(220-(api.w6.t0-30)*3.5,0,220),70,60)}"
+      "type": "box",
+      "h": 44,
+      "style": {
+        "radius": 8,
+        "background": "#161b22",
+        "gradient": "#0d1015"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{api.w6.r1*1.54}",
+          "h": 44,
+          "style": {
+            "radius": 8,
+            "background": "#0c2038",
+            "gradient": "#184f8c",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "text",
+          "x": 9,
+          "y": 15,
+          "text": "+1h",
+          "font": "sans",
+          "size": 14,
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c1<3&&api.w6.d1==1,68,0)}",
+          "y": 10,
+          "text": "☀",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#ffd24a"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c1<3&&api.w6.d1==0,68,0)}",
+          "y": 10,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c1>=3&&api.w6.c1<51,68,0)}",
+          "y": 10,
+          "text": "☁",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#c8d4e2"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c1>=51&&api.w6.c1<71||api.w6.c1>=80,68,0)}",
+          "y": 10,
+          "text": "🌧",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#6fc3ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c1>=71&&api.w6.c1<80,68,0)}",
+          "y": 10,
+          "text": "❄",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "text"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 11,
+          "text": "{round(api.w6.t1)}°",
+          "font": "bold",
+          "size": 22,
+          "align": "right",
+          "color": "{hsv(clamp(220-(api.w6.t1-30)*3.5,0,220),45,100)}"
+        },
+        {
+          "type": "text",
+          "x": 148,
+          "y": 18,
+          "text": "{api.w6.r1}%",
+          "align": "right",
+          "color": "#cfe6ff"
+        }
+      ]
     },
     {
-      "type": "text",
-      "text": "shade: rain · ridge: temp",
-      "color": "dim",
-      "align": "center"
+      "type": "box",
+      "h": 44,
+      "style": {
+        "radius": 8,
+        "background": "#161b22",
+        "gradient": "#0d1015"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{api.w6.r2*1.54}",
+          "h": 44,
+          "style": {
+            "radius": 8,
+            "background": "#0c2038",
+            "gradient": "#184f8c",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "text",
+          "x": 9,
+          "y": 15,
+          "text": "+2h",
+          "font": "sans",
+          "size": 14,
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c2<3&&api.w6.d2==1,68,0)}",
+          "y": 10,
+          "text": "☀",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#ffd24a"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c2<3&&api.w6.d2==0,68,0)}",
+          "y": 10,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c2>=3&&api.w6.c2<51,68,0)}",
+          "y": 10,
+          "text": "☁",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#c8d4e2"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c2>=51&&api.w6.c2<71||api.w6.c2>=80,68,0)}",
+          "y": 10,
+          "text": "🌧",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#6fc3ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c2>=71&&api.w6.c2<80,68,0)}",
+          "y": 10,
+          "text": "❄",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "text"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 11,
+          "text": "{round(api.w6.t2)}°",
+          "font": "bold",
+          "size": 22,
+          "align": "right",
+          "color": "{hsv(clamp(220-(api.w6.t2-30)*3.5,0,220),45,100)}"
+        },
+        {
+          "type": "text",
+          "x": 148,
+          "y": 18,
+          "text": "{api.w6.r2}%",
+          "align": "right",
+          "color": "#cfe6ff"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 44,
+      "style": {
+        "radius": 8,
+        "background": "#161b22",
+        "gradient": "#0d1015"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{api.w6.r3*1.54}",
+          "h": 44,
+          "style": {
+            "radius": 8,
+            "background": "#0c2038",
+            "gradient": "#184f8c",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "text",
+          "x": 9,
+          "y": 15,
+          "text": "+3h",
+          "font": "sans",
+          "size": 14,
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c3<3&&api.w6.d3==1,68,0)}",
+          "y": 10,
+          "text": "☀",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#ffd24a"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c3<3&&api.w6.d3==0,68,0)}",
+          "y": 10,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c3>=3&&api.w6.c3<51,68,0)}",
+          "y": 10,
+          "text": "☁",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#c8d4e2"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c3>=51&&api.w6.c3<71||api.w6.c3>=80,68,0)}",
+          "y": 10,
+          "text": "🌧",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#6fc3ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c3>=71&&api.w6.c3<80,68,0)}",
+          "y": 10,
+          "text": "❄",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "text"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 11,
+          "text": "{round(api.w6.t3)}°",
+          "font": "bold",
+          "size": 22,
+          "align": "right",
+          "color": "{hsv(clamp(220-(api.w6.t3-30)*3.5,0,220),45,100)}"
+        },
+        {
+          "type": "text",
+          "x": 148,
+          "y": 18,
+          "text": "{api.w6.r3}%",
+          "align": "right",
+          "color": "#cfe6ff"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 44,
+      "style": {
+        "radius": 8,
+        "background": "#161b22",
+        "gradient": "#0d1015"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{api.w6.r4*1.54}",
+          "h": 44,
+          "style": {
+            "radius": 8,
+            "background": "#0c2038",
+            "gradient": "#184f8c",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "text",
+          "x": 9,
+          "y": 15,
+          "text": "+4h",
+          "font": "sans",
+          "size": 14,
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c4<3&&api.w6.d4==1,68,0)}",
+          "y": 10,
+          "text": "☀",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#ffd24a"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c4<3&&api.w6.d4==0,68,0)}",
+          "y": 10,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c4>=3&&api.w6.c4<51,68,0)}",
+          "y": 10,
+          "text": "☁",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#c8d4e2"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c4>=51&&api.w6.c4<71||api.w6.c4>=80,68,0)}",
+          "y": 10,
+          "text": "🌧",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#6fc3ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c4>=71&&api.w6.c4<80,68,0)}",
+          "y": 10,
+          "text": "❄",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "text"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 11,
+          "text": "{round(api.w6.t4)}°",
+          "font": "bold",
+          "size": 22,
+          "align": "right",
+          "color": "{hsv(clamp(220-(api.w6.t4-30)*3.5,0,220),45,100)}"
+        },
+        {
+          "type": "text",
+          "x": 148,
+          "y": 18,
+          "text": "{api.w6.r4}%",
+          "align": "right",
+          "color": "#cfe6ff"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 44,
+      "style": {
+        "radius": 8,
+        "background": "#161b22",
+        "gradient": "#0d1015"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{api.w6.r5*1.54}",
+          "h": 44,
+          "style": {
+            "radius": 8,
+            "background": "#0c2038",
+            "gradient": "#184f8c",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "text",
+          "x": 9,
+          "y": 15,
+          "text": "+5h",
+          "font": "sans",
+          "size": 14,
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c5<3&&api.w6.d5==1,68,0)}",
+          "y": 10,
+          "text": "☀",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#ffd24a"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c5<3&&api.w6.d5==0,68,0)}",
+          "y": 10,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#aab8ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c5>=3&&api.w6.c5<51,68,0)}",
+          "y": 10,
+          "text": "☁",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#c8d4e2"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c5>=51&&api.w6.c5<71||api.w6.c5>=80,68,0)}",
+          "y": 10,
+          "text": "🌧",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "#6fc3ff"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.w6.c5>=71&&api.w6.c5<80,68,0)}",
+          "y": 10,
+          "text": "❄",
+          "font": "emoji",
+          "size": 24,
+          "align": "right",
+          "color": "text"
+        },
+        {
+          "type": "text",
+          "x": 116,
+          "y": 11,
+          "text": "{round(api.w6.t5)}°",
+          "font": "bold",
+          "size": 22,
+          "align": "right",
+          "color": "{hsv(clamp(220-(api.w6.t5-30)*3.5,0,220),45,100)}"
+        },
+        {
+          "type": "text",
+          "x": 148,
+          "y": 18,
+          "text": "{api.w6.r5}%",
+          "align": "right",
+          "color": "#cfe6ff"
+        }
+      ]
     }
   ]
 }
