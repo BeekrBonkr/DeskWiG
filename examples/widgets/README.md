@@ -39,7 +39,7 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `photo-frame.json` | URL image as a full-screen background with an overlay | internet |
 | **Finance** | | |
 | `stock-ticker.json` | One stock: price, change, day-range bar, LED on big moves | `stock` |
-| `stock-board.json` | Three stocks with a centred change bar under each | `stock1` `stock2` `stock3` |
+| `stock-board.json` | Four stocks with a centred change bar under each, raw Finnhub field names | `nvda` `tsm` `sgdm` `vti` |
 | `crypto-board.json` | Four coins from one CoinGecko call, 24h change bar | `coins` |
 | `fear-greed.json` | Three-quarter arc gauge (`start`/`end` past 360) with the label inside | `fng` |
 | `mempool-fees.json` | A plain-text source (empty path) for the block height, fee tiers | `fees` `tip` |
@@ -153,7 +153,7 @@ fields:   last = c
           prev = pc
 ```
 
-Quotes update during market hours; outside them the values are the last close. **stock1**, **stock2** and **stock3** for `stock-board.json` are the same source three times with `symbol=AAPL`, `MSFT` and `NVDA` and the fields `price = c` and `pct = dp`. Edit the labels in the layout to match your symbols. No key at all? Yahoo's chart endpoint works without one: `https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1d` with `price = chart.result.0.meta.regularMarketPrice` and `prev = chart.result.0.meta.chartPreviousClose`.
+Quotes update during market hours; outside them the values are the last close. `stock-board.json` uses four sources named after their tickers, **nvda**, **tsm**, **sgdm** and **vti**, each the same URL with its own `symbol=` and the field names exactly as **Discover keys** generates them (`c`, `d`, `dp`, `h`, `l`, `o`, `pc`, `t`); the layout reads `c` and `dp`. For other stocks, name the source after the ticker and change the label and the `api.<id>` keys in that row. No key at all? Yahoo's chart endpoint works without one: `https://query1.finance.yahoo.com/v8/finance/chart/AAPL?range=1d&interval=1d` with `price = chart.result.0.meta.regularMarketPrice` and `prev = chart.result.0.meta.chartPreviousClose`.
 
 **coins** (CoinGecko, no key)
 
