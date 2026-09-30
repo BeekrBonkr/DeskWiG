@@ -1,6 +1,6 @@
 # Example widgets
 
-Fifty-five layouts that show what DeskWiG layouts can do. They are not preloaded on the device: open `http://deskwig.local/editor`, paste one into the editor, and press **Save**, or push it from a shell:
+Fifty-six layouts that show what DeskWiG layouts can do. They are not preloaded on the device: open `http://deskwig.local/editor`, paste one into the editor, and press **Save**, or push it from a shell:
 
 ```bash
 curl -X PUT "http://deskwig.local/api/layouts?id=big-clock" \
@@ -52,7 +52,8 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `space-weather.json` | Object keys that look like numbers (`0.G.Scale`), aurora alert LED | `swpc` |
 | `space-dashboard.json` | Three sources on one screen with emoji icons in rows | `iss` `astros` `neo` |
 | **Weather** | | |
-| `weather-hourly.json` | Condition tiles lit by `if()` on rain, snow and `is_day`, field names as **Discover keys** generates them, hourly index 0 via `forecast_hours`, stat cards | `wx` |
+| `weather-hourly.json` | Current conditions: hero card whose gradient follows the temperature (`hsv()`), condition tiles lit by `if()` on rain, snow and `is_day`, gradient rain-chance bar, stat cards | `wx` |
+| `weather-6h.json` | Next six hours in one row: per-hour icon picked by moving the other icons out of view with a templated `x`, column shade from rain chance (`mix()`), a temperature ridge polygon with templated points | `w6` |
 | `rain-next-hours.json` | Six hourly bars from one array (`hourly.x.0` to `.5`), `max()` | `rain` |
 | `forecast-3day.json` | Daily highs, lows and rain chance for three days | `fc` `weather` |
 | `barometer.json` | Gauge over a 950–1050 hPa window with `clamp()` | `baro` |
@@ -293,6 +294,19 @@ fields:   temperature_2m2 = hourly.temperature_2m.0
 ```
 
 The tiles light from the amounts: sun or moon (by `is_day`) when nothing is falling, rain when `rain + showers` is above zero, snow when `snowfall` is. Temperatures are rounded in the layout with `round()`, so the fields can keep their decimals.
+
+**w6** (Open-Meteo hourly forecast for the next six hours, no key). `forecast_hours=6` makes every hourly array hold the current hour and the five after it. The layout expects short names, so type them in place of the ones Discover suggests: `t` temperature, `r` chance of rain, `c` WMO weather code, `d` is_day, each with the hour index.
+
+```
+url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,precipitation_probability,weather_code,is_day&forecast_hours=6&timezone=auto&temperature_unit=fahrenheit
+interval: 600
+fields:   t0 = hourly.temperature_2m.0             ... t5 = hourly.temperature_2m.5
+          r0 = hourly.precipitation_probability.0  ... r5 = hourly.precipitation_probability.5
+          c0 = hourly.weather_code.0               ... c5 = hourly.weather_code.5
+          d0 = hourly.is_day.0                     ... d5 = hourly.is_day.5
+```
+
+Weather codes: 0-2 clear or partly cloudy (sun by day, moon at night), 3-48 overcast and fog, 51-67 and 80-99 rain, drizzle, showers and storms, 71-77 snow. Put your own coordinates in the URL.
 
 **rain** (Open-Meteo hourly, no key)
 
