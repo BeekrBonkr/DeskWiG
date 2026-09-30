@@ -7,12 +7,12 @@
     "brightness": 30,
     "rules": [
       {
-        "when": "api.stock1.pct < 0 && api.stock2.pct < 0 && api.stock3.pct < 0",
+        "when": "api.nvda.dp < 0 && api.tsm.dp < 0 && api.sgdm.dp < 0 && api.vti.dp < 0",
         "color": "bad",
         "mode": "solid"
       },
       {
-        "when": "api.stock1.pct < 0 || api.stock2.pct < 0 || api.stock3.pct < 0",
+        "when": "api.nvda.dp < 0 || api.tsm.dp < 0 || api.sgdm.dp < 0 || api.vti.dp < 0",
         "color": "warn",
         "mode": "solid"
       }
@@ -35,86 +35,6 @@
       "children": [
         {
           "type": "text",
-          "text": "AAPL",
-          "font": "bold",
-          "size": 16,
-          "w": 48
-        },
-        {
-          "type": "text",
-          "text": "{round(api.stock1.price, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.stock1.pct, 1)}%",
-          "align": "right",
-          "w": 52
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "bar",
-      "h": 4,
-      "value": "{clamp(api.stock1.pct * 10 + 50, 0, 100)}",
-      "color": "ok",
-      "style": {
-        "background": "#202020",
-        "radius": 3
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "MSFT",
-          "font": "bold",
-          "size": 16,
-          "w": 48
-        },
-        {
-          "type": "text",
-          "text": "{round(api.stock2.price, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.stock2.pct, 1)}%",
-          "align": "right",
-          "w": 52
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "bar",
-      "h": 4,
-      "value": "{clamp(api.stock2.pct * 10 + 50, 0, 100)}",
-      "color": "ok",
-      "style": {
-        "background": "#202020",
-        "radius": 3
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
           "text": "NVDA",
           "font": "bold",
           "size": 16,
@@ -122,14 +42,14 @@
         },
         {
           "type": "text",
-          "text": "{round(api.stock3.price, 2)}",
+          "text": "{round(api.nvda.c, 2)}",
           "font": "sans",
           "size": 16,
           "align": "right"
         },
         {
           "type": "text",
-          "text": "{round(api.stock3.pct, 1)}%",
+          "text": "{round(api.nvda.dp, 1)}%",
           "align": "right",
           "w": 52
         }
@@ -143,7 +63,127 @@
     {
       "type": "bar",
       "h": 4,
-      "value": "{clamp(api.stock3.pct * 10 + 50, 0, 100)}",
+      "value": "{clamp(api.nvda.dp * 10 + 50, 0, 100)}",
+      "color": "ok",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "TSM",
+          "font": "bold",
+          "size": 16,
+          "w": 48
+        },
+        {
+          "type": "text",
+          "text": "{round(api.tsm.c, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.tsm.dp, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 4,
+      "value": "{clamp(api.tsm.dp * 10 + 50, 0, 100)}",
+      "color": "ok",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "SGDM",
+          "font": "bold",
+          "size": 16,
+          "w": 48
+        },
+        {
+          "type": "text",
+          "text": "{round(api.sgdm.c, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.sgdm.dp, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 4,
+      "value": "{clamp(api.sgdm.dp * 10 + 50, 0, 100)}",
+      "color": "ok",
+      "style": {
+        "background": "#202020",
+        "radius": 3
+      }
+    },
+    {
+      "type": "box",
+      "children": [
+        {
+          "type": "text",
+          "text": "VTI",
+          "font": "bold",
+          "size": 16,
+          "w": 48
+        },
+        {
+          "type": "text",
+          "text": "{round(api.vti.c, 2)}",
+          "font": "sans",
+          "size": 16,
+          "align": "right"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.vti.dp, 1)}%",
+          "align": "right",
+          "w": 52
+        }
+      ],
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      }
+    },
+    {
+      "type": "bar",
+      "h": 4,
+      "value": "{clamp(api.vti.dp * 10 + 50, 0, 100)}",
       "color": "ok",
       "style": {
         "background": "#202020",
@@ -163,7 +203,7 @@
     },
     {
       "type": "text",
-      "text": "{api.stock1.age} ago · {time}",
+      "text": "{api.nvda.age} ago · {time}",
       "color": "dim",
       "align": "center"
     }
