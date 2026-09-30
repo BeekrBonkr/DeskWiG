@@ -247,7 +247,7 @@ async function requireLogin() {
   if (!auth.loggedIn) { toLogin(); return null; }
   return auth;
 }
-requireLogin();
+const loginReady = requireLogin();
 
 async function api(path, method, body) {
   const r = await fetch(path, {
@@ -275,9 +275,15 @@ function openSection(name, scroll) {
   }
 }
 function sub(name, text) { $('sub-' + name).textContent = text || ''; }
+// The device has little RAM to spare for requests nobody is looking at:
+// a section is only re-polled while it is open and the tab is visible,
+// and it is refreshed once when it opens.
+let started = false;
+const live = n => $('sec-' + n).open && !document.hidden;
+const onOpen = { clock: () => loadClock(), sources: () => { if (sourcesIdle()) loadSources(); }, history: () => loadSeries() };
 SECTIONS.forEach(n => {
   $('sec-' + n).addEventListener('toggle', e => {
-    if (e.target.open) openSection(n, false);
+    if (e.target.open) { openSection(n, false); if (started && onOpen[n]) onOpen[n](); }
     else if (location.hash === '#' + n) history.replaceState(null, '', location.pathname);
   });
 });
@@ -289,7 +295,7 @@ window.addEventListener('hashchange', () => { const h = location.hash.slice(1); 
 
 // ---------- account ----------
 async function loadAccount() {
-  const a = auth || await requireLogin();
+  const a = auth || await loginReady;
   if (!a) return;
   $('acct').innerHTML = a.hotspot && !a.configured
     ? 'No account yet. Create one on the <a href="/login">login page</a> once the device is on your network.'
@@ -315,7 +321,6 @@ $('logout').onclick = async () => {
   try { await api('/api/auth/logout', 'POST'); } catch (e) {}
   location.href = '/login';
 };
-setTimeout(loadAccount, 0);
 
 function showStatus(s) {
   let t;
@@ -481,7 +486,8 @@ function showClock(c, t) {
 
 async function loadClock() {
   try {
-    const [c, s] = await Promise.all([api('/api/config'), api('/api/status')]);
+    const c = await api('/api/config');
+    const s = await api('/api/status');
     showClock(c.clock, s.time);
   } catch (e) { $('clockStatus').textContent = e.message; }
 }
@@ -504,8 +510,7 @@ async function saveClock() {
 }
 
 $('saveClock').onclick = saveClock;
-setInterval(async () => { try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
-loadClock();
+setInterval(async () => { if (!live('clock')) return; try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
 
 // ---------- firmware ----------
 async function loadFw() {
@@ -537,7 +542,6 @@ function uploadFw() {
   xhr.send(fd);
 }
 $('fwUpload').onclick = uploadFw;
-loadFw();
 
 // ---------- fonts ----------
 let fontDelPending = null;
@@ -602,7 +606,6 @@ async function deleteFont(name) {
 }
 
 $('fontUpload').onclick = uploadFont;
-loadFonts();
 
 // ---------- images ----------
 let imgDelPending = null;
@@ -758,7 +761,6 @@ async function deleteImage(name) {
 }
 
 $('imgUpload').onclick = uploadImage;
-loadImages();
 
 // ---------- data sources ----------
 let sources = [];
@@ -991,8 +993,7 @@ async function deleteSeries(key) {
 
 $('serSave').onclick = saveSeries;
 $('serKey').onkeydown = e => { if (e.key === 'Enter') saveSeries(); };
-loadSeries();
-setInterval(() => { if ($('sec-history').open) loadSeries(); }, 10000);
+setInterval(() => { if (live('history')) loadSeries(); }, 10000);
 
 // ---------- key discovery ----------
 // The device fetches the URL (with the header, so private APIs work too)
@@ -1061,15 +1062,25 @@ $('srcDiscover').onclick = async () => {
     discTimer = setTimeout(() => pollDiscovery(30), 800);
   } catch (e) { msg(e.message); }
 };
-setInterval(() => { if (!editingId && $('srcForm').style.display === 'none') loadSources(); }, 10000);
-loadSources();
+function sourcesIdle() { return !editingId && $('srcForm').style.display === 'none'; }
+setInterval(() => { if (live('sources') && sourcesIdle()) loadSources(); }, 10000);
 
 $('host').addEventListener('input', () => { $('hostPreview').textContent = $('host').value || 'deskwig'; });
 $('scan').onclick = scan;
 $('join').onclick = join;
 $('forget').onclick = forget;
 $('saveHost').onclick = saveHost;
-refresh();
+
+// First load: one request at a time, so opening the page costs the device
+// one connection's worth of memory instead of nine at once. Every loader
+// also fills the one-line summary on its section's header.
+(async () => {
+  await loginReady;
+  for (const load of [refresh, loadAccount, loadClock, loadFw, loadFonts, loadImages, loadSources, loadSeries]) {
+    try { await load(); } catch (e) {}
+  }
+  started = true;
+})();
 </script>
 </body>
 </html>
@@ -1285,7 +1296,7 @@ let paused = false;
 let polling = false;
 
 async function poll() {
-  if (paused || polling) return;
+  if (paused || polling || document.hidden) return;
   polling = true;
   try {
     const r = await fetch('/api/log?since=' + since);
@@ -1329,6 +1340,7 @@ function tile(k, v, used, total, note) {
     (note ? '<div class="k" style="text-transform:none;margin-top:4px">' + note + '</div>' : '') + '</div>';
 }
 async function loadResources() {
+  if (document.hidden) return;
   try {
     const r = await fetch('/api/status');
     if (!r.ok) return;
