@@ -200,6 +200,7 @@ The routes:
 | `GET /api/images`               | no   | Uploaded images with type and size                             |
 | `POST /api/images?name=<name>`  | yes  | Multipart upload of a PNG, JPEG or GIF (field `file`), up to 512 KB |
 | `DELETE /api/images?name=<name>`| yes  | Remove an image                                                |
+| `POST /api/images/rename?name=<name>&to=<new>` | yes | Rename an image; layouts that use the old name are left to the caller |
 | `GET /img/<name>`               | no   | The image file, used by the editor's preview                   |
 | `GET /api/sources`              | no   | Data sources with fetch state and current values (header value redacted) |
 | `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
@@ -445,6 +446,8 @@ Upload PNG, JPEG or animated GIF files (up to 512 KB each, 24 in total) under **
 {"type":"image","src":"https://example.com/radar.png","w":158,"h":120,"refresh":300,"style":{"fit":"cover"}}
 {"type":"box","style":{"image":"sky"},"children":[ ... ]}
 ```
+
+Images can be renamed from the setup page. Since layouts refer to them by name, the page first checks every stored widget for the old name, lists the ones that use it, and offers to rewrite and save them with the new name.
 
 An image element sizes itself to the picture, or keeps the aspect ratio when only `w` or `h` is given. `style.fit` is `contain` (default), `cover` or `stretch`. A box's `style.image` is drawn to cover the box behind its children, which is how a layout gets a picture background. Animated GIFs play at their own frame rate.
 

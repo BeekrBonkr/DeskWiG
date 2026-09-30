@@ -1200,6 +1200,20 @@ static void registerImages() {
     sendJson(req, 200, doc);
   });
 
+  // POST /api/images/rename?name=<old>&to=<new>. Layouts that use the old
+  // name keep it; the setup page finds them and offers to update them.
+  server.on(AsyncURIMatcher::exact("/api/images/rename"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("name") || !req->hasParam("to")) { sendError(req, 400, "missing name or to"); return; }
+    String from = req->getParam("name")->value(), to = req->getParam("to")->value();
+    char err[80];
+    if (!imageRename(from.c_str(), to.c_str(), err, sizeof(err))) { sendError(req, 400, err); return; }
+    JsonDocument doc;
+    fillImageList(doc);
+    doc["renamed"] = to;
+    sendJson(req, 200, doc);
+  });
+
   // GET /img/<name> or /img/<name>.<ext>: the stored file, for the editor's preview.
   server.on(AsyncURIMatcher::prefix("/img/"), HTTP_GET, [](AsyncWebServerRequest* req) {
     String name = req->url().substring(5);

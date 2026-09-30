@@ -589,6 +589,8 @@ loadFonts();
 
 // ---------- images ----------
 let imgDelPending = null;
+let imgRenaming = null;        // image whose rename form is open
+let imgRenamePrompt = null;    // {from, to, refs} while asking about widgets that use it
 
 async function loadImages() {
   try {
@@ -605,10 +607,12 @@ async function loadImages() {
       // RAM with a long list. "View" fetches one on demand instead.
       d.className = 'card src thumb';
       d.innerHTML = '<div><b>' + esc(im.name) + '</b><br><span class="dim">' + esc(im.type) + ' &middot; ' + fmtBytes(im.size) + '</span></div>' +
-        '<div class="btns"><button class="view">View</button><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
+        '<div class="btns"><button class="view">View</button><button class="ren">Rename</button><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
       d.querySelector('.view').onclick = () => window.open('/img/' + encodeURIComponent(im.name) + '.' + im.type, '_blank');
+      d.querySelector('.ren').onclick = () => { imgRenaming = imgRenaming === im.name ? null : im.name; imgRenamePrompt = null; loadImages(); };
       d.querySelector('.del').onclick = () => deleteImage(im.name);
       box.appendChild(d);
+      if (imgRenaming === im.name) box.appendChild(renameForm(im));
     });
   } catch (e) { $('imgList').textContent = e.message; }
 }
@@ -632,6 +636,93 @@ async function uploadImage() {
     loadImages();
   } catch (e) { msg(e.message); }
   $('imgUpload').disabled = false;
+}
+
+// The rename form under an image's card. Once the widgets that use the
+// image are known it turns into the question of whether to update them.
+function renameForm(im) {
+  const f = document.createElement('div');
+  f.className = 'card src';
+  const close = () => { imgRenaming = null; imgRenamePrompt = null; loadImages(); };
+  const p = imgRenamePrompt && imgRenamePrompt.from === im.name ? imgRenamePrompt : null;
+  if (p) {
+    const n = p.refs.length;
+    f.innerHTML = '<div>Renaming <b>' + esc(p.from) + '</b> breaks ' + n + ' widget' + (n === 1 ? '' : 's') + ' that use' + (n === 1 ? 's' : '') +
+      ' it: <b>' + p.refs.map(r => esc(r.name)).join('</b>, <b>') + '</b>. Update ' + (n === 1 ? 'it' : 'them') + ' to <b>' + esc(p.to) + '</b> and save?</div>' +
+      '<div class="btns"><button class="primary upd">Rename and update</button><button class="only">Rename only</button><button class="cancel">Cancel</button></div>';
+    f.querySelector('.upd').onclick = () => doRename(p.from, p.to, p.refs);
+    f.querySelector('.only').onclick = () => doRename(p.from, p.to, []);
+    f.querySelector('.cancel').onclick = close;
+    return f;
+  }
+  f.innerHTML = '<div class="row"><input class="p" maxlength="23" value="' + esc(im.name) + '" placeholder="new name"><button class="primary ok">Save</button><button class="cancel">Cancel</button></div>' +
+    '<div class="hint">Widgets that use this image are checked first, and can be updated to the new name for you.</div>';
+  const inp = f.querySelector('input');
+  f.querySelector('.ok').onclick = () => renameImage(im.name, inp.value);
+  f.querySelector('.cancel').onclick = close;
+  inp.onkeydown = e => { if (e.key === 'Enter') renameImage(im.name, inp.value); else if (e.key === 'Escape') close(); };
+  setTimeout(() => { inp.focus(); inp.select(); }, 0);
+  return f;
+}
+
+// Layouts use an image as "src" on an image element or "image" in a style
+// (an element's, a named style's or the root's). Counts the uses, and
+// rewrites them when `to` is given.
+function imageUses(node, name, to) {
+  let hits = 0;
+  if (Array.isArray(node)) { node.forEach(n => { hits += imageUses(n, name, to); }); return hits; }
+  if (!node || typeof node !== 'object') return 0;
+  for (const k of Object.keys(node)) {
+    const v = node[k];
+    if ((k === 'src' || k === 'image') && v === name) { hits++; if (to) node[k] = to; }
+    else if (v && typeof v === 'object') hits += imageUses(v, name, to);
+  }
+  return hits;
+}
+
+// Every stored layout that uses the image, with its JSON so it can be rewritten.
+async function imageRefs(name) {
+  const list = await api('/api/layouts');
+  const out = [];
+  for (const l of (list.layouts || [])) {
+    const doc = await api('/api/layouts?id=' + encodeURIComponent(l.id));
+    if (imageUses(doc, name)) out.push({ id: l.id, name: doc.name || l.name || l.id, doc });
+  }
+  return out;
+}
+
+async function renameImage(from, to) {
+  to = to.trim().toLowerCase();
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,21}[a-z0-9])?$/.test(to)) { msg('Names are 1-23 lowercase letters, digits and dashes.'); return; }
+  if (to === from) { imgRenaming = null; loadImages(); return; }
+  msg('Checking widgets for "' + from + '"\u2026');
+  let refs;
+  try { refs = await imageRefs(from); } catch (e) { msg(e.message); return; }
+  if (!refs.length) { doRename(from, to, []); return; }
+  msg('');
+  imgRenamePrompt = { from, to, refs };
+  loadImages();
+}
+
+// Renames on the device, then saves each layout in refs with the new name.
+async function doRename(from, to, refs) {
+  try {
+    await api('/api/images/rename?name=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to), 'POST');
+  } catch (e) { msg(e.message); return; }
+  imgRenaming = null;
+  imgRenamePrompt = null;
+  let updated = 0;
+  const failed = [];
+  for (const r of refs) {
+    imageUses(r.doc, from, to);
+    try { await api('/api/layouts?id=' + encodeURIComponent(r.id), 'PUT', r.doc); updated++; }
+    catch (e) { failed.push(r.name + ' (' + e.message + ')'); }
+  }
+  let t = 'Renamed image "' + from + '" to "' + to + '".';
+  if (updated) t += ' Updated ' + updated + ' widget' + (updated === 1 ? '' : 's') + '.';
+  if (failed.length) t += ' Could not update ' + failed.join(', ') + '.';
+  msg(t);
+  loadImages();
 }
 
 async function deleteImage(name) {
