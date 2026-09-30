@@ -293,7 +293,7 @@ function lookup(key, strict) {
 function isExpr(b) { return /[()+\-*\/%^ <>=!&|]/.test(b) || /^[0-9]/.test(b); }
 function evalNumber(body) { const r = evalExpr(body); return r === '--' ? null : parseFloat(r); }
 
-// Colours in expressions are numbers 0xRRGGBB; see rgb(), hsv() and mix().
+// Colors in expressions are numbers 0xRRGGBB; see rgb(), hsv() and mix().
 const clamp255 = v => Math.max(0, Math.min(255, v));
 const packRgb = (r, g, b) => (Math.round(clamp255(r)) << 16) + (Math.round(clamp255(g)) << 8) + Math.round(clamp255(b));
 function hsvToRgb(h, s, v) {
@@ -507,7 +507,7 @@ function drawImageFit(src, x, y, w, h, fit) {
   ctx.restore();
 }
 
-// Returns the CSS colour for a spec. present=false when the spec is empty.
+// Returns the CSS color for a spec. present=false when the spec is empty.
 function color(spec, fallback) {
   const raw = String(spec ?? '');
   if (!raw) return { c: fallback, present: false };
@@ -691,7 +691,7 @@ function parse() { return parseText(srcGet()); }
 function parseText(text) { return validate(JSON.parse(text)); }
 
 // Validates a layout object and attaches its render tree as a
-// non-enumerable _root, so the object still serialises cleanly.
+// non-enumerable _root, so the object still serializes cleanly.
 function validate(j) {
   if (!j || typeof j !== 'object' || Array.isArray(j)) throw new Error('layout must be a JSON object');
   if (!Array.isArray(j.elements)) throw new Error('"elements" must be an array');
@@ -754,7 +754,7 @@ function canvasFont(name, px) {
 }
 
 // The device draws emoji from the monochrome font. Chrome would swap in
-// its colour emoji font for emoji-presentation characters, so the text
+// its color emoji font for emoji-presentation characters, so the text
 // presentation selector (U+FE0E) is appended to keep the preview honest.
 function monoEmoji(s) {
   let out = '';
@@ -1012,7 +1012,7 @@ function fillRectR(x, y, w, h, r, col) {
   rrPath(x, y, w, h, r); ctx.fill();
 }
 
-// Two-colour gradient inside a (rounded) rectangle, like fillGradient on the device.
+// Two-color gradient inside a (rounded) rectangle, like fillGradient on the device.
 function fillGradientR(x, y, w, h, r, c0, c1, right) {
   if (w <= 0 || h <= 0) return;
   const g = right ? ctx.createLinearGradient(x * S, 0, (x + w) * S, 0) : ctx.createLinearGradient(0, y * S, 0, (y + h) * S);

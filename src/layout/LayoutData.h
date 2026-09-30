@@ -14,7 +14,7 @@
 //   <series key>.min, .max, .avg, .first, .last, .delta, .count, .span
 //     for keys sampled over time (see Series.h)
 //
-// Colour keys resolve to a colour role name (ok, warn, bad, dim, text).
+// Color keys resolve to a color role name (ok, warn, bad, dim, text).
 //
 // A brace body that is not a key is evaluated as arithmetic with keys as
 // variables, e.g. {round(api.weather.temp * 9/5 + 32, 1)}; see LayoutExpr.h.

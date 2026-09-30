@@ -107,7 +107,7 @@ bool sourceDiscoverStart(const char* url, const char* headerName, const char* he
 // state (idle|fetching|ok|error), url, error, json (bool), keys [{path, value}], truncated.
 void sourceDiscoverToJson(JsonObject obj);
 
-// Serialises settings.sources access. Anything that mutates settings.sources
+// Serializes settings.sources access. Anything that mutates settings.sources
 // or reads runtime values from another task must hold this.
 void sourcesLock();
 void sourcesUnlock();

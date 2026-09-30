@@ -128,7 +128,7 @@ struct Parser {
       if (n != 3) { err = true; return r; }
       r.v = a[0].v + (a[1].v - a[0].v) * a[2].v;
     } else if (is("rgb")) {
-      // Colours are numbers 0xRRGGBB, so an expression can produce one.
+      // Colors are numbers 0xRRGGBB, so an expression can produce one.
       if (n != 3) { err = true; return r; }
       r.v = packRgb(a[0].v, a[1].v, a[2].v);
       r.decimals = 0;

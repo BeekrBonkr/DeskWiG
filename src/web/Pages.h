@@ -135,7 +135,7 @@ static const char SETUP_HTML[] = R"html(
   <button id="fontUpload" type="button">Upload</button>
 </div>
 <p class="msg" id="msg-fonts"></p>
-<p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasteriser does no bounds checking.</p>
+<p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasterizer does no bounds checking.</p>
 </div>
 </details>
 
@@ -1163,7 +1163,7 @@ async function load() {
 
 // ---------- drag to reorder ----------
 // Pointer events so the same code serves mouse and touch. The dragged
-// row is moved in the DOM as the pointer crosses its neighbours' midlines,
+// row is moved in the DOM as the pointer crosses its neighbors' midlines,
 // and the new order is sent when the pointer is released.
 function startDrag(e, row) {
   if (e.button !== undefined && e.button !== 0) return;

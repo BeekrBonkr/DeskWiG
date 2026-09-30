@@ -11,7 +11,7 @@
 #include "../app/Log.h"
 
 static const char* IMG_DIR = "/img";
-static const uint16_t TRANSP = 0x0821;          // sprite colour treated as "nothing drawn"
+static const uint16_t TRANSP = 0x0821;          // sprite color treated as "nothing drawn"
 static const uint32_t CONNECT_TIMEOUT_MS = 5000;
 static const uint32_t READ_TIMEOUT_MS = 10000;
 static const uint32_t RETRY_AFTER_ERROR_S = 60;
@@ -321,7 +321,7 @@ static void gifDraw(GIFDRAW* p) {
     uint8_t idx = px[sx - fx0];
     if (p->ucHasTransparency && idx == p->ucTransparent) continue;
     uint16_t c = pal[idx];
-    if (c == TRANSP_SWAPPED) c ^= 0x0100;   // keep the key colour for "nothing drawn"
+    if (c == TRANSP_SWAPPED) c ^= 0x0100;   // keep the key color for "nothing drawn"
     row[ox] = c;
   }
   // Rows sharing this source line are copies of the first.

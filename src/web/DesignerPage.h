@@ -405,7 +405,7 @@ const FIELDS = [
   { key: 'align', label: 'Align items', kind: 'sel', opts: ['', 'stretch', 'start', 'center', 'end'], types: ['root', 'box'], style: true },
   { key: 'justify', label: 'Justify', kind: 'sel', opts: ['', 'start', 'center', 'end', 'between'], types: ['root', 'box'], style: true },
   { key: 'background', label: 'Background', kind: 'color', types: ['root', 'box', 'rect', 'text', 'bar', 'chart', 'arc', 'circle', 'ellipse', 'triangle', 'polygon', 'image'], style: true },
-  { key: 'gradient', label: 'Gradient to', kind: 'color', types: ['root', 'box', 'rect', 'bar', 'chart'], style: true, hint: 'fades the fill into this colour' },
+  { key: 'gradient', label: 'Gradient to', kind: 'color', types: ['root', 'box', 'rect', 'bar', 'chart'], style: true, hint: 'fades the fill into this color' },
   { key: 'gradientDir', label: 'Gradient', kind: 'sel', opts: ['', 'down', 'right'], types: ['root', 'box', 'rect', 'bar', 'chart'], style: true },
   { key: 'border', label: 'Border', kind: 'color', types: ['box', 'rect', 'circle', 'ellipse', 'triangle', 'polygon'], style: true },
   { key: 'borderWidth', label: 'Border width', kind: 'num', types: ['box', 'rect', 'circle', 'ellipse', 'triangle', 'polygon'], style: true },
@@ -631,7 +631,7 @@ function buildLed() {
   inspEl.appendChild(off);
 }
 
-// Datalists for colour roles and image names.
+// Datalists for color roles and image names.
 const dl = document.createElement('datalist'); dl.id = 'roleList';
 for (const r of ROLES) { const o = document.createElement('option'); o.value = r; dl.appendChild(o); }
 document.body.appendChild(dl);
