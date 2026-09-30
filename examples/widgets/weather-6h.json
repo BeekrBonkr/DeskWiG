@@ -483,46 +483,46 @@
     {
       "type": "polygon",
       "w": 154,
-      "h": 44,
+      "h": 96,
       "points": [
         [
           0,
-          44
+          96
         ],
         [
           12,
-          22
+          48
         ],
         [
           38,
-          "{clamp(22-(api.w6.t1-api.w6.t0)*3,2,42)}"
+          "{clamp(48-(api.w6.t1-api.w6.t0)*6,4,92)}"
         ],
         [
           64,
-          "{clamp(22-(api.w6.t2-api.w6.t0)*3,2,42)}"
+          "{clamp(48-(api.w6.t2-api.w6.t0)*6,4,92)}"
         ],
         [
           90,
-          "{clamp(22-(api.w6.t3-api.w6.t0)*3,2,42)}"
+          "{clamp(48-(api.w6.t3-api.w6.t0)*6,4,92)}"
         ],
         [
           116,
-          "{clamp(22-(api.w6.t4-api.w6.t0)*3,2,42)}"
+          "{clamp(48-(api.w6.t4-api.w6.t0)*6,4,92)}"
         ],
         [
           142,
-          "{clamp(22-(api.w6.t5-api.w6.t0)*3,2,42)}"
+          "{clamp(48-(api.w6.t5-api.w6.t0)*6,4,92)}"
         ],
         [
           154,
-          44
+          96
         ]
       ],
       "color": "{hsv(clamp(220-(api.w6.t0-30)*3.5,0,220),70,60)}"
     },
     {
       "type": "text",
-      "text": "shade = chance of rain · ridge = temp vs now",
+      "text": "shade: rain · ridge: temp",
       "color": "dim",
       "align": "center"
     }
