@@ -29,6 +29,8 @@
 #include "../app/Log.h"
 
 extern ScreenManager screens;
+extern uint32_t perfFrameUs;
+extern uint32_t perfPushUs;
 
 static AsyncWebServer server(80);
 
@@ -394,6 +396,18 @@ static void registerStatus() {
     mem["psramFree"]  = ESP.getFreePsram();
     mem["fsTotal"]    = LittleFS.totalBytes();
     mem["fsUsed"]     = LittleFS.usedBytes();
+    // The least stack each long-lived task has ever had left, in bytes:
+    // how much could come off its stack size. Stacks are internal RAM.
+    static const char* const TASKS[] = { "loopTask", "sources", "images", "async_tcp" };
+    static TaskHandle_t handles[4] = {};
+    JsonObject stacks = mem["stackFree"].to<JsonObject>();
+    for (uint8_t i = 0; i < 4; i++) {
+      if (!handles[i]) handles[i] = xTaskGetHandle(TASKS[i]);
+      if (handles[i]) stacks[TASKS[i]] = uxTaskGetStackHighWaterMark(handles[i]);
+    }
+    JsonObject perf = doc["perf"].to<JsonObject>();
+    perf["frameMs"] = perfFrameUs / 1000.0f;
+    perf["pushMs"]  = perfPushUs / 1000.0f;
     doc["activeWidget"] = screens.getActive();
     doc["widgetCount"]  = screens.getCount();
     fillWifiStatus(doc["wifi"].to<JsonObject>());
