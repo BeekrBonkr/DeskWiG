@@ -107,9 +107,9 @@
           "children": [
             {
               "type": "bar",
+              "w": 34,
               "x": 0,
               "y": 0,
-              "w": 34,
               "h": 34,
               "value": "{if(api.wx.is_day2==1&&api.wx.precipitation2==0,100,0)}",
               "color": "#1e3a5c",
@@ -136,9 +136,9 @@
           "children": [
             {
               "type": "bar",
+              "w": 34,
               "x": 0,
               "y": 0,
-              "w": 34,
               "h": 34,
               "value": "{if(api.wx.is_day2==0&&api.wx.precipitation2==0,100,0)}",
               "color": "#1e3a5c",
@@ -165,9 +165,9 @@
           "children": [
             {
               "type": "bar",
+              "w": 34,
               "x": 0,
               "y": 0,
-              "w": 34,
               "h": 34,
               "value": "{if(api.wx.rain2+api.wx.showers2>0,100,0)}",
               "color": "#1e3a5c",
@@ -194,9 +194,9 @@
           "children": [
             {
               "type": "bar",
+              "w": 34,
               "x": 0,
               "y": 0,
-              "w": 34,
               "h": 34,
               "value": "{if(api.wx.snowfall2>0,100,0)}",
               "color": "#1e3a5c",
@@ -219,9 +219,26 @@
       ]
     },
     {
-      "type": "text",
-      "text": "☔ CHANCE OF RAIN",
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 4,
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "☔",
+          "font": "emoji",
+          "size": 12,
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "CHANCE OF RAIN",
+          "color": "dim"
+        }
+      ]
     },
     {
       "type": "box",
@@ -233,6 +250,7 @@
       "children": [
         {
           "type": "bar",
+          "w": 114,
           "h": 10,
           "value": "{api.wx.precipitation_2}",
           "color": "#204a80",
@@ -245,9 +263,9 @@
         },
         {
           "type": "text",
+          "w": 34,
           "text": "{api.wx.precipitation_2}%",
-          "align": "right",
-          "w": 34
+          "align": "right"
         }
       ]
     },
@@ -260,6 +278,7 @@
       "children": [
         {
           "type": "box",
+          "w": 74,
           "style": {
             "direction": "column",
             "gap": 2,
@@ -286,6 +305,7 @@
         },
         {
           "type": "box",
+          "w": 74,
           "style": {
             "direction": "column",
             "gap": 2,
@@ -321,6 +341,7 @@
       "children": [
         {
           "type": "box",
+          "w": 74,
           "style": {
             "direction": "column",
             "gap": 2,
@@ -347,6 +368,7 @@
         },
         {
           "type": "box",
+          "w": 74,
           "style": {
             "direction": "column",
             "gap": 2,
