@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <LovyanGFX.hpp>
+#include <esp_heap_caps.h>
+#include <mbedtls/platform.h>
 
 #include "app/Board.h"
 #include "app/ScreenManager.h"
@@ -67,6 +69,20 @@ public:
 
 LGFX_Display tft;
 LGFX_Sprite ui(&tft);
+
+// =====================
+// TLS MEMORY
+// The SDK build gives mbedTLS internal RAM only, about 32 KB per HTTPS
+// session. These send its buffers to PSRAM instead, falling back to
+// internal RAM when PSRAM is absent or full.
+// =====================
+static void* tlsCalloc(size_t n, size_t size) {
+  return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+
+static void tlsFree(void* p) {
+  heap_caps_free(p);
+}
 
 // =====================
 // WIDGETS / SCREENS
@@ -169,6 +185,9 @@ lgfx::LGFX_Sprite* uiSprite() { return &ui; }
 
 void setup() {
   Log.begin(115200);
+
+  // Before anything opens a TLS session or joins a network.
+  mbedtls_platform_set_calloc_free(tlsCalloc, tlsFree);
 
   tft.init();
   tft.setColorDepth(16);
