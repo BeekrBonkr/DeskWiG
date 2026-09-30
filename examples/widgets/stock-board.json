@@ -7,12 +7,12 @@
     "brightness": 30,
     "rules": [
       {
-        "when": "api.nvda.dp < 0 && api.tsm.dp < 0 && api.sgdm.dp < 0 && api.vti.dp < 0",
+        "when": "max(api.nvda.dp, api.tsm.dp, api.sgdm.dp, api.vti.dp) < 0",
         "color": "bad",
         "mode": "solid"
       },
       {
-        "when": "api.nvda.dp < 0 || api.tsm.dp < 0 || api.sgdm.dp < 0 || api.vti.dp < 0",
+        "when": "min(api.nvda.dp, api.tsm.dp, api.sgdm.dp, api.vti.dp) < 0",
         "color": "warn",
         "mode": "solid"
       }
