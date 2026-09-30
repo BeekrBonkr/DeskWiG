@@ -420,8 +420,15 @@ bool LayoutWidget::parseNode(JsonVariantConst v, uint8_t parent, uint8_t depth, 
       if (!parseStyle(e.st, v["style"].as<JsonObjectConst>(), idx, path, err, errLen)) return false;
     }
     if (e.type == ElType::TEXT) {
-      if (!e.st.font[0] && e.st.size > BITMAP_MAX_SCALE) return fail(err, errLen, path, "size must be 1-40 with the bitmap font; set \"font\" for pixel sizes");
-      if (e.st.font[0] && e.st.size < FONT_MIN_PX) return fail(err, errLen, path, "size must be at least 6 with a TrueType font");
+      // A templated size has no value yet; it is clamped to the font's range each frame.
+      bool sizeBound = false;
+      for (uint8_t k = 0; k < _bindCount; k++) {
+        if (_bind[k].node == idx && _bind[k].field == BF_SIZE) sizeBound = true;
+      }
+      if (!sizeBound) {
+        if (!e.st.font[0] && e.st.size > BITMAP_MAX_SCALE) return fail(err, errLen, path, "size must be 1-40 with the bitmap font; set \"font\" for pixel sizes");
+        if (e.st.font[0] && e.st.size < FONT_MIN_PX) return fail(err, errLen, path, "size must be at least 6 with a TrueType font");
+      }
     }
 
     // ---- geometry (numbers or templates) ----
@@ -828,7 +835,10 @@ void LayoutWidget::applyBindings() {
       case BF_A0: e.a0 = (int16_t)v; break;
       case BF_A1: e.a1 = (int16_t)v; break;
       case BF_WINDOW: e.window = v < 0 ? 0 : (uint32_t)v; break;
-      case BF_SIZE: e.st.size = clampU8((int)v, 1, e.st.font[0] ? FONT_MAX_PX : BITMAP_MAX_SCALE); break;
+      case BF_SIZE:
+        if (e.st.font[0]) e.st.size = clampU8((int)v, FONT_MIN_PX, FONT_MAX_PX);
+        else              e.st.size = clampU8((int)v, 1, BITMAP_MAX_SCALE);
+        break;
       case BF_THICK: e.st.thick = clampU8((int)v, 1, 80); break;
       case BF_RADIUS: e.st.radius = clampU8((int)v, 0, 80); break;
       case BF_BORDERW: e.st.borderW = clampU8((int)v, 0, 20); break;

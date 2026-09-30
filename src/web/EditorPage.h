@@ -631,8 +631,13 @@ function buildNode(e, path, styles, depth) {
   if (e.fill !== undefined) st.fill = !!e.fill;
   if (e.style && typeof e.style === 'object') parseStyle(st, e.style, path);
   if (e.type === 'text') {
-    if (!st.font && st.size > 40) throw new Error(at(path) + ': size must be 1-40 with the bitmap font; set "font" for pixel sizes');
-    if (st.font && st.size < 6) throw new Error(at(path) + ': size must be at least 6 with a TrueType font');
+    // A templated size is clamped to the font's range, like the device does each frame.
+    const sizeTpl = typeof e.size === 'string' || (e.style && typeof e.style === 'object' && typeof e.style.size === 'string');
+    if (sizeTpl) st.size = Math.max(st.font ? 6 : 1, Math.min(st.font ? 160 : 40, st.size));
+    else {
+      if (!st.font && st.size > 40) throw new Error(at(path) + ': size must be 1-40 with the bitmap font; set "font" for pixel sizes');
+      if (st.font && st.size < 6) throw new Error(at(path) + ': size must be at least 6 with a TrueType font');
+    }
   }
   n.st = st;
 
