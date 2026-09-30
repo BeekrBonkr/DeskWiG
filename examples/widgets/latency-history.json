@@ -1,0 +1,134 @@
+{
+  "name": "Latency History",
+  "led": {
+    "color": "{ping.0.color}",
+    "mode": "solid",
+    "brightness": 30
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "{ping.0.name}",
+          "font": "bold",
+          "size": 16
+        },
+        {
+          "type": "text",
+          "text": "{ping.0.ms} ms",
+          "font": "bold",
+          "size": 16,
+          "align": "right",
+          "color": "{ping.0.color}"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "series": "ping.0.ms",
+      "window": 1800,
+      "h": 70,
+      "color": "{ping.0.color}",
+      "style": {
+        "kind": "dots",
+        "thickness": 2,
+        "min": 0,
+        "background": "#0c1016",
+        "radius": 6
+      }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "avg {round(ping.0.ms.avg)}",
+          "color": "dim"
+        },
+        {
+          "type": "text",
+          "text": "worst {round(ping.0.ms.max)}",
+          "color": "dim",
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "line",
+      "h": 1,
+      "color": "dim"
+    },
+    {
+      "type": "text",
+      "text": "SIGNAL",
+      "color": "dim"
+    },
+    {
+      "type": "chart",
+      "series": "wifi.rssi",
+      "window": 1800,
+      "h": 50,
+      "style": {
+        "kind": "area",
+        "min": -90,
+        "max": -30,
+        "gradient": "#102030"
+      }
+    },
+    {
+      "type": "box",
+      "h": 30,
+      "children": [
+        {
+          "type": "arc",
+          "x": 0,
+          "y": 0,
+          "w": 30,
+          "value": "{wifi.pct}",
+          "color": "{wifi.color}",
+          "style": {
+            "thickness": 5
+          }
+        },
+        {
+          "type": "text",
+          "x": 38,
+          "y": 4,
+          "text": "{wifi.rssi} dBm",
+          "size": 2
+        },
+        {
+          "type": "rect",
+          "x": 38,
+          "y": 24,
+          "w": "{clamp(wifi.pct * 1.16, 2, 116)}",
+          "h": 4,
+          "fill": true,
+          "color": "{wifi.color}"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "30 min · {time}",
+      "color": "dim",
+      "align": "center"
+    }
+  ]
+}

@@ -178,6 +178,23 @@ static const char SETUP_HTML[] = R"html(
 </div>
 </details>
 
+<details class="sec" id="sec-history">
+<summary><span>History</span><span class="sub" id="sub-history"></span></summary>
+<div class="body">
+<div id="serList" class="dim">Loading&hellip;</div>
+<div class="card">
+  <input id="serKey" placeholder="Key to sample, e.g. api.weather.temp or ping.0.ms" autocapitalize="off" autocorrect="off" maxlength="47">
+  <div class="row">
+    <input id="serEvery" class="n" type="number" min="5" placeholder="Every N seconds (60)">
+    <input id="serKeep" class="n" type="number" min="10" placeholder="Keep N seconds (3600)">
+    <button id="serSave" type="button" class="primary">Add</button>
+  </div>
+</div>
+<p class="msg" id="msg-history"></p>
+<p class="hint">A key sampled over time. Layouts draw it with <code>{"type":"chart","series":"api.weather.temp","h":60}</code> and read <code>{api.weather.temp.min}</code>, <code>.max</code>, <code>.avg</code>, <code>.first</code>, <code>.last</code>, <code>.delta</code>, <code>.count</code> and <code>.span</code>. A data source or ping target named here keeps updating whatever is on screen. At most 720 samples per key, so an hour at every 5 s or a day at every 2 min; samples are lost on reboot.</p>
+</div>
+</details>
+
 <details class="sec" id="sec-account">
 <summary><span>Account</span><span class="sub" id="sub-account"></span></summary>
 <div class="body">
@@ -214,7 +231,7 @@ const bars = r => r > -55 ? '||||' : r > -65 ? '|||.' : r > -75 ? '||..' : '|...
 // Status text goes next to the buttons of the open section (msg-<name>),
 // so it is beside whatever was just pressed; with no section open it
 // falls back to the line under the status card.
-const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'account', 'firmware'];
+const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'history', 'account', 'firmware'];
 function msg(t, sec) {
   const target = sec || SECTIONS.find(n => $('sec-' + n).open);
   SECTIONS.forEach(n => { if (n !== target) $('msg-' + n).textContent = ''; });
@@ -895,6 +912,87 @@ $('srcAdd').onclick = () => openForm(null);
 $('srcCancel').onclick = closeForm;
 $('srcSave').onclick = saveSource;
 $('srcFieldAdd').onclick = () => $('srcFields').appendChild(fieldRow(null));
+
+// ---------- history (series) ----------
+let series = [];
+let serDelPending = null;
+
+function spanText(s) {
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  return Math.floor(s / 86400) + 'd ' + Math.floor((s % 86400) / 3600) + 'h';
+}
+
+function renderSeries() {
+  const box = $('serList');
+  box.className = '';
+  if (!series.length) { box.innerHTML = '<div class="dim">Nothing is sampled yet.</div>'; return; }
+  box.innerHTML = '';
+  series.forEach(se => {
+    const d = document.createElement('div');
+    d.className = 'card src';
+    const st = se.count ? '<span class="ok">' + se.count + ' samples</span> <span class="dim">over ' + spanText(se.span) + ', last ' + esc(String(se.last)) + '</span>'
+                        : '<span class="dim">waiting for the first sample</span>';
+    d.innerHTML = '<b>' + esc(se.key) + '</b> &middot; ' + st +
+      '<div class="dim" style="font-size:13px">every ' + se.every + ' s, keeps ' + spanText(se.keep) + ' (' + se.cap + ' samples)' +
+      (se.count ? ' &middot; min ' + esc(String(se.min)) + ', max ' + esc(String(se.max)) : '') + '</div>' +
+      '<div class="btns"><button class="edit">Edit</button><button class="danger del">' + (serDelPending === se.key ? 'Tap again to delete' : 'Delete') + '</button></div>';
+    d.querySelector('.edit').onclick = () => { $('serKey').value = se.key; $('serEvery').value = se.every; $('serKeep').value = se.keep; $('serSave').textContent = 'Save'; $('serKey').focus(); };
+    d.querySelector('.del').onclick = () => deleteSeries(se.key);
+    box.appendChild(d);
+  });
+}
+
+async function loadSeries() {
+  try {
+    const r = await api('/api/series');
+    series = r.series || [];
+    renderSeries();
+    sub('history', series.length ? series.map(x => x.key).join(', ') : 'nothing sampled');
+    $('serSave').disabled = r.free === 0 && !series.some(x => x.key === $('serKey').value.trim());
+  } catch (e) { $('serList').textContent = e.message; }
+}
+
+async function saveSeries() {
+  const key = $('serKey').value.trim();
+  if (!key) { msg('Enter the key to sample, as you would write it in a layout without the braces.'); return; }
+  const body = {};
+  const ev = parseInt($('serEvery').value, 10), kp = parseInt($('serKeep').value, 10);
+  if (!isNaN(ev)) body.every = ev;
+  if (!isNaN(kp)) body.keep = kp;
+  try {
+    const r = await api('/api/series?key=' + encodeURIComponent(key), 'PUT', body);
+    series = r.series || [];
+    $('serKey').value = ''; $('serEvery').value = ''; $('serKeep').value = '';
+    $('serSave').textContent = 'Add';
+    renderSeries();
+    sub('history', series.map(x => x.key).join(', '));
+    msg('Sampling ' + key + '. Use {"type":"chart","series":"' + key + '"} in a layout.');
+  } catch (e) { msg(e.message); }
+}
+
+async function deleteSeries(key) {
+  if (serDelPending !== key) {
+    serDelPending = key;
+    renderSeries();
+    setTimeout(() => { if (serDelPending === key) { serDelPending = null; renderSeries(); } }, 4000);
+    return;
+  }
+  serDelPending = null;
+  try {
+    const r = await api('/api/series?key=' + encodeURIComponent(key), 'DELETE');
+    series = r.series || [];
+    renderSeries();
+    sub('history', series.length ? series.map(x => x.key).join(', ') : 'nothing sampled');
+    msg('Stopped sampling ' + key + '.');
+  } catch (e) { msg(e.message); }
+}
+
+$('serSave').onclick = saveSeries;
+$('serKey').onkeydown = e => { if (e.key === 'Enter') saveSeries(); };
+loadSeries();
+setInterval(() => { if ($('sec-history').open) loadSeries(); }, 10000);
 
 // ---------- key discovery ----------
 // The device fetches the URL (with the header, so private APIs work too)

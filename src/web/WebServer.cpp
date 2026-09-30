@@ -19,6 +19,7 @@
 #include "../app/Log.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
+#include "../net/Series.h"
 #include "Settings.h"
 #include "Auth.h"
 #include "Pages.h"
@@ -944,6 +945,74 @@ static void registerSources() {
 }
 
 // =====================
+// SERIES
+// =====================
+static void fillSeriesList(JsonDocument& doc, const char* samplesFor) {
+  seriesToJson(doc["series"].to<JsonArray>(), samplesFor);
+  doc["free"] = MAX_SERIES - settings.seriesCount;
+  doc["max"]  = MAX_SERIES;
+  doc["maxSamples"] = SERIES_MAX_SAMPLES;
+}
+
+static void registerSeries() {
+  // GET /api/series -> every sampled key with its settings and statistics.
+  // GET /api/series?key=<key> -> the same, plus that key's samples as
+  // [secondsAgo, value] pairs, oldest first.
+  server.on(AsyncURIMatcher::exact("/api/series"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    String key = req->hasParam("key") ? req->getParam("key")->value() : "";
+    fillSeriesList(doc, key.length() ? key.c_str() : nullptr);
+    sendJson(req, 200, doc);
+  });
+
+  // PUT /api/series?key=<key> {"every","keep"} -> start sampling a key, or
+  // change how it is sampled. Samples survive when the size is unchanged.
+  auto* put = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/series"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("key")) { sendError(req, 400, "missing key"); return; }
+    String key = req->getParam("key")->value();
+    json["key"] = key;
+    SeriesCfg parsed;
+    char err[96];
+    if (!seriesFromJson(parsed, json.as<JsonVariantConst>(), err, sizeof(err))) { sendError(req, 400, err); return; }
+    int idx = seriesFind(parsed.key);
+    if (idx >= 0) {
+      settings.series[idx] = parsed;
+    } else if (settings.seriesCount < MAX_SERIES) {
+      settings.series[settings.seriesCount++] = parsed;
+    } else {
+      snprintf(err, sizeof(err), "no free slots (max %u series)", MAX_SERIES);
+      sendError(req, 400, err);
+      return;
+    }
+    seriesApply();
+    if (!saveSettings()) { sendError(req, 500, "failed to save settings"); return; }
+    JsonDocument doc;
+    fillSeriesList(doc, nullptr);
+    doc["saved"] = key;
+    sendJson(req, 200, doc);
+  });
+  put->setMethod(HTTP_PUT);
+  put->setMaxContentLength(1024);
+  server.addHandler(put);
+
+  server.on(AsyncURIMatcher::exact("/api/series"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("key")) { sendError(req, 400, "missing key"); return; }
+    String key = req->getParam("key")->value();
+    int idx = seriesFind(key.c_str());
+    if (idx < 0) { sendError(req, 404, "no such series"); return; }
+    for (uint8_t i = idx; i + 1 < settings.seriesCount; i++) settings.series[i] = settings.series[i + 1];
+    settings.seriesCount--;
+    seriesApply();
+    if (!saveSettings()) { sendError(req, 500, "failed to save settings"); return; }
+    JsonDocument doc;
+    fillSeriesList(doc, nullptr);
+    sendJson(req, 200, doc);
+  });
+}
+
+// =====================
 // FONTS
 // =====================
 static void fillFontList(JsonDocument& doc) {
@@ -1401,6 +1470,7 @@ void startWebServer() {
   registerLog();
   registerConfig();
   registerSources();
+  registerSeries();
   registerFonts();
   registerImages();
   registerScreenshot();

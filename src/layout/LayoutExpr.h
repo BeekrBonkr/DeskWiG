@@ -9,7 +9,9 @@
 //
 // Operators: + - * / % ^ and parentheses, comparisons < > <= >= == !=
 // (giving 1 or 0), && || and !. Functions: round(x[, n]), abs, min, max,
-// floor, ceil, sqrt, clamp(x, lo, hi), if(cond, a, b).
+// floor, ceil, sqrt, clamp(x, lo, hi), if(cond, a, b), lerp(a, b, t).
+// Colour functions give a number 0xRRGGBB that colour properties accept:
+// rgb(r, g, b), hsv(h, s, v) and mix(c1, c2, t).
 //
 // Key values are read as numbers (a leading number is enough, so "12s"
 // is 12). A key that is unknown or has no number makes the whole
