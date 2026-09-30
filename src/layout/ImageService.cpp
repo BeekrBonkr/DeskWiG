@@ -494,6 +494,26 @@ bool imageDelete(const char* name, char* err, size_t errLen) {
   return true;
 }
 
+bool imageRename(const char* from, const char* to, char* err, size_t errLen) {
+  if (!imageValidName(to)) { strlcpy(err, "invalid name: use 1-23 lowercase letters, digits and dashes", errLen); return false; }
+  take();
+  String path = imagePath(from);
+  if (!path.length()) { give(); strlcpy(err, "no such image", errLen); return false; }
+  if (!strcmp(from, to)) { give(); return true; }
+  if (imagePath(to).length()) { give(); strlcpy(err, "an image with that name already exists", errLen); return false; }
+  String dest = String(IMG_DIR) + "/" + to + "." + imageExt(from);
+  if (!LittleFS.rename(path, dest)) { give(); strlcpy(err, "rename failed", errLen); return false; }
+  // Whatever was cached under the old name is stale; the new name loads fresh on first use.
+  RawImage* r = rawFind(from);
+  if (r) {
+    for (auto& d : decoded) if (d.used && d.raw == r) decodedFree(d);
+    rawFree(*r);
+  }
+  scanLocked();
+  give();
+  return true;
+}
+
 void imagesRescan() {
   take();
   scanLocked();
