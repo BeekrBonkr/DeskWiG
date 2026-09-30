@@ -89,6 +89,11 @@ static void tlsFree(void* p) {
 // =====================
 ScreenManager screens;
 
+// Smoothed timing of recent frames in microseconds, for /api/status: one
+// whole pass of loop(), and within it the push of the sprite to the panel.
+uint32_t perfFrameUs = 0;
+uint32_t perfPushUs = 0;
+
 // =====================
 // RECOVERY JUMPER
 // Returns true if the hotspot should be forced. Never returns if the
@@ -287,5 +292,12 @@ void loop() {
     if ((int32_t)(toastUntil - now) > 0) drawToast();
   }
 
+  uint32_t pushStart = micros();
   ui.pushSprite(0, 0);
+  uint32_t pushEnd = micros();
+
+  static uint32_t lastFrameEnd = 0;
+  perfPushUs = (perfPushUs * 7 + (pushEnd - pushStart)) / 8;
+  if (lastFrameEnd) perfFrameUs = (perfFrameUs * 7 + (pushEnd - lastFrameEnd)) / 8;
+  lastFrameEnd = pushEnd;
 }
