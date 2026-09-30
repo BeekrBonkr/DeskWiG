@@ -8,6 +8,7 @@
 #include <esp_heap_caps.h>
 
 #include "../net/WifiManager.h"
+#include "../net/FetchLock.h"
 #include "../app/Log.h"
 
 static const char* IMG_DIR = "/img";
@@ -591,6 +592,7 @@ static void fetchTask(void*) {
     size_t len = 0;
     {
       bool https = !strncmp(url, "https://", 8);
+      FetchGuard oneAtATime;   // shared with the data source task; released at the end of this block
       WiFiClientSecure secure;
       WiFiClient plain;
       if (https) secure.setInsecure();

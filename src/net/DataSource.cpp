@@ -7,6 +7,7 @@
 #include <esp_heap_caps.h>
 
 #include "WifiManager.h"
+#include "FetchLock.h"
 #include "../web/Settings.h"
 #include "../app/Log.h"
 
@@ -552,6 +553,7 @@ static void doFetch(const FetchJob& job, FetchResult& r) {
   for (uint8_t i = 0; i < MAX_SOURCE_FIELDS; i++) strlcpy(r.values[i], "--", sizeof(r.values[i]));
 
   bool https = strncmp(job.url, "https://", 8) == 0;
+  FetchGuard oneAtATime;   // shared with the image task; released when this returns
   WiFiClientSecure secure;
   WiFiClient plain;
   if (https) secure.setInsecure();
