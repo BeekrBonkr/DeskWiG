@@ -43,21 +43,25 @@
         {
           "type": "text",
           "text": "{round(api.nvda.c, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
+          "size": 15,
+          "font": "bold"
         },
         {
           "type": "text",
           "text": "{round(api.nvda.dp, 1)}%",
           "align": "right",
-          "w": 52
+          "size": 15,
+          "font": "bold",
+          "x": 146,
+          "y": 16
         }
       ],
       "style": {
-        "direction": "row",
+        "direction": "column",
         "justify": "between",
-        "align": "center"
+        "padding": 2,
+        "gap": 0,
+        "borderWidth": 0
       }
     },
     {
@@ -83,21 +87,25 @@
         {
           "type": "text",
           "text": "{round(api.tsm.c, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
+          "size": 15,
+          "font": "bold"
         },
         {
           "type": "text",
           "text": "{round(api.tsm.dp, 1)}%",
           "align": "right",
-          "w": 52
+          "size": 15,
+          "font": "bold",
+          "x": 146,
+          "y": 16
         }
       ],
       "style": {
-        "direction": "row",
+        "direction": "column",
         "justify": "between",
-        "align": "center"
+        "padding": 2,
+        "gap": 0,
+        "borderWidth": 0
       }
     },
     {
@@ -123,21 +131,25 @@
         {
           "type": "text",
           "text": "{round(api.sgdm.c, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
+          "size": 15,
+          "font": "bold"
         },
         {
           "type": "text",
           "text": "{round(api.sgdm.dp, 1)}%",
           "align": "right",
-          "w": 52
+          "size": 15,
+          "font": "bold",
+          "x": 146,
+          "y": 16
         }
       ],
       "style": {
-        "direction": "row",
+        "direction": "column",
         "justify": "between",
-        "align": "center"
+        "padding": 2,
+        "gap": 0,
+        "borderWidth": 0
       }
     },
     {
@@ -163,21 +175,25 @@
         {
           "type": "text",
           "text": "{round(api.vti.c, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
+          "size": 15,
+          "font": "bold"
         },
         {
           "type": "text",
           "text": "{round(api.vti.dp, 1)}%",
           "align": "right",
-          "w": 52
+          "size": 15,
+          "font": "bold",
+          "x": 146,
+          "y": 16
         }
       ],
       "style": {
-        "direction": "row",
+        "direction": "column",
         "justify": "between",
-        "align": "center"
+        "padding": 2,
+        "gap": 0,
+        "borderWidth": 0
       }
     },
     {
