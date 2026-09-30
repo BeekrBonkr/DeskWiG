@@ -3,6 +3,7 @@
 #include "../net/PingTarget.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
+#include "../net/Series.h"
 
 // Short enough to type from the device screen; brute force is blunted by
 // the login lockout in Auth.cpp.
@@ -50,6 +51,10 @@ struct Settings {
 
   uint8_t sourceCount = 0;
   DataSource sources[MAX_SOURCES];
+
+  // Keys sampled over time for charts and {key.min}-style statistics.
+  uint8_t seriesCount = 0;
+  SeriesCfg series[MAX_SERIES];
 };
 
 extern Settings settings;
