@@ -9,6 +9,9 @@ namespace Board {
   constexpr int TFT_CS   = 10;
   constexpr int TFT_DC   = 9;
   constexpr int TFT_RST  = 8;
+  // Backlight, PWM dimmed. Most 1.9" modules switch BL through a
+  // transistor, so the pin drives it directly.
+  constexpr int TFT_BL   = 13;
 
   // Onboard WS2812 status LED
   constexpr int STATUS_LED = 48;
