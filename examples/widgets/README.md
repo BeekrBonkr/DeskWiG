@@ -84,7 +84,7 @@ Each block below can be pasted as is: open **Data sources** on the setup page, p
 
 ```
 id:       weather
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m,apparent_temperature
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m,apparent_temperature
 interval: 600
 fields:   temp = current.temperature_2m (decimals 0)
           humidity = current.relative_humidity_2m
@@ -96,7 +96,7 @@ fields:   temp = current.temperature_2m (decimals 0)
 
 ```
 id:       aqi
-url:      https://air-quality-api.open-meteo.com/v1/air-quality?latitude=42.36&longitude=-71.06&current=european_aqi,pm2_5,pm10
+url:      https://air-quality-api.open-meteo.com/v1/air-quality?latitude=51.48&longitude=0.00&current=european_aqi,pm2_5,pm10
 interval: 900
 fields:   aqi = current.european_aqi
           pm25 = current.pm2_5
@@ -107,7 +107,7 @@ fields:   aqi = current.european_aqi
 
 ```
 id:       sun
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&daily=sunrise,sunset,uv_index_max&timezone=auto&forecast_days=1
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&daily=sunrise,sunset,uv_index_max&timezone=auto&forecast_days=1
 interval: 3600
 fields:   sunrise = daily.sunrise.0
           sunset = daily.sunset.0
@@ -300,7 +300,7 @@ fields:   count = element_count
 
 ```
 id:       wx
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,precipitation_probability,rain,showers,snowfall,snow_depth,is_day,weather_code&timezone=auto&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_hours=6
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,precipitation_probability,rain,showers,snowfall,snow_depth,is_day,weather_code&timezone=auto&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_hours=6
 interval: 600
 fields:   temperature_2m2 = hourly.temperature_2m.0
           apparent_tempe2 = hourly.apparent_temperature.0
@@ -319,7 +319,7 @@ The tiles light from the amounts: sun or moon (by `is_day`) when nothing is fall
 
 ```
 id:       w6
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,precipitation_probability,weather_code,is_day&forecast_hours=6&timezone=auto&temperature_unit=fahrenheit
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&hourly=temperature_2m,precipitation_probability,weather_code,is_day&forecast_hours=6&timezone=auto&temperature_unit=fahrenheit
 interval: 600
 fields:   t0 = hourly.temperature_2m.0             ... t5 = hourly.temperature_2m.5
           r0 = hourly.precipitation_probability.0  ... r5 = hourly.precipitation_probability.5
@@ -333,7 +333,7 @@ Weather codes: 0-2 clear or partly cloudy (sun by day, moon at night), 3-48 over
 
 ```
 id:       rain
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=precipitation_probability&forecast_hours=6&timezone=auto
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&hourly=precipitation_probability&forecast_hours=6&timezone=auto
 interval: 900
 fields:   p0 = hourly.precipitation_probability.0
           p1 = hourly.precipitation_probability.1
@@ -344,7 +344,7 @@ fields:   p0 = hourly.precipitation_probability.0
 
 ```
 id:       fc
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3
 interval: 1800
 fields:   hi0 = daily.temperature_2m_max.0 (decimals 0)    lo0 = daily.temperature_2m_min.0 (decimals 0)    rain0 = daily.precipitation_probability_max.0
           hi1, lo1, rain1 and hi2, lo2, rain2 the same with .1 and .2
@@ -354,7 +354,7 @@ fields:   hi0 = daily.temperature_2m_max.0 (decimals 0)    lo0 = daily.temperatu
 
 ```
 id:       baro
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=pressure_msl,cloud_cover,uv_index
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=pressure_msl,cloud_cover,uv_index
 interval: 600
 fields:   pressure = current.pressure_msl
           cloud = current.cloud_cover
@@ -365,7 +365,7 @@ fields:   pressure = current.pressure_msl
 
 ```
 id:       surf
-url:      https://marine-api.open-meteo.com/v1/marine?latitude=33.66&longitude=-118.0&current=wave_height,wave_period,wave_direction,swell_wave_height
+url:      https://marine-api.open-meteo.com/v1/marine?latitude=39.60&longitude=-9.07&current=wave_height,wave_period,wave_direction,swell_wave_height
 interval: 900
 fields:   wave = current.wave_height
           period = current.wave_period
@@ -377,7 +377,7 @@ fields:   wave = current.wave_height
 
 ```
 id:       wind
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=wind_speed_10m,wind_gusts_10m,wind_direction_10m
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=wind_speed_10m,wind_gusts_10m,wind_direction_10m
 interval: 300
 fields:   speed = current.wind_speed_10m
           gust = current.wind_gusts_10m
@@ -388,7 +388,7 @@ fields:   speed = current.wind_speed_10m
 
 ```
 id:       sun2
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&daily=sunrise,sunset&current=is_day&timeformat=unixtime&timezone=auto&forecast_days=1
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&daily=sunrise,sunset&current=is_day&timeformat=unixtime&timezone=auto&forecast_days=1
 interval: 300
 fields:   t = current.time
           r = daily.sunrise.0

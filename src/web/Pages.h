@@ -162,7 +162,7 @@ static const char SETUP_HTML[] = R"html(
 <div class="card" id="srcImport" style="display:none">
   <p class="hint">One or more sources, in the text form below or as the JSON the API takes. A source that already exists is replaced; an empty header value keeps the stored one. The example widgets' README lists ready-made blocks to paste.</p>
   <textarea id="srcText" spellcheck="false" placeholder="id:       weather
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&amp;longitude=-71.06&amp;current=temperature_2m,relative_humidity_2m
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&amp;longitude=0.00&amp;current=temperature_2m,relative_humidity_2m
 interval: 600
 header:   Authorization = Bearer abc123   (optional)
 fields:   temp = current.temperature_2m (decimals 0)

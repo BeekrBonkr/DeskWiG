@@ -262,7 +262,7 @@ Everything except WiFi credentials, the key and the account lives in `/config.js
   "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
   "sources": [
-    { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
+    { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
       "intervalS": 600,
       "fields": [ { "name": "temp", "path": "current.temperature_2m", "decimals": 0 },
                   { "name": "humidity", "path": "current.relative_humidity_2m" },
@@ -317,7 +317,7 @@ curl -X PUT "http://<device-ip>/api/sources?id=weather" \
   -H "Authorization: Bearer <key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
     "intervalS": 600,
     "fields": [
       { "name": "temp",     "path": "current.temperature_2m", "decimals": 0 },
@@ -331,7 +331,7 @@ Or paste them: **Paste data sources as text** on the same page takes one or more
 
 ```
 id:       weather
-url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m
 interval: 600
 header:   Authorization = Bearer abc123
 fields:   temp = current.temperature_2m (decimals 0)
