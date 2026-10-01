@@ -66,14 +66,15 @@
               "h": 20,
               "color": "#1a2029",
               "style": {
-                "radius": 6
+                "radius": 6,
+                "background": "#0c0c0d"
               }
             },
             {
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.hour/16)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.hour/16)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -83,7 +84,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.hour/8)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.hour/8)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -93,7 +94,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.hour/4)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.hour/4)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -103,7 +104,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.hour/2)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.hour/2)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -113,7 +114,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.hour/1)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.hour/1)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -137,7 +138,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.min/32)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.min/32)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -147,7 +148,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.min/16)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.min/16)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -157,7 +158,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.min/8)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.min/8)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -167,7 +168,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.min/4)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.min/4)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -177,7 +178,7 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.min/2)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.min/2)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -187,7 +188,81 @@
               "type": "rect",
               "w": 20,
               "h": 20,
-              "color": "{if(floor(time.min/1)%2,rgb(0,158,255),rgb(22,28,36))}",
+              "color": "{if(floor(time.min/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "SECONDS",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 20,
+              "h": 20,
+              "color": "{if(floor(time.second/32)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 20,
+              "h": 20,
+              "color": "{if(floor(time.second/16)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 20,
+              "h": 20,
+              "color": "{if(floor(time.second/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 20,
+              "h": 20,
+              "color": "{if(floor(time.second/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 20,
+              "h": 20,
+              "color": "{if(floor(time.second/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 20,
+              "h": 20,
+              "color": "{if(floor(time.second/1)%2,rgb(0,158,255),rgb(12,12,12))}",
               "fill": true,
               "style": {
                 "radius": 6
@@ -293,9 +368,9 @@
         {
           "type": "text",
           "text": "{date.dow}",
-          "font": "sans",
+          "align": "center",
           "size": 18,
-          "align": "center"
+          "font": "bold"
         },
         {
           "type": "text",
@@ -304,14 +379,6 @@
           "color": "#7c8794"
         }
       ]
-    },
-    {
-      "type": "text",
-      "x": 77,
-      "y": 296,
-      "text": "lit cells add up",
-      "align": "center",
-      "color": "dim"
     }
   ]
 }

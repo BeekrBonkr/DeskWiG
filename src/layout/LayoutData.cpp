@@ -67,6 +67,11 @@ static bool resolveTime(const char* field, char* out, size_t n) {
     snprintf(out, n, "%02d", t.tm_min);
     return true;
   }
+  if (!strcmp(field, "second")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_sec);
+    return true;
+  }
   if (!strcmp(field, "ampm")) {
     if (!ok || settings.clock24h) { out[0] = '\0'; return true; }
     strlcpy(out, t.tm_hour >= 12 ? "PM" : "AM", n);
@@ -331,7 +336,7 @@ void layoutExpand(const char* tpl, char* out, size_t outLen) {
 
 void layoutFillData(JsonObject obj) {
   static const char* STATIC_KEYS[] = {
-    "time", "time.sec", "time.hour", "time.min", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year",
+    "time", "time.sec", "time.hour", "time.min", "time.second", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year",
     "wifi.ssid", "wifi.ip", "wifi.rssi", "wifi.pct", "wifi.bars", "wifi.color",
     "hostname", "uptime", "heap", "ping.count"
   };
