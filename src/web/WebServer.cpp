@@ -1519,6 +1519,9 @@ static void registerSystem() {
 // restarts so everything comes up from the restored state.
 constexpr uint8_t BACKUP_FORMAT = 1;
 constexpr size_t RESTORE_MAX = 2 * 1024 * 1024;
+// A layout file can be 10 levels deep (the parser's default limit) and the
+// backup wraps each one two levels further down.
+constexpr uint8_t BACKUP_NESTING = 24;
 
 static uint8_t* backupBuf = nullptr;
 static size_t backupLen = 0;
@@ -1526,7 +1529,7 @@ static size_t backupLen = 0;
 static bool parseFileInto(const String& path, JsonDocument& doc) {
   File f = LittleFS.open(path, "r");
   if (!f) return false;
-  DeserializationError err = deserializeJson(doc, f);
+  DeserializationError err = deserializeJson(doc, f, DeserializationOption::NestingLimit(BACKUP_NESTING));
   f.close();
   return !err;
 }
@@ -1728,11 +1731,15 @@ static void registerBackup() {
       }
 
       JsonDocument doc(&psramJsonAlloc);
-      DeserializationError perr = deserializeJson(doc, (const char*)u->buf, u->len);
+      DeserializationError perr = deserializeJson(doc, (const char*)u->buf, u->len, DeserializationOption::NestingLimit(BACKUP_NESTING));
       heap_caps_free(u->buf);
       free(u);
       req->_tempObject = nullptr;
-      if (perr) { sendError(req, 400, "the file is not valid JSON"); return; }
+      if (perr) {
+        Log.printf("[CFG] Restore: %s\n", perr.c_str());
+        sendError(req, 400, perr == DeserializationError::TooDeep ? "the file nests too deeply" : "the file is not valid JSON");
+        return;
+      }
 
       JsonDocument out;
       JsonObject done = out["restored"].to<JsonObject>();
