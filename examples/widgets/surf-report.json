@@ -21,125 +21,309 @@
   "style": {
     "direction": "column",
     "gap": 6,
-    "padding": 8,
-    "justify": "center"
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "🌊",
-      "font": "emoji",
-      "size": 48,
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "SURF REPORT",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.surf.age}",
+          "align": "right",
+          "color": "{api.surf.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 124,
+      "style": {
+        "padding": 8,
+        "radius": 12,
+        "background": "#0d3b66",
+        "gradient": "#03111f"
+      },
+      "children": [
+        {
+          "type": "text",
+          "x": 69,
+          "y": 0,
+          "text": "{round(api.surf.wave,1)} m",
+          "font": "bold",
+          "size": 44,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 69,
+          "y": 46,
+          "text": "wave height",
+          "align": "center",
+          "color": "#bfe6ff"
+        },
+        {
+          "type": "polygon",
+          "x": 0,
+          "y": 62,
+          "points": [
+            [
+              0,
+              46
+            ],
+            [
+              0,
+              30
+            ],
+            [
+              26,
+              "{30-clamp(api.surf.swell*9,2,30)}"
+            ],
+            [
+              52,
+              30
+            ],
+            [
+              78,
+              "{30-clamp(api.surf.swell*9,2,30)}"
+            ],
+            [
+              104,
+              30
+            ],
+            [
+              130,
+              "{30-clamp(api.surf.swell*9,2,30)}"
+            ],
+            [
+              138,
+              46
+            ]
+          ],
+          "color": "#1769aa"
+        },
+        {
+          "type": "polygon",
+          "x": 0,
+          "y": 62,
+          "points": [
+            [
+              0,
+              46
+            ],
+            [
+              0,
+              38
+            ],
+            [
+              26,
+              "{38-clamp(api.surf.wave*9,2,30)}"
+            ],
+            [
+              52,
+              38
+            ],
+            [
+              78,
+              "{38-clamp(api.surf.wave*9,2,30)}"
+            ],
+            [
+              104,
+              38
+            ],
+            [
+              130,
+              "{38-clamp(api.surf.wave*9,2,30)}"
+            ],
+            [
+              138,
+              46
+            ]
+          ],
+          "color": "#4fc3f7"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6,
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 73,
+          "h": 73,
+          "children": [
+            {
+              "type": "arc",
+              "x": 3,
+              "y": 3,
+              "w": 66,
+              "value": 0,
+              "style": {
+                "thickness": 3,
+                "background": "#1d3a52"
+              }
+            },
+            {
+              "type": "arc",
+              "x": 0,
+              "y": 0,
+              "w": 72,
+              "value": 100,
+              "start": "{api.surf.dir-9}",
+              "end": "{api.surf.dir+9}",
+              "color": "#4fc3f7",
+              "style": {
+                "thickness": 9
+              }
+            },
+            {
+              "type": "text",
+              "x": 36,
+              "y": 10,
+              "text": "N",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "x": 36,
+              "y": 27,
+              "text": "{round(api.surf.dir)}°",
+              "font": "bold",
+              "size": 18,
+              "align": "center"
+            },
+            {
+              "type": "text",
+              "x": 36,
+              "y": 48,
+              "text": "from",
+              "align": "center",
+              "color": "#7c8794"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 75,
+          "style": {
+            "gap": 10
+          },
+          "children": [
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "between"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "period",
+                  "color": "#7c8794"
+                },
+                {
+                  "type": "text",
+                  "text": "{round(api.surf.period)} s",
+                  "align": "right"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "between"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "swell",
+                  "color": "#7c8794"
+                },
+                {
+                  "type": "text",
+                  "text": "{round(api.surf.swell,1)} m",
+                  "align": "right"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "between"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "wind",
+                  "color": "#7c8794"
+                },
+                {
+                  "type": "text",
+                  "text": "{api.weather.wind}km/h",
+                  "align": "right"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "ENERGY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "height² × period",
+          "align": "right",
+          "color": "dim"
+        }
+      ]
+    },
+    {
+      "type": "bar",
+      "h": 10,
+      "value": "{min(api.surf.wave^2*api.surf.period*2,100)}",
+      "color": "#1769aa",
+      "style": {
+        "gradient": "#7df9ff",
+        "gradientDir": "right",
+        "radius": 5,
+        "background": "#1a2029"
+      }
     },
     {
       "type": "text",
-      "text": "{round(api.surf.wave, 1)} m",
-      "font": "bold",
-      "size": 44,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "wave height",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "period",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.surf.period)} s",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "direction",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.surf.dir)}°",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "swell",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.surf.swell, 1)} m",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "wind",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.weather.wind} km/h",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "Open-Meteo marine · {api.surf.age} ago",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

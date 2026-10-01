@@ -21,108 +21,349 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
-  },
-  "styles": {
-    "k": {
-      "color": "dim",
-      "font": "sans",
-      "size": 14
-    },
-    "v": {
-      "font": "bold",
-      "size": 22,
-      "align": "right"
-    }
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "{round(api.weather.temp * 9/5 + 32)}°F",
-      "font": "bold",
-      "size": 64,
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "THERMOMETER",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.weather.age}",
+          "align": "right",
+          "color": "{api.weather.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "h": 180,
+          "children": [
+            {
+              "type": "text",
+              "x": 20,
+              "y": 0,
+              "text": "°F",
+              "align": "right",
+              "color": "#c4ccd6"
+            },
+            {
+              "type": "text",
+              "x": 54,
+              "y": 0,
+              "text": "°C",
+              "color": "#c4ccd6"
+            },
+            {
+              "type": "rect",
+              "x": 30,
+              "y": 14,
+              "w": 14,
+              "h": 152,
+              "color": "#1a2029",
+              "fill": true,
+              "style": {
+                "radius": 7
+              }
+            },
+            {
+              "type": "rect",
+              "x": 33,
+              "y": "{157-clamp((api.weather.temp+18)*2.4,0,140)}",
+              "w": 8,
+              "h": "{clamp((api.weather.temp+18)*2.4,0,140)+16}",
+              "color": "{hsv(clamp(220-(api.weather.temp+10)*5,0,220),85,100)}",
+              "fill": true,
+              "style": {
+                "radius": 4
+              }
+            },
+            {
+              "type": "circle",
+              "x": 27,
+              "y": 158,
+              "r": 10,
+              "color": "{hsv(clamp(220-(api.weather.temp+10)*5,0,220),85,100)}"
+            },
+            {
+              "type": "text",
+              "x": 20,
+              "y": 14,
+              "text": "104",
+              "align": "right",
+              "color": "#7c8794"
+            },
+            {
+              "type": "rect",
+              "x": 24,
+              "y": 17,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "rect",
+              "x": 46,
+              "y": 17,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "text",
+              "x": 54,
+              "y": 14,
+              "text": "40",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "x": 20,
+              "y": 49,
+              "text": "77",
+              "align": "right",
+              "color": "#7c8794"
+            },
+            {
+              "type": "rect",
+              "x": 24,
+              "y": 52,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "rect",
+              "x": 46,
+              "y": 52,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "text",
+              "x": 54,
+              "y": 49,
+              "text": "25",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "x": 20,
+              "y": 85,
+              "text": "50",
+              "align": "right",
+              "color": "#7c8794"
+            },
+            {
+              "type": "rect",
+              "x": 24,
+              "y": 88,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "rect",
+              "x": 46,
+              "y": 88,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "text",
+              "x": 54,
+              "y": 85,
+              "text": "10",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "x": 20,
+              "y": 109,
+              "text": "32",
+              "align": "right",
+              "color": "#7c8794"
+            },
+            {
+              "type": "rect",
+              "x": 24,
+              "y": 112,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "rect",
+              "x": 46,
+              "y": 112,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "text",
+              "x": 54,
+              "y": 109,
+              "text": "0",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "x": 20,
+              "y": 152,
+              "text": "0",
+              "align": "right",
+              "color": "#7c8794"
+            },
+            {
+              "type": "rect",
+              "x": 24,
+              "y": 155,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "rect",
+              "x": 46,
+              "y": 155,
+              "w": 4,
+              "h": 1,
+              "color": "#7c8794",
+              "fill": true
+            },
+            {
+              "type": "text",
+              "x": 54,
+              "y": 152,
+              "text": "-18",
+              "color": "#7c8794"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 5
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{round(api.weather.temp*9/5+32)}°F",
+              "font": "bold",
+              "size": 32
+            },
+            {
+              "type": "text",
+              "text": "{round(api.weather.temp,1)}°C",
+              "font": "sans",
+              "size": 18,
+              "color": "#c4ccd6"
+            },
+            {
+              "type": "line",
+              "h": 1,
+              "color": "#252d38"
+            },
+            {
+              "type": "text",
+              "text": "FEELS LIKE",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.weather.feels*9/5+32)}°F",
+              "font": "bold",
+              "size": 20
+            },
+            {
+              "type": "text",
+              "text": "WIND",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.weather.wind/1.609)} mph",
+              "font": "bold",
+              "size": 20
+            },
+            {
+              "type": "text",
+              "text": "HUMIDITY",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.weather.humidity}%",
+              "font": "bold",
+              "size": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 6,
+        "radius": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "°F = °C × 9/5 + 32",
+          "align": "center",
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "text": "mph = km/h / 1.609",
+          "align": "center",
+          "color": "#c4ccd6"
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "{round(api.weather.temp, 1)}°C",
-      "font": "sans",
-      "size": 18,
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
       "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "feels like",
-          "class": "k"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.weather.feels * 9/5 + 32)}°F",
-          "class": "v"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "wind",
-          "class": "k"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.weather.wind / 1.609)} mph",
-          "class": "v"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "humidity",
-          "class": "k"
-        },
-        {
-          "type": "text",
-          "text": "{api.weather.humidity}%",
-          "class": "v"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "text",
-      "text": "converted on the device with {math}",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

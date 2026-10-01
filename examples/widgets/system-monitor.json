@@ -15,104 +15,162 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
+    "gap": 6,
     "padding": 8
   },
   "styles": {
     "card": {
-      "background": "#101010",
-      "border": "#2a2a2a",
-      "radius": 6,
-      "padding": 6,
-      "gap": 2
+      "background": "#141a22",
+      "gradient": "#0b0e13",
+      "border": "#252d38",
+      "radius": 10,
+      "padding": 7,
+      "gap": 5
+    },
+    "label": {
+      "color": "#7c8794"
     }
   },
   "elements": [
     {
-      "type": "text",
-      "text": "DESKWIG SYSTEM",
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "DESKWIG SYSTEM",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{hostname}",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          },
           "children": [
             {
               "type": "text",
-              "text": "HEAP",
-              "color": "dim"
+              "class": "label",
+              "text": "FREE HEAP"
             },
             {
               "type": "text",
               "text": "{heap}",
               "font": "bold",
-              "size": 22
+              "size": 20,
+              "align": "right"
             }
-          ],
-          "class": "card"
+          ]
         },
         {
+          "type": "chart",
+          "h": 44,
+          "series": "heap",
+          "window": 3600,
+          "color": "#a78bfa",
+          "style": {
+            "kind": "area",
+            "gradient": "#221a3d",
+            "background": "#0c1016",
+            "radius": 6
+          }
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
           "type": "box",
+          "class": "card",
+          "w": 74,
           "children": [
             {
               "type": "text",
-              "text": "UPTIME",
-              "color": "dim"
+              "class": "label",
+              "text": "UPTIME"
             },
             {
               "type": "text",
               "text": "{uptime}",
               "font": "bold",
-              "size": 22
+              "size": 18
             }
-          ],
-          "class": "card"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "gap": 6
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "TARGETS",
-          "color": "dim"
+          ]
         },
         {
           "type": "box",
+          "class": "card",
+          "w": 74,
           "children": [
             {
               "type": "text",
-              "text": "{ping.count} configured"
+              "class": "label",
+              "text": "TARGETS"
             },
             {
-              "type": "text",
-              "text": "{ping.0.status}/{ping.1.status}/{ping.2.status}",
-              "align": "right",
-              "color": "dim"
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 5,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "circle",
+                  "r": 5,
+                  "color": "{ping.0.color}"
+                },
+                {
+                  "type": "circle",
+                  "r": 5,
+                  "color": "{ping.1.color}"
+                },
+                {
+                  "type": "circle",
+                  "r": 5,
+                  "color": "{ping.2.color}"
+                },
+                {
+                  "type": "text",
+                  "text": "{ping.count}",
+                  "font": "bold",
+                  "size": 18
+                }
+              ]
             }
-          ],
-          "style": {
-            "direction": "row",
-            "justify": "between"
-          }
+          ]
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "text",
-          "text": "CLOCK",
-          "color": "dim"
+          "class": "label",
+          "text": "CLOCK"
         },
         {
           "type": "text",
@@ -124,33 +182,48 @@
         {
           "type": "text",
           "text": "{date} · {date.dow}",
-          "color": "dim",
-          "align": "center"
+          "align": "center",
+          "color": "#7c8794"
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
-          "type": "text",
-          "text": "WIFI",
-          "color": "dim"
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "class": "label",
+              "text": "WIFI"
+            },
+            {
+              "type": "text",
+              "text": "{wifi.ssid} {wifi.rssi} dBm",
+              "align": "right",
+              "color": "#c4ccd6"
+            }
+          ]
         },
         {
           "type": "bar",
           "h": 8,
           "value": "{wifi.pct}",
-          "color": "{wifi.color}"
-        },
-        {
-          "type": "text",
-          "text": "{wifi.ssid} {wifi.rssi} dBm",
-          "color": "dim"
+          "color": "#c0392b",
+          "style": {
+            "gradient": "#2fd37a",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#1a2029"
+          }
         }
-      ],
-      "class": "card"
+      ]
     }
   ]
 }

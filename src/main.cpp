@@ -1,12 +1,16 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <LovyanGFX.hpp>
+#include <esp_heap_caps.h>
+#include <mbedtls/platform.h>
 
 #include "app/Board.h"
 #include "app/ScreenManager.h"
 #include "app/StatusLed.h"
 #include "app/SystemScreens.h"
 #include "app/Encoder.h"
+#include "app/Menu.h"
+#include "app/Display.h"
 
 #include "app/Builtins.h"
 #include "layout/LayoutStore.h"
@@ -17,11 +21,14 @@
 #include "net/WifiManager.h"
 #include "net/TimeService.h"
 #include "net/DataSource.h"
+#include "net/Series.h"
 #include "layout/FontService.h"
 #include "layout/ImageService.h"
 #include "app/Log.h"
 
-// How long the connection-info screen (IP + API key) stays up after WiFi connects.
+// Until an account exists the login page needs the API key, so the
+// connection screen (address + key) is shown this long after WiFi connects.
+// After that it lives under Device > Connection in the knob menu.
 constexpr uint32_t INFO_SCREEN_MS = 30000;
 
 static uint32_t infoScreenUntil = 0;
@@ -30,7 +37,6 @@ static uint32_t infoScreenUntil = 0;
 // saved a moment after the knob stops so a fast spin is one flash write.
 constexpr uint32_t TOAST_MS = 1500;
 constexpr uint32_t SAVE_DELAY_MS = 2000;
-constexpr uint32_t INFO_BY_BUTTON_MS = 15000;
 static uint32_t toastUntil = 0;
 static uint32_t saveAt = 0;
 static bool savePending = false;
@@ -41,6 +47,7 @@ static bool savePending = false;
 class LGFX_Display : public lgfx::LGFX_Device {
   lgfx::Panel_ST7789 _panel;
   lgfx::Bus_SPI _bus;
+  lgfx::Light_PWM _light;
 public:
   LGFX_Display() {
     auto b = _bus.config();
@@ -60,6 +67,15 @@ public:
     p.rgb_order = false;
     _panel.config(p);
 
+    // Backlight PWM. 20 kHz keeps the switching above hearing range and
+    // out of a camera's frame rate.
+    auto l = _light.config();
+    l.pin_bl = Board::TFT_BL;
+    l.freq = 20000;
+    l.pwm_channel = 7;
+    _light.config(l);
+    _panel.setLight(&_light);
+
     setPanel(&_panel);
   }
 };
@@ -68,9 +84,28 @@ LGFX_Display tft;
 LGFX_Sprite ui(&tft);
 
 // =====================
+// TLS MEMORY
+// The SDK build gives mbedTLS internal RAM only, about 32 KB per HTTPS
+// session. These send its buffers to PSRAM instead, falling back to
+// internal RAM when PSRAM is absent or full.
+// =====================
+static void* tlsCalloc(size_t n, size_t size) {
+  return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+
+static void tlsFree(void* p) {
+  heap_caps_free(p);
+}
+
+// =====================
 // WIDGETS / SCREENS
 // =====================
 ScreenManager screens;
+
+// Smoothed timing of recent frames in microseconds, for /api/status: one
+// whole pass of loop(), and within it the push of the sprite to the panel.
+uint32_t perfFrameUs = 0;
+uint32_t perfPushUs = 0;
 
 // =====================
 // RECOVERY JUMPER
@@ -148,11 +183,20 @@ static void drawToast() {
 
 static void encoderStep(uint32_t now) {
   EncoderEvent ev = encoderLoop(now);
-  if (ev.steps) switchWidget(ev.steps, now);
-  if (ev.button == EncoderButton::CLICK) {
-    // Toggle the connection-info screen (address and API key).
-    bool showing = (int32_t)(infoScreenUntil - now) > 0;
-    infoScreenUntil = showing ? now : now + INFO_BY_BUTTON_MS;
+  if (menuActive()) {
+    menuInput(ev, now);
+  } else {
+    if (ev.steps) switchWidget(ev.steps, now);
+    if (ev.button == EncoderButton::CLICK) {
+      // Show which widget this is; also dismisses the first-boot connection screen.
+      infoScreenUntil = now;
+      toastUntil = now + TOAST_MS;
+    } else if (ev.button == EncoderButton::LONG_PRESS) {
+      layoutPreviewStop();
+      infoScreenUntil = now;
+      toastUntil = now;
+      menuOpen(now);
+    }
   }
   if (savePending && (int32_t)(now - saveAt) >= 0) {
     savePending = false;
@@ -166,14 +210,38 @@ static void encoderStep(uint32_t now) {
 // The composed screen, for the screenshot endpoint.
 lgfx::LGFX_Sprite* uiSprite() { return &ui; }
 
+// Backlight from a percentage. A square curve so the slider feels even:
+// LED brightness is perceived roughly as the square root of duty.
+void backlightSet(uint8_t pct) {
+  if (pct > 100) pct = 100;
+  uint32_t duty = (255u * pct * pct + 5000) / 10000;
+  if (pct > 0 && duty == 0) duty = 1;
+  tft.setBrightness(duty);
+}
+
+// 0 is the normal portrait mounting, 2 the same turned 180 degrees. Both
+// are 170 x 320, so the sprite and every layout stay as they are.
+void displayApplyOrientation() {
+  tft.setRotation(settings.displayFlip ? 2 : 0);
+}
+
 void setup() {
   Log.begin(115200);
+
+  // Before anything opens a TLS session or joins a network.
+  mbedtls_platform_set_calloc_free(tlsCalloc, tlsFree);
 
   tft.init();
   tft.setColorDepth(16);
   tft.setRotation(0);
   tft.invertDisplay(true);
+  tft.setBrightness(255);           // full until the saved level is loaded
 
+  // The frame buffer is 109 KB. Left to the library it comes out of the
+  // 300 KB of internal RAM, which WiFi, TLS and the web server also need;
+  // PSRAM has megabytes to spare. Without PSRAM the library falls back to
+  // internal RAM by itself.
+  ui.setPsram(true);
   ui.setColorDepth(16);
   ui.createSprite(tft.width(), tft.height());
 
@@ -183,6 +251,8 @@ void setup() {
   bool forceAp = checkRecoveryJumper();
 
   loadSettings();
+  backlightSet(settings.displayBrightness);
+  displayApplyOrientation();
   authBegin();
   fontsBegin();
   imagesBegin();
@@ -190,6 +260,7 @@ void setup() {
   wifiBegin(forceAp);
   timeBegin();
   sourcesBegin();
+  seriesBegin();
 
   builtinsBegin(screens);           // Ping and Clock, unless deleted
   layoutsBegin(screens);            // JSON widgets from /widgets/*.json
@@ -222,10 +293,12 @@ void loop() {
   timeLoop();
   webLoop();
   encoderStep(now);
+  if (wifiState == WifiState::CONNECTED) seriesLoop(now);
 
-  // Show the info screen each time we (re)connect.
+  // First-time setup: show the address and API key on connect until an
+  // account exists. Afterwards the menu has them.
   static WifiState lastState = WifiState::AP_MODE;
-  if (wifiState == WifiState::CONNECTED && lastState != WifiState::CONNECTED) {
+  if (wifiState == WifiState::CONNECTED && lastState != WifiState::CONNECTED && !authConfigured()) {
     infoScreenUntil = now + INFO_SCREEN_MS;
   }
   lastState = wifiState;
@@ -246,6 +319,8 @@ void loop() {
   // Screen
   if (authKeyScreenActive()) {
     drawKeyScreen(ui, authKeyScreenSecondsLeft());
+  } else if (menuActive()) {
+    menuRender(ui, now);              // also in hotspot mode, so WiFi can be joined from the knob
   } else if (wifiState == WifiState::CONNECTED && (int32_t)(infoScreenUntil - now) > 0) {
     drawInfoScreen(ui, (infoScreenUntil - now) / 1000);
   } else if (wifiApActive()) {
@@ -260,5 +335,12 @@ void loop() {
     if ((int32_t)(toastUntil - now) > 0) drawToast();
   }
 
+  uint32_t pushStart = micros();
   ui.pushSprite(0, 0);
+  uint32_t pushEnd = micros();
+
+  static uint32_t lastFrameEnd = 0;
+  perfPushUs = (perfPushUs * 7 + (pushEnd - pushStart)) / 8;
+  if (lastFrameEnd) perfFrameUs = (perfFrameUs * 7 + (pushEnd - lastFrameEnd)) / 8;
+  lastFrameEnd = pushEnd;
 }

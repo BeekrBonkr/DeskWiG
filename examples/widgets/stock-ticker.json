@@ -28,150 +28,214 @@
   "style": {
     "direction": "column",
     "gap": 6,
-    "padding": 8,
-    "justify": "center"
+    "padding": 8
   },
   "elements": [
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "AAPL",
-          "font": "bold",
-          "size": 20
+          "text": "AAPL · NASDAQ",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "NASDAQ",
-          "color": "dim",
-          "align": "right"
+          "text": "{api.stock.age}",
+          "align": "right",
+          "color": "{api.stock.color}"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 6,
+        "radius": 12,
+        "background": "{if(api.stock.pct<0,rgb(84,20,30),rgb(12,66,42))}",
+        "gradient": "#07090c"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "${round(api.stock.last,2)}",
+          "font": "bold",
+          "size": 34,
+          "align": "center"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center",
+            "justify": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{round(api.stock.change,2)}",
+              "font": "bold",
+              "size": 16,
+              "color": "{if(api.stock.pct<0,rgb(255,77,94),rgb(47,211,122))}"
+            },
+            {
+              "type": "box",
+              "style": {
+                "padding": 3,
+                "radius": 6,
+                "background": "{if(api.stock.pct<0,rgb(150,30,45),rgb(20,120,70))}"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{round(api.stock.pct,2)}%",
+                  "font": "bold",
+                  "size": 14
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
       "style": {
         "direction": "row",
-        "justify": "between",
-        "align": "center"
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "TODAY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.stock.last.delta,2)}",
+          "align": "right",
+          "color": "{if(api.stock.last.delta<0,rgb(255,77,94),rgb(47,211,122))}"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 60,
+      "series": "api.stock.last",
+      "window": 14400,
+      "color": "{if(api.stock.last.delta<0,rgb(255,77,94),rgb(47,211,122))}",
+      "style": {
+        "kind": "area",
+        "gradient": "{if(api.stock.last.delta<0,rgb(52,16,22),rgb(10,42,28))}",
+        "background": "#0c1016",
+        "radius": 6
       }
     },
     {
       "type": "text",
-      "text": "${round(api.stock.last, 2)}",
-      "font": "bold",
-      "size": 40,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{round(api.stock.change, 2)}  ({round(api.stock.pct, 2)}%)",
-      "font": "sans",
-      "size": 18,
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "day range",
-      "color": "dim"
+      "text": "DAY RANGE",
+      "color": "#7c8794"
     },
     {
       "type": "bar",
-      "h": 8,
+      "h": 10,
       "value": "{(api.stock.last-api.stock.lo)/(api.stock.hi-api.stock.lo)*100}",
-      "color": "accent",
+      "color": "#1d4ed8",
       "style": {
-        "background": "#202020",
-        "radius": 3
+        "gradient": "#7fb4ff",
+        "gradientDir": "right",
+        "radius": 5,
+        "background": "#1a2029"
       }
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "{round(api.stock.lo, 2)}",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.stock.hi, 2)}",
-          "color": "dim",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
-    },
-    {
-      "type": "box",
+      },
       "children": [
         {
           "type": "text",
-          "text": "open",
-          "color": "dim"
+          "text": "{round(api.stock.lo,2)}",
+          "color": "#c4ccd6"
         },
         {
           "type": "text",
-          "text": "{round(api.stock.open, 2)}",
-          "align": "right"
+          "text": "{round(api.stock.hi,2)}",
+          "align": "right",
+          "color": "#c4ccd6"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "prev close",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.stock.prev, 2)}",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
+        "gap": 6
+      },
       "children": [
         {
-          "type": "text",
-          "text": "{api.stock.status}",
-          "color": "{api.stock.color}"
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "OPEN",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.stock.open,2)}",
+              "font": "bold",
+              "size": 16,
+              "align": "center"
+            }
+          ]
         },
         {
-          "type": "text",
-          "text": "{api.stock.age} ago",
-          "color": "dim",
-          "align": "right"
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "PREV",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.stock.prev,2)}",
+              "font": "bold",
+              "size": 16,
+              "align": "center"
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     }
   ]
 }

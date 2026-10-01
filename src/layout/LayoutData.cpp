@@ -3,11 +3,13 @@
 
 #include <WiFi.h>
 #include <time.h>
+#include <math.h>
 
 #include "../web/Settings.h"
 #include "../net/PingService.h"
 #include "../net/WifiManager.h"
 #include "../net/DataSource.h"
+#include "../net/Series.h"
 
 static const char* DAY_SHORT[]   = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 static const char* DAY_LONG[]    = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
@@ -65,6 +67,11 @@ static bool resolveTime(const char* field, char* out, size_t n) {
     snprintf(out, n, "%02d", t.tm_min);
     return true;
   }
+  if (!strcmp(field, "second")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_sec);
+    return true;
+  }
   if (!strcmp(field, "ampm")) {
     if (!ok || settings.clock24h) { out[0] = '\0'; return true; }
     strlcpy(out, t.tm_hour >= 12 ? "PM" : "AM", n);
@@ -93,6 +100,16 @@ static bool resolveDate(const char* field, char* out, size_t n) {
   if (!strcmp(field, "year")) {
     if (!ok) { strlcpy(out, "----", n); return true; }
     snprintf(out, n, "%04d", t.tm_year + 1900);
+    return true;
+  }
+  if (!strcmp(field, "month")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_mon + 1);
+    return true;
+  }
+  if (!strcmp(field, "dom")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_mday);
     return true;
   }
   if (!strcmp(field, "md")) {
@@ -234,11 +251,61 @@ static bool resolvePing(const char* rest, char* out, size_t n) {
 }
 
 // =====================
+// SERIES
+// =====================
+static const char* SERIES_STATS[] = { "min", "max", "avg", "first", "last", "delta", "count", "span" };
+
+static void formatNumber(double v, char* out, size_t n) {
+  if (v == floor(v) && fabs(v) < 1e15) { snprintf(out, n, "%.0f", v); return; }
+  snprintf(out, n, "%.2f", v);
+  char* dot = strchr(out, '.');
+  if (dot) {
+    char* e = out + strlen(out) - 1;
+    while (e > dot && *e == '0') *e-- = '\0';
+    if (e == dot) *e = '\0';
+  }
+}
+
+// <series key>.<stat>: only for keys that are sampled, so ping.count and
+// a source field that happens to be called "last" still resolve as before.
+static bool resolveSeriesStat(const char* key, char* out, size_t n) {
+  const char* dot = strrchr(key, '.');
+  if (!dot || dot == key) return false;
+  const char* stat = dot + 1;
+  int which = -1;
+  for (int i = 0; i < 8; i++) if (!strcmp(stat, SERIES_STATS[i])) { which = i; break; }
+  if (which < 0) return false;
+  char prefix[SERIES_KEY_LEN + 1];
+  size_t len = dot - key;
+  if (len > SERIES_KEY_LEN) return false;
+  memcpy(prefix, key, len);
+  prefix[len] = '\0';
+  int idx = seriesFind(prefix);
+  if (idx < 0) return false;
+  SeriesStats st;
+  seriesStats(idx, 0, st);
+  if (st.count == 0) { strlcpy(out, "--", n); return true; }
+  switch (which) {
+    case 0: formatNumber(st.min, out, n); break;
+    case 1: formatNumber(st.max, out, n); break;
+    case 2: formatNumber(st.avg, out, n); break;
+    case 3: formatNumber(st.first, out, n); break;
+    case 4: formatNumber(st.last, out, n); break;
+    case 5: formatNumber((double)st.last - st.first, out, n); break;
+    case 6: snprintf(out, n, "%u", st.count); break;
+    case 7: snprintf(out, n, "%u", (unsigned)st.spanS); break;
+  }
+  return true;
+}
+
+// =====================
 // PUBLIC
 // =====================
 bool layoutResolveKey(const char* key, char* out, size_t n) {
   if (n == 0) return false;
   out[0] = '\0';
+
+  if (settings.seriesCount && resolveSeriesStat(key, out, n)) return true;
 
   if (!strncmp(key, "time", 4) && (key[4] == '\0' || key[4] == '.')) return resolveTime(key[4] ? key + 5 : "", out, n);
   if (!strncmp(key, "date", 4) && (key[4] == '\0' || key[4] == '.')) return resolveDate(key[4] ? key + 5 : "", out, n);
@@ -279,7 +346,7 @@ void layoutExpand(const char* tpl, char* out, size_t outLen) {
 
 void layoutFillData(JsonObject obj) {
   static const char* STATIC_KEYS[] = {
-    "time", "time.sec", "time.hour", "time.min", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year",
+    "time", "time.sec", "time.hour", "time.min", "time.second", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year", "date.month", "date.dom",
     "wifi.ssid", "wifi.ip", "wifi.rssi", "wifi.pct", "wifi.bars", "wifi.color",
     "hostname", "uptime", "heap", "ping.count"
   };
@@ -307,6 +374,14 @@ void layoutFillData(JsonObject obj) {
     }
     for (const char* f : SOURCE_FIELDS) {
       snprintf(key, sizeof(key), "api.%s.%s", s.id, f);
+      if (layoutResolveKey(key, val, sizeof(val))) obj[key] = val;
+    }
+  }
+
+  for (uint8_t i = 0; i < settings.seriesCount; i++) {
+    char key[SERIES_KEY_LEN + 8];
+    for (const char* st : SERIES_STATS) {
+      snprintf(key, sizeof(key), "%s.%s", settings.series[i].key, st);
       if (layoutResolveKey(key, val, sizeof(val))) obj[key] = val;
     }
   }

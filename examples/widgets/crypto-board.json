@@ -22,160 +22,254 @@
   "style": {
     "direction": "column",
     "gap": 6,
-    "padding": 8,
-    "justify": "center"
+    "padding": 8
   },
   "elements": [
     {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "MARKETS 24H",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.coins.age}",
+          "align": "right",
+          "color": "{api.coins.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "h": 112,
+          "style": {
+            "padding": 8,
+            "gap": 8,
+            "radius": 12,
+            "background": "{hsv(if(api.coins.btcc<0,0,140),75,15+abs(api.coins.btcc)*8)}",
+            "gradient": "#0a0c10"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "BTC",
+              "font": "bold",
+              "size": 20
+            },
+            {
+              "type": "text",
+              "text": "${round(api.coins.btc)}",
+              "font": "sans",
+              "size": 15,
+              "color": "#e6ecf2"
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{round(api.coins.btcc,1)}%",
+                  "font": "bold",
+                  "size": 17
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "h": 112,
+          "style": {
+            "padding": 8,
+            "gap": 8,
+            "radius": 12,
+            "background": "{hsv(if(api.coins.ethc<0,0,140),75,15+abs(api.coins.ethc)*8)}",
+            "gradient": "#0a0c10"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "ETH",
+              "font": "bold",
+              "size": 20
+            },
+            {
+              "type": "text",
+              "text": "${round(api.coins.eth)}",
+              "font": "sans",
+              "size": 15,
+              "color": "#e6ecf2"
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{round(api.coins.ethc,1)}%",
+                  "font": "bold",
+                  "size": 17
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "h": 112,
+          "style": {
+            "padding": 8,
+            "gap": 8,
+            "radius": 12,
+            "background": "{hsv(if(api.coins.solc<0,0,140),75,15+abs(api.coins.solc)*8)}",
+            "gradient": "#0a0c10"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "SOL",
+              "font": "bold",
+              "size": 20
+            },
+            {
+              "type": "text",
+              "text": "${round(api.coins.sol,2)}",
+              "font": "sans",
+              "size": 15,
+              "color": "#e6ecf2"
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{round(api.coins.solc,1)}%",
+                  "font": "bold",
+                  "size": 17
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "h": 112,
+          "style": {
+            "padding": 8,
+            "gap": 8,
+            "radius": 12,
+            "background": "{hsv(if(api.coins.dogec<0,0,140),75,15+abs(api.coins.dogec)*8)}",
+            "gradient": "#0a0c10"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "DOGE",
+              "font": "bold",
+              "size": 20
+            },
+            {
+              "type": "text",
+              "text": "${round(api.coins.doge,3)}",
+              "font": "sans",
+              "size": 15,
+              "color": "#e6ecf2"
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "justify": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{round(api.coins.dogec,1)}%",
+                  "font": "bold",
+                  "size": 17
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "-10%",
+          "color": "#ff4d5e"
+        },
+        {
+          "type": "rect",
+          "w": 84,
+          "h": 6,
+          "color": "#c21f3a",
+          "fill": true,
+          "style": {
+            "radius": 3,
+            "gradient": "#1fae64",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "text",
+          "text": "+10%",
+          "color": "#2fd37a"
+        }
+      ]
+    },
+    {
       "type": "text",
-      "text": "MARKETS",
+      "x": 77,
+      "y": 296,
+      "text": "shade = size of the move",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "BTC",
-          "font": "bold",
-          "size": 16,
-          "w": 46
-        },
-        {
-          "type": "text",
-          "text": "${round(api.coins.btc)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.coins.btcc, 1)}%",
-          "align": "right",
-          "w": 52
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "ETH",
-          "font": "bold",
-          "size": 16,
-          "w": 46
-        },
-        {
-          "type": "text",
-          "text": "${round(api.coins.eth)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.coins.ethc, 1)}%",
-          "align": "right",
-          "w": 52
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "SOL",
-          "font": "bold",
-          "size": 16,
-          "w": 46
-        },
-        {
-          "type": "text",
-          "text": "${round(api.coins.sol, 2)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.coins.solc, 1)}%",
-          "align": "right",
-          "w": 52
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "DOGE",
-          "font": "bold",
-          "size": 16,
-          "w": 46
-        },
-        {
-          "type": "text",
-          "text": "${round(api.coins.doge, 3)}",
-          "font": "sans",
-          "size": 16,
-          "align": "right"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.coins.dogec, 1)}%",
-          "align": "right",
-          "w": 52
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "24h change",
-      "color": "dim"
-    },
-    {
-      "type": "bar",
-      "h": 6,
-      "value": "{clamp(api.coins.btcc * 5 + 50, 0, 100)}",
-      "color": "warn",
-      "style": {
-        "background": "#202020",
-        "radius": 3
-      }
-    },
-    {
-      "type": "text",
-      "text": "CoinGecko · {api.coins.age} ago",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

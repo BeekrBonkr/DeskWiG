@@ -12,8 +12,11 @@
 // API never stalls the display; results are copied out under a mutex.
 //
 // HTTPS is encrypted but the server certificate is not verified.
+//
+// Each source is about 3.5 KB, so the array lives in PSRAM (sourcesAlloc)
+// rather than in the settings struct; settings.sourceCap says how many fit.
 
-constexpr uint8_t  MAX_SOURCES           = 6;
+constexpr uint8_t  MAX_SOURCES           = 32;
 constexpr uint8_t  MAX_SOURCE_FIELDS     = 24;
 constexpr uint8_t  SOURCE_ID_LEN         = 16;
 constexpr uint16_t SOURCE_URL_LEN        = 511;   // long enough for Open-Meteo style query strings
@@ -61,8 +64,21 @@ struct DataSource {
   char error[SOURCE_ERROR_LEN + 1];
 };
 
+// Allocates settings.sources, in PSRAM when there is some, and sets
+// settings.sourceCap. Called by loadSettings() before the config is read.
+void sourcesAlloc();
+
 // Creates the mutex and the fetch task. Call once after loadSettings().
 void sourcesBegin();
+
+// ArduinoJson allocator that prefers PSRAM and falls back to internal RAM,
+// for documents that can grow large (config, source lists, discovery).
+struct PsramJsonAllocator : ArduinoJson::Allocator {
+  void* allocate(size_t n) override;
+  void deallocate(void* p) override;
+  void* reallocate(void* p, size_t n) override;
+};
+extern PsramJsonAllocator psramJsonAlloc;
 
 // Lowercase letters, digits and dashes, 1-16 chars.
 bool sourceValidId(const char* id);
@@ -107,7 +123,7 @@ bool sourceDiscoverStart(const char* url, const char* headerName, const char* he
 // state (idle|fetching|ok|error), url, error, json (bool), keys [{path, value}], truncated.
 void sourceDiscoverToJson(JsonObject obj);
 
-// Serialises settings.sources access. Anything that mutates settings.sources
+// Serializes settings.sources access. Anything that mutates settings.sources
 // or reads runtime values from another task must hold this.
 void sourcesLock();
 void sourcesUnlock();

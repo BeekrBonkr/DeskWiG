@@ -27,81 +27,266 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "ELECTRICITY NOW",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{round(api.power.price / 10, 1)}",
-      "font": "bold",
-      "size": 48,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "ct / kWh spot",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "bar",
-      "h": 10,
-      "value": "{clamp(api.power.price / 2, 0, 100)}",
-      "color": "warn",
+      "type": "box",
       "style": {
-        "background": "#202020",
-        "radius": 3
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "ELECTRICITY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.power.age}",
+          "align": "right",
+          "color": "{api.power.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center",
+        "padding": 8,
+        "radius": 12,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{round(api.power.price/10,1)}",
+              "font": "bold",
+              "size": 38,
+              "color": "{hsv(clamp(130-api.power.price*0.65,0,130),85,100)}"
+            },
+            {
+              "type": "text",
+              "text": "ct/kWh spot",
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "box",
+              "w": 26,
+              "h": 72,
+              "children": [
+                {
+                  "type": "rect",
+                  "x": 0,
+                  "y": 0,
+                  "w": 26,
+                  "h": 60,
+                  "color": "#1a2029",
+                  "fill": true,
+                  "style": {
+                    "radius": 5
+                  }
+                },
+                {
+                  "type": "rect",
+                  "x": 0,
+                  "y": "{60-clamp(api.power.price*0.3,2,60)}",
+                  "w": 26,
+                  "h": "{clamp(api.power.price*0.3,2,60)}",
+                  "color": "{hsv(clamp(130-api.power.price*0.65,0,130),85,100)}",
+                  "fill": true,
+                  "style": {
+                    "radius": 5
+                  }
+                },
+                {
+                  "type": "text",
+                  "x": 13,
+                  "y": 64,
+                  "text": "now",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 26,
+              "h": 72,
+              "children": [
+                {
+                  "type": "rect",
+                  "x": 0,
+                  "y": 0,
+                  "w": 26,
+                  "h": 60,
+                  "color": "#1a2029",
+                  "fill": true,
+                  "style": {
+                    "radius": 5
+                  }
+                },
+                {
+                  "type": "rect",
+                  "x": 0,
+                  "y": "{60-clamp(api.power.next*0.3,2,60)}",
+                  "w": 26,
+                  "h": "{clamp(api.power.next*0.3,2,60)}",
+                  "color": "{hsv(clamp(130-api.power.next*0.65,0,130),85,100)}",
+                  "fill": true,
+                  "style": {
+                    "radius": 5
+                  }
+                },
+                {
+                  "type": "text",
+                  "x": 13,
+                  "y": 64,
+                  "text": "next",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 26,
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 4,
+          "w": 154,
+          "h": 6,
+          "color": "#2fd37a",
+          "fill": true,
+          "style": {
+            "radius": 3,
+            "gradient": "#ff3b30",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "circle",
+          "x": "{clamp(api.power.price*0.72,0,144)}",
+          "y": 2,
+          "r": 5,
+          "color": "text",
+          "style": {
+            "border": "bg",
+            "borderWidth": 2
+          }
+        },
+        {
+          "type": "text",
+          "x": 0,
+          "y": 16,
+          "text": "0",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 16,
+          "text": "100",
+          "align": "center",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 154,
+          "y": 16,
+          "text": "200 €/MWh",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LAST 24 H",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "avg {round(api.power.price.avg/10,1)} ct",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 64,
+      "series": "api.power.price",
+      "window": 86400,
+      "color": "#ffb020",
+      "style": {
+        "kind": "bars",
+        "gradient": "#3a2a08",
+        "background": "#0c1016",
+        "radius": 6,
+        "min": 0
       }
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "0",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "100",
-          "color": "dim",
-          "align": "center"
-        },
-        {
-          "type": "text",
-          "text": "200 €/MWh",
-          "color": "dim",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "next hour",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.power.next/10,1)} ct",
+          "align": "right"
+        }
+      ]
     },
     {
-      "type": "line",
-      "h": 1,
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "next hour {round(api.power.next / 10, 1)} ct",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "aWATTar day-ahead · {api.power.age} ago",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

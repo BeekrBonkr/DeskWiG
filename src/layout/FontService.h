@@ -3,14 +3,14 @@
 #include <ArduinoJson.h>
 #include <LovyanGFX.hpp>
 
-// TrueType fonts for layouts, rasterised on the device with stb_truetype.
+// TrueType fonts for layouts, rasterized on the device with stb_truetype.
 //
 // Three fonts are built into the firmware: "sans" and "bold" (Inter,
 // Latin subset) and "emoji" (Noto Emoji, monochrome subset). Users can
 // upload more .ttf files to /fonts on the filesystem; they are loaded
 // into PSRAM the first time a layout uses them.
 //
-// Glyphs are rasterised once per (font, size, codepoint) into an alpha
+// Glyphs are rasterized once per (font, size, codepoint) into an alpha
 // bitmap cache in PSRAM and blended onto the sprite. Any codepoint the
 // chosen font lacks falls back to the emoji font, then to "sans".
 //

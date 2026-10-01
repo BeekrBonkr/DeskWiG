@@ -15,64 +15,156 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "🎮",
-      "font": "emoji",
-      "size": 48,
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "STEAM",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.steam.age}",
+          "align": "right",
+          "color": "{api.steam.color}"
+        }
+      ]
     },
     {
-      "type": "text",
-      "text": "{round(api.steam.players / 1000, 1)}k",
-      "font": "bold",
-      "size": 48,
-      "align": "center"
+      "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 6,
+        "radius": 12,
+        "background": "#2a475e",
+        "gradient": "#0e151d",
+        "border": "#32566f"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "🎮",
+              "font": "emoji",
+              "size": 24,
+              "color": "#66c0f4"
+            },
+            {
+              "type": "box",
+              "style": {
+                "gap": 4
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Counter-Strike 2",
+                  "color": "#c7d5e0"
+                },
+                {
+                  "type": "text",
+                  "text": "playing now",
+                  "color": "#8fa3b3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{round(api.steam.players/1000,1)}k",
+          "font": "bold",
+          "size": 42,
+          "align": "center"
+        }
+      ]
     },
     {
-      "type": "text",
-      "text": "playing right now",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "Counter-Strike 2",
-      "font": "sans",
-      "size": 18,
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "OF 1.5M PEAK",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.steam.players/15000)}%",
+          "align": "right"
+        }
+      ]
     },
     {
       "type": "bar",
-      "h": 8,
-      "value": "{min(api.steam.players / 15000, 100)}",
-      "color": "accent",
+      "h": 10,
+      "value": "{min(api.steam.players/15000,100)}",
+      "color": "#1b5e8c",
       "style": {
-        "background": "#202020",
-        "radius": 3
+        "gradient": "#66c0f4",
+        "gradientDir": "right",
+        "radius": 5,
+        "background": "#1a2029"
+      }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LAST 24 H",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "peak {round(api.steam.players.max/1000)}k",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 80,
+      "series": "api.steam.players",
+      "window": 86400,
+      "color": "#66c0f4",
+      "style": {
+        "kind": "area",
+        "gradient": "#15293a",
+        "background": "#0c1016",
+        "radius": 6
       }
     },
     {
       "type": "text",
-      "text": "bar full at 1.5M players",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "Steam · {api.steam.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

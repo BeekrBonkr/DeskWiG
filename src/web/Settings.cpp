@@ -87,6 +87,19 @@ void regenerateApiToken() {
   Log.println("[CFG] Generated new API key");
 }
 
+bool setApiToken(const char* token) {
+  if (!token || strlen(token) != API_TOKEN_LEN) return false;
+  for (const char* p = token; *p; p++) {
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9'))) return false;
+  }
+  strlcpy(settings.apiToken, token, sizeof(settings.apiToken));
+  Preferences prefs;
+  prefs.begin(NVS_NS, false);
+  prefs.putString("token", settings.apiToken);
+  prefs.end();
+  return true;
+}
+
 static void loadNvs() {
   Preferences prefs;
   prefs.begin(NVS_NS, true);
@@ -160,7 +173,7 @@ static bool loadConfigFile() {
   File f = LittleFS.open(CONFIG_PATH, "r");
   if (!f) return false;
 
-  JsonDocument doc;
+  JsonDocument doc(&psramJsonAlloc);
   DeserializationError err = deserializeJson(doc, f);
   f.close();
 
@@ -206,6 +219,9 @@ static bool loadConfigFile() {
   settings.ledEnabled    = led["enabled"]    | true;
   settings.ledBrightness = led["brightness"] | 5;
 
+  setDisplayBrightness(doc["display"]["brightness"] | 100);
+  settings.displayFlip = doc["display"]["flip"] | false;
+
   settings.targetCount = 0;
   for (JsonVariantConst t : doc["targets"].as<JsonArrayConst>()) {
     if (settings.targetCount >= MAX_PING_TARGETS) break;
@@ -221,7 +237,10 @@ static bool loadConfigFile() {
 
   settings.sourceCount = 0;
   for (JsonVariantConst v : doc["sources"].as<JsonArrayConst>()) {
-    if (settings.sourceCount >= MAX_SOURCES) break;
+    if (settings.sourceCount >= settings.sourceCap) {
+      Log.println("[CFG] Too many data sources in config, extra ones skipped");
+      break;
+    }
     char err[96];
     if (sourceFromJson(settings.sources[settings.sourceCount], v, err, sizeof(err))) {
       settings.sourceCount++;
@@ -230,11 +249,24 @@ static bool loadConfigFile() {
     }
   }
 
+  settings.seriesCount = 0;
+  for (JsonVariantConst v : doc["series"].as<JsonArrayConst>()) {
+    if (settings.seriesCount >= MAX_SERIES) break;
+    char err[96];
+    if (seriesFromJson(settings.series[settings.seriesCount], v, err, sizeof(err))) {
+      settings.seriesCount++;
+    } else {
+      Log.printf("[CFG] Skipping series: %s\n", err);
+    }
+  }
+
   return true;
 }
 
+static bool writeConfig(JsonVariantConst doc);
+
 bool saveSettings() {
-  JsonDocument doc;
+  JsonDocument doc(&psramJsonAlloc);
   doc["version"]        = CONFIG_VERSION;
   doc["hostname"]       = settings.hostname;
   doc["pingIntervalMs"] = settings.pingIntervalMs;
@@ -257,6 +289,9 @@ bool saveSettings() {
   led["enabled"]    = settings.ledEnabled;
   led["brightness"] = settings.ledBrightness;
 
+  doc["display"]["brightness"] = settings.displayBrightness;
+  doc["display"]["flip"]       = settings.displayFlip;
+
   JsonArray targets = doc["targets"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.targetCount; i++) {
     const PingTarget& src = settings.targets[i];
@@ -272,8 +307,25 @@ bool saveSettings() {
     sourceToJson(settings.sources[i], sources.add<JsonObject>(), true);
   }
 
-  // Write to a temp file, then rename over the real one so a power loss
-  // mid-write can't leave a half-written config.
+  JsonArray series = doc["series"].to<JsonArray>();
+  for (uint8_t i = 0; i < settings.seriesCount; i++) {
+    JsonObject o = series.add<JsonObject>();
+    o["key"]   = settings.series[i].key;
+    o["every"] = settings.series[i].everyS;
+    o["keep"]  = settings.series[i].keepS;
+  }
+
+  return writeConfig(doc);
+}
+
+bool saveConfigRaw(JsonVariantConst config) {
+  if (!config.is<JsonObjectConst>()) return false;
+  return writeConfig(config);
+}
+
+// Write to a temp file, then rename over the real one so a power loss
+// mid-write can't leave a half-written config.
+static bool writeConfig(JsonVariantConst doc) {
   File f = LittleFS.open(CONFIG_TMP, "w");
   if (!f) {
     Log.println("[CFG] Failed to open temp config for writing");
@@ -353,6 +405,12 @@ bool setNtpServer(const char* host) {
   return true;
 }
 
+void setDisplayBrightness(int pct) {
+  if (pct < 1) pct = 1;
+  if (pct > 100) pct = 100;
+  settings.displayBrightness = (uint8_t)pct;
+}
+
 // =====================
 // FACTORY RESET
 // =====================
@@ -375,6 +433,7 @@ void factoryReset() {
 // =====================
 void loadSettings() {
   loadNvs();
+  sourcesAlloc();
 
   if (!LittleFS.begin(true)) {
     Log.println("[CFG] LittleFS mount failed, running on defaults");

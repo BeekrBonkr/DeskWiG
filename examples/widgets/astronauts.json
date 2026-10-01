@@ -8,71 +8,351 @@
   "style": {
     "direction": "column",
     "gap": 6,
-    "padding": 8,
-    "justify": "center"
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "🚀",
-      "font": "emoji",
-      "size": 48,
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "IN ORBIT NOW",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.astros.age}",
+          "align": "right",
+          "color": "{api.astros.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 132,
+      "style": {
+        "padding": 8,
+        "radius": 12,
+        "background": "#1b1440",
+        "gradient": "#05040c",
+        "border": "#2a2260"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "x": 10,
+          "y": 8,
+          "w": 1,
+          "h": 1,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 30,
+          "y": 30,
+          "w": 2,
+          "h": 2,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 52,
+          "y": 12,
+          "w": 1,
+          "h": 1,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 96,
+          "y": 6,
+          "w": 2,
+          "h": 2,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 120,
+          "y": 24,
+          "w": 1,
+          "h": 1,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 132,
+          "y": 50,
+          "w": 1,
+          "h": 1,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 14,
+          "y": 60,
+          "w": 1,
+          "h": 1,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 112,
+          "y": 72,
+          "w": 2,
+          "h": 2,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 70,
+          "y": 4,
+          "w": 1,
+          "h": 1,
+          "color": "#8891b8",
+          "fill": true
+        },
+        {
+          "type": "circle",
+          "x": -31,
+          "y": 92,
+          "r": 100,
+          "color": "#123a63"
+        },
+        {
+          "type": "circle",
+          "x": -27,
+          "y": 98,
+          "r": 96,
+          "color": "#0c2742"
+        },
+        {
+          "type": "text",
+          "x": 108,
+          "y": 38,
+          "text": "🚀",
+          "font": "emoji",
+          "size": 26,
+          "color": "#9f8cff"
+        },
+        {
+          "type": "text",
+          "x": 10,
+          "y": 12,
+          "text": "{api.astros.count}",
+          "font": "bold",
+          "size": 60
+        },
+        {
+          "type": "text",
+          "x": 10,
+          "y": 76,
+          "text": "PEOPLE IN SPACE",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 5,
+        "justify": "center"
+      },
+      "children": [
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=1,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=2,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=3,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=4,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=5,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=6,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=7,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=8,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=9,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=10,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=11,rgb(159,140,255),rgb(30,28,52))}"
+        },
+        {
+          "type": "circle",
+          "r": 4,
+          "color": "{if(api.astros.count>=12,rgb(159,140,255),rgb(30,28,52))}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10,
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "#9f8cff"
+            },
+            {
+              "type": "text",
+              "text": "{api.astros.p1}"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "#9f8cff"
+            },
+            {
+              "type": "text",
+              "text": "{api.astros.p2}"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "#9f8cff"
+            },
+            {
+              "type": "text",
+              "text": "{api.astros.p3}"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "#9f8cff"
+            },
+            {
+              "type": "text",
+              "text": "{api.astros.p4}"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "#9f8cff"
+            },
+            {
+              "type": "text",
+              "text": "{api.astros.p5}"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "+ {api.astros.count-5} more",
+          "color": "#7c8794"
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "{api.astros.count}",
-      "font": "bold",
-      "size": 48,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "PEOPLE IN SPACE",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "{api.astros.p1}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.astros.p2}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.astros.p3}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.astros.p4}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.astros.p5}",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "…",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "Open Notify · {api.astros.age} ago",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

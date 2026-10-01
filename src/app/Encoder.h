@@ -11,7 +11,7 @@
 enum class EncoderButton : uint8_t { NONE, CLICK, LONG_PRESS };
 
 struct EncoderEvent {
-  int8_t steps;            // detents turned since the last call: + clockwise, - anticlockwise
+  int8_t steps;            // detents turned since the last call: + clockwise, - counterclockwise
   EncoderButton button;
 };
 

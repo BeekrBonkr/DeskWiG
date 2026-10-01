@@ -22,81 +22,240 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "QUAKES · LAST 24H",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{api.quakes.count}",
-      "font": "bold",
-      "size": 56,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "magnitude 4.5 and up",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "latest",
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "M {round(api.quakes.mag, 1)}",
-          "font": "bold",
-          "size": 28
+          "text": "EARTHQUAKES",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{api.quakes.place}",
-          "align": "right"
+          "text": "{api.quakes.age}",
+          "align": "right",
+          "color": "{api.quakes.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
-      "type": "bar",
-      "h": 6,
-      "value": "{clamp(api.quakes.mag * 10, 0, 100)}",
-      "color": "bad",
+      "type": "box",
+      "w": 154,
+      "h": 134,
       "style": {
-        "background": "#202020",
-        "radius": 3
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+        "radius": 12,
+        "background": "#140d0a",
+        "gradient": "#060404",
+        "border": "#2a1a12"
+      },
+      "children": [
+        {
+          "type": "circle",
+          "x": "{77-api.quakes.mag*9}",
+          "y": "{66-api.quakes.mag*9}",
+          "r": "{api.quakes.mag*9}",
+          "color": "#3a1d12",
+          "fill": false
+        },
+        {
+          "type": "circle",
+          "x": "{77-api.quakes.mag*6.5}",
+          "y": "{66-api.quakes.mag*6.5}",
+          "r": "{api.quakes.mag*6.5}",
+          "color": "#6b3516",
+          "fill": false
+        },
+        {
+          "type": "circle",
+          "x": "{77-api.quakes.mag*4}",
+          "y": "{66-api.quakes.mag*4}",
+          "r": "{api.quakes.mag*4}",
+          "color": "#a8531c",
+          "fill": false
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 50,
+          "text": "M{round(api.quakes.mag,1)}",
+          "font": "bold",
+          "size": 32,
+          "align": "center",
+          "color": "{hsv(clamp(60-(api.quakes.mag-4.5)*20,0,60),90,100)}"
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "USGS · {api.quakes.age} ago",
-      "color": "dim",
-      "align": "center"
+      "text": "LATEST",
+      "color": "#7c8794"
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 4
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 150,
+          "h": 8,
+          "children": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "text": "{api.quakes.place}"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 150,
+          "h": 8,
+          "children": [
+            {
+              "type": "text",
+              "x": -150,
+              "y": 0,
+              "text": "{api.quakes.place}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 26,
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 4,
+          "w": 154,
+          "h": 6,
+          "color": "#ffe066",
+          "fill": true,
+          "style": {
+            "radius": 3,
+            "gradient": "#d62828",
+            "gradientDir": "right"
+          }
+        },
+        {
+          "type": "circle",
+          "x": "{clamp((api.quakes.mag-4.5)*32,0,144)}",
+          "y": 2,
+          "r": 5,
+          "color": "text",
+          "style": {
+            "border": "bg",
+            "borderWidth": 2
+          }
+        },
+        {
+          "type": "text",
+          "x": 0,
+          "y": 16,
+          "text": "4.5",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 16,
+          "text": "magnitude",
+          "align": "center",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 154,
+          "y": 16,
+          "text": "9",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "LAST 24 H",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.quakes.count}",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "AT LEAST",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "M4.5",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "USGS · {time}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

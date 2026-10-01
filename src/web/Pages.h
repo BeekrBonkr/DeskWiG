@@ -15,6 +15,8 @@ button.active{border-color:#3c3}
 button:disabled{opacity:.5;cursor:default}
 button.net{display:flex;justify-content:space-between}
 input{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box}
+input[type=range]{padding:0;background:none;border:0;accent-color:#3c3}
+textarea{display:block;width:100%;margin:8px 0;padding:10px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box;min-height:180px;resize:vertical;white-space:pre;overflow-wrap:normal;overflow-x:auto}
 .card{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px}
 .dim{color:#999}
 .hint{color:#999;font-size:13px}
@@ -107,6 +109,17 @@ static const char SETUP_HTML[] = R"html(
 </div>
 </details>
 
+<details class="sec" id="sec-display">
+<summary><span>Display</span><span class="sub" id="sub-display"></span></summary>
+<div class="body">
+<label class="inline" for="bright">Brightness <b id="brightVal"></b></label>
+<input type="range" id="bright" min="1" max="100" value="100">
+<label class="inline"><input type="checkbox" id="flip"> Upside down</label>
+<p class="msg" id="msg-display"></p>
+<p class="hint">Brightness changes as you drag and is saved when you let go. Upside down turns the picture 180 degrees for a display mounted the other way round.</p>
+</div>
+</details>
+
 <details class="sec" id="sec-clock">
 <summary><span>Clock</span><span class="sub" id="sub-clock"></span></summary>
 <div class="body">
@@ -135,7 +148,7 @@ static const char SETUP_HTML[] = R"html(
   <button id="fontUpload" type="button">Upload</button>
 </div>
 <p class="msg" id="msg-fonts"></p>
-<p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasteriser does no bounds checking.</p>
+<p class="hint">Upload a .ttf (up to 2 MB) and use it in a layout with <code>"font":"name"</code>; <code>size</code> is then the line height in pixels. <b>sans</b>, <b>bold</b> and <b>emoji</b> are built in. Only upload fonts you trust: the on-device rasterizer does no bounds checking.</p>
 </div>
 </details>
 
@@ -157,6 +170,19 @@ static const char SETUP_HTML[] = R"html(
 <div class="body">
 <div id="srcList" class="dim">Loading&hellip;</div>
 <button id="srcAdd">Add data source</button>
+<button id="srcPaste">Paste data sources as text</button>
+<div class="card" id="srcImport" style="display:none">
+  <p class="hint">One or more sources, in the text form below or as the JSON the API takes. A source that already exists is replaced; an empty header value keeps the stored one. The example widgets' README lists ready-made blocks to paste.</p>
+  <textarea id="srcText" spellcheck="false" placeholder="id:       weather
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&amp;longitude=0.00&amp;current=temperature_2m,relative_humidity_2m
+interval: 600
+header:   Authorization = Bearer abc123   (optional)
+fields:   temp = current.temperature_2m (decimals 0)
+          humidity = current.relative_humidity_2m"></textarea>
+  <button id="srcImportGo" class="primary">Import</button>
+  <button id="srcFill" type="button">Fill with the current sources</button>
+  <button id="srcImportCancel">Cancel</button>
+</div>
 <div class="card" id="srcForm" style="display:none">
   <input id="srcId" placeholder="Name used in layouts, e.g. weather" autocapitalize="off" autocorrect="off" maxlength="16">
   <input id="srcUrl" placeholder="https://api.example.com/data?key=..." autocapitalize="off" autocorrect="off" maxlength="511">
@@ -175,6 +201,23 @@ static const char SETUP_HTML[] = R"html(
 </div>
 <p class="msg" id="msg-sources"></p>
 <p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified.</p>
+</div>
+</details>
+
+<details class="sec" id="sec-history">
+<summary><span>History</span><span class="sub" id="sub-history"></span></summary>
+<div class="body">
+<div id="serList" class="dim">Loading&hellip;</div>
+<div class="card">
+  <input id="serKey" placeholder="Key to sample, e.g. api.weather.temp or ping.0.ms" autocapitalize="off" autocorrect="off" maxlength="47">
+  <div class="row">
+    <input id="serEvery" class="n" type="number" min="5" placeholder="Every N seconds (60)">
+    <input id="serKeep" class="n" type="number" min="10" placeholder="Keep N seconds (3600)">
+    <button id="serSave" type="button" class="primary">Add</button>
+  </div>
+</div>
+<p class="msg" id="msg-history"></p>
+<p class="hint">A key sampled over time. Layouts draw it with <code>{"type":"chart","series":"api.weather.temp","h":60}</code> and read <code>{api.weather.temp.min}</code>, <code>.max</code>, <code>.avg</code>, <code>.first</code>, <code>.last</code>, <code>.delta</code>, <code>.count</code> and <code>.span</code>. A data source or ping target named here keeps updating whatever is on screen. At most 720 samples per key, so an hour at every 5 s or a day at every 2 min; samples are lost on reboot.</p>
 </div>
 </details>
 
@@ -206,6 +249,25 @@ static const char SETUP_HTML[] = R"html(
 </div>
 </details>
 
+<details class="sec" id="sec-backup">
+<summary><span>Backup</span><span class="sub" id="sub-backup"></span></summary>
+<div class="body">
+<button id="bakDownload" type="button">Download backup</button>
+<p class="hint">One JSON file with the settings, data sources (including their secret headers), ping targets, history keys, every widget, the WiFi network and password, the account and the API key. Keep it private. Fonts and images are not included and need uploading again on a new device.</p>
+<div class="row">
+  <input type="file" id="bakFile" accept=".json,application/json" class="p">
+  <button id="bakRestore" type="button" class="danger" disabled>Restore</button>
+</div>
+<div class="card" id="bakInfo" style="display:none"></div>
+<label class="inline"><input type="checkbox" id="bakConfig" checked> Settings, data sources, ping targets and history</label>
+<label class="inline"><input type="checkbox" id="bakWidgets" checked> Widgets (replaces the ones on the device)</label>
+<label class="inline"><input type="checkbox" id="bakWifi" checked> WiFi network and password</label>
+<label class="inline"><input type="checkbox" id="bakAuth" checked> Account and API key</label>
+<p class="msg" id="msg-backup"></p>
+<p class="hint">Restoring writes the ticked parts and restarts the device. If the account is restored, log in again with the backup's username and password; if the name or network changed, the address changes with it.</p>
+</div>
+</details>
+
 <script>
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -214,7 +276,7 @@ const bars = r => r > -55 ? '||||' : r > -65 ? '|||.' : r > -75 ? '||..' : '|...
 // Status text goes next to the buttons of the open section (msg-<name>),
 // so it is beside whatever was just pressed; with no section open it
 // falls back to the line under the status card.
-const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'account', 'firmware'];
+const SECTIONS = ['wifi', 'name', 'display', 'clock', 'fonts', 'images', 'sources', 'history', 'account', 'firmware', 'backup'];
 function msg(t, sec) {
   const target = sec || SECTIONS.find(n => $('sec-' + n).open);
   SECTIONS.forEach(n => { if (n !== target) $('msg-' + n).textContent = ''; });
@@ -230,7 +292,7 @@ async function requireLogin() {
   if (!auth.loggedIn) { toLogin(); return null; }
   return auth;
 }
-requireLogin();
+const loginReady = requireLogin();
 
 async function api(path, method, body) {
   const r = await fetch(path, {
@@ -258,9 +320,15 @@ function openSection(name, scroll) {
   }
 }
 function sub(name, text) { $('sub-' + name).textContent = text || ''; }
+// The device has little RAM to spare for requests nobody is looking at:
+// a section is only re-polled while it is open and the tab is visible,
+// and it is refreshed once when it opens.
+let started = false;
+const live = n => $('sec-' + n).open && !document.hidden;
+const onOpen = { display: () => loadDisplay(), clock: () => loadClock(), sources: () => { if (sourcesIdle()) loadSources(); }, history: () => loadSeries() };
 SECTIONS.forEach(n => {
   $('sec-' + n).addEventListener('toggle', e => {
-    if (e.target.open) openSection(n, false);
+    if (e.target.open) { openSection(n, false); if (started && onOpen[n]) onOpen[n](); }
     else if (location.hash === '#' + n) history.replaceState(null, '', location.pathname);
   });
 });
@@ -272,7 +340,7 @@ window.addEventListener('hashchange', () => { const h = location.hash.slice(1); 
 
 // ---------- account ----------
 async function loadAccount() {
-  const a = auth || await requireLogin();
+  const a = auth || await loginReady;
   if (!a) return;
   $('acct').innerHTML = a.hotspot && !a.configured
     ? 'No account yet. Create one on the <a href="/login">login page</a> once the device is on your network.'
@@ -298,7 +366,6 @@ $('logout').onclick = async () => {
   try { await api('/api/auth/logout', 'POST'); } catch (e) {}
   location.href = '/login';
 };
-setTimeout(loadAccount, 0);
 
 function showStatus(s) {
   let t;
@@ -411,6 +478,46 @@ async function saveHost() {
   } catch (e) { msg(e.message); }
 }
 
+// ---------- display ----------
+// Dragging previews the level without saving, one request in flight at a
+// time with only the latest value queued; letting go saves it.
+let brightBusy = false, brightNext = -1;
+function showDisplay(d) {
+  $('bright').value = d.brightness;
+  $('brightVal').textContent = d.brightness + '%';
+  $('flip').checked = !!d.flip;
+  sub('display', d.brightness + '%' + (d.flip ? ', upside down' : ''));
+}
+async function previewBright(pct) {
+  if (brightBusy) { brightNext = pct; return; }
+  brightBusy = true;
+  try {
+    await fetch('/api/display/preview', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'brightness=' + pct });
+  } catch (e) {}
+  brightBusy = false;
+  if (brightNext >= 0) { const n = brightNext; brightNext = -1; if (n !== pct) previewBright(n); }
+}
+async function saveBright(pct) {
+  try {
+    const c = await api('/api/config', 'PUT', { display: { brightness: pct } });
+    showDisplay(c.display);
+    msg('Brightness saved.', 'display');
+  } catch (e) { msg(e.message, 'display'); }
+}
+$('flip').onchange = async () => {
+  try {
+    const c = await api('/api/config', 'PUT', { display: { flip: $('flip').checked } });
+    showDisplay(c.display);
+    msg(c.display.flip ? 'Display turned upside down.' : 'Display the normal way up.', 'display');
+  } catch (e) { msg(e.message, 'display'); }
+};
+$('bright').oninput = () => { const v = +$('bright').value; $('brightVal').textContent = v + '%'; previewBright(v); };
+$('bright').onchange = () => saveBright(+$('bright').value);
+async function loadDisplay() {
+  try { const c = await api('/api/config'); showDisplay(c.display); }
+  catch (e) { msg(e.message, 'display'); }
+}
+
 // ---------- clock ----------
 const ZONES = [
   ['UTC', 'UTC0'],
@@ -464,7 +571,9 @@ function showClock(c, t) {
 
 async function loadClock() {
   try {
-    const [c, s] = await Promise.all([api('/api/config'), api('/api/status')]);
+    const c = await api('/api/config');
+    if (c.display) showDisplay(c.display);
+    const s = await api('/api/status');
     showClock(c.clock, s.time);
   } catch (e) { $('clockStatus').textContent = e.message; }
 }
@@ -487,8 +596,7 @@ async function saveClock() {
 }
 
 $('saveClock').onclick = saveClock;
-setInterval(async () => { try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
-loadClock();
+setInterval(async () => { if (!live('clock')) return; try { showClock(null, (await api('/api/status')).time); } catch (e) {} }, 10000);
 
 // ---------- firmware ----------
 async function loadFw() {
@@ -520,7 +628,59 @@ function uploadFw() {
   xhr.send(fd);
 }
 $('fwUpload').onclick = uploadFw;
-loadFw();
+
+// ---------- backup ----------
+let bakData = null, bakArmed = false;
+$('bakDownload').onclick = () => { location.href = '/api/backup'; };
+$('bakFile').onchange = async () => {
+  bakData = null; bakArmed = false;
+  $('bakRestore').textContent = 'Restore';
+  $('bakRestore').disabled = true;
+  const f = $('bakFile').files[0];
+  const box = $('bakInfo');
+  if (!f) { box.style.display = 'none'; return; }
+  try {
+    const j = JSON.parse(await f.text());
+    if (!j.deskwig || j.deskwig.format !== 1) throw new Error('Not a DeskWiG backup file.');
+    bakData = j;
+    const widgets = Object.keys(j.widgets || {});
+    const skipped = [].concat((j.notIncluded || {}).fonts || [], (j.notIncluded || {}).images || []);
+    box.innerHTML = 'Backup of <b>' + esc(j.deskwig.hostname || '?') + '</b>' + (j.deskwig.exported ? ' from ' + esc(j.deskwig.exported) : '') + ', firmware ' + esc(j.deskwig.firmware || '?') +
+      '<br><span class="dim">' + widgets.length + ' widget' + (widgets.length === 1 ? '' : 's') +
+      (j.wifi && j.wifi.ssid ? ' &middot; WiFi ' + esc(j.wifi.ssid) : '') +
+      (j.auth && j.auth.user ? ' &middot; account ' + esc(j.auth.user) : '') + '</span>' +
+      (skipped.length ? '<br><span class="dim">Not in the file, upload again: ' + esc(skipped.join(', ')) + '</span>' : '');
+    box.style.display = '';
+    $('bakRestore').disabled = false;
+    msg('', 'backup');
+  } catch (e) { box.style.display = 'none'; msg(e.message, 'backup'); }
+};
+$('bakRestore').onclick = () => {
+  if (!bakData) return;
+  const parts = [['bakConfig', 'config'], ['bakWidgets', 'widgets'], ['bakWifi', 'wifi'], ['bakAuth', 'auth']].filter(p => $(p[0]).checked).map(p => p[1]);
+  if (!parts.length) { msg('Tick at least one part to restore.', 'backup'); return; }
+  if (!bakArmed) { bakArmed = true; $('bakRestore').textContent = 'Tap again to restore and restart'; return; }
+  bakArmed = false;
+  $('bakRestore').textContent = 'Restore';
+  const fd = new FormData();
+  fd.append('file', $('bakFile').files[0], 'backup.json');
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/restore?parts=' + parts.join(','));
+  $('bakRestore').disabled = true;
+  xhr.upload.onprogress = e => { if (e.lengthComputable) msg('Uploading\u2026 ' + Math.round(100 * e.loaded / e.total) + '%', 'backup'); };
+  xhr.onerror = () => { msg('Upload failed (connection lost).', 'backup'); $('bakRestore').disabled = false; };
+  xhr.onload = async () => {
+    let j = {}; try { j = JSON.parse(xhr.responseText); } catch (e) {}
+    if (xhr.status !== 200) { msg(j.error || ('HTTP ' + xhr.status), 'backup'); $('bakRestore').disabled = false; return; }
+    msg('Restored. The device is restarting\u2026', 'backup');
+    for (let i = 0; i < 30; i++) {
+      await sleep(2000);
+      try { const r = await fetch('/api/status'); if (r.ok) { const st = await r.json(); if (st.uptimeMs < 60000) { location.reload(); return; } } } catch (e) {}
+    }
+    msg('The device has not come back yet. Reload this page in a moment.', 'backup');
+  };
+  xhr.send(fd);
+};
 
 // ---------- fonts ----------
 let fontDelPending = null;
@@ -585,10 +745,11 @@ async function deleteFont(name) {
 }
 
 $('fontUpload').onclick = uploadFont;
-loadFonts();
 
 // ---------- images ----------
 let imgDelPending = null;
+let imgRenaming = null;        // image whose rename form is open
+let imgRenamePrompt = null;    // {from, to, refs} while asking about widgets that use it
 
 async function loadImages() {
   try {
@@ -605,10 +766,12 @@ async function loadImages() {
       // RAM with a long list. "View" fetches one on demand instead.
       d.className = 'card src thumb';
       d.innerHTML = '<div><b>' + esc(im.name) + '</b><br><span class="dim">' + esc(im.type) + ' &middot; ' + fmtBytes(im.size) + '</span></div>' +
-        '<div class="btns"><button class="view">View</button><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
+        '<div class="btns"><button class="view">View</button><button class="ren">Rename</button><button class="danger del">' + (imgDelPending === im.name ? 'Tap again to delete' : 'Delete') + '</button></div>';
       d.querySelector('.view').onclick = () => window.open('/img/' + encodeURIComponent(im.name) + '.' + im.type, '_blank');
+      d.querySelector('.ren').onclick = () => { imgRenaming = imgRenaming === im.name ? null : im.name; imgRenamePrompt = null; loadImages(); };
       d.querySelector('.del').onclick = () => deleteImage(im.name);
       box.appendChild(d);
+      if (imgRenaming === im.name) box.appendChild(renameForm(im));
     });
   } catch (e) { $('imgList').textContent = e.message; }
 }
@@ -634,6 +797,93 @@ async function uploadImage() {
   $('imgUpload').disabled = false;
 }
 
+// The rename form under an image's card. Once the widgets that use the
+// image are known it turns into the question of whether to update them.
+function renameForm(im) {
+  const f = document.createElement('div');
+  f.className = 'card src';
+  const close = () => { imgRenaming = null; imgRenamePrompt = null; loadImages(); };
+  const p = imgRenamePrompt && imgRenamePrompt.from === im.name ? imgRenamePrompt : null;
+  if (p) {
+    const n = p.refs.length;
+    f.innerHTML = '<div>Renaming <b>' + esc(p.from) + '</b> breaks ' + n + ' widget' + (n === 1 ? '' : 's') + ' that use' + (n === 1 ? 's' : '') +
+      ' it: <b>' + p.refs.map(r => esc(r.name)).join('</b>, <b>') + '</b>. Update ' + (n === 1 ? 'it' : 'them') + ' to <b>' + esc(p.to) + '</b> and save?</div>' +
+      '<div class="btns"><button class="primary upd">Rename and update</button><button class="only">Rename only</button><button class="cancel">Cancel</button></div>';
+    f.querySelector('.upd').onclick = () => doRename(p.from, p.to, p.refs);
+    f.querySelector('.only').onclick = () => doRename(p.from, p.to, []);
+    f.querySelector('.cancel').onclick = close;
+    return f;
+  }
+  f.innerHTML = '<div class="row"><input class="p" maxlength="23" value="' + esc(im.name) + '" placeholder="new name"><button class="primary ok">Save</button><button class="cancel">Cancel</button></div>' +
+    '<div class="hint">Widgets that use this image are checked first, and can be updated to the new name for you.</div>';
+  const inp = f.querySelector('input');
+  f.querySelector('.ok').onclick = () => renameImage(im.name, inp.value);
+  f.querySelector('.cancel').onclick = close;
+  inp.onkeydown = e => { if (e.key === 'Enter') renameImage(im.name, inp.value); else if (e.key === 'Escape') close(); };
+  setTimeout(() => { inp.focus(); inp.select(); }, 0);
+  return f;
+}
+
+// Layouts use an image as "src" on an image element or "image" in a style
+// (an element's, a named style's or the root's). Counts the uses, and
+// rewrites them when `to` is given.
+function imageUses(node, name, to) {
+  let hits = 0;
+  if (Array.isArray(node)) { node.forEach(n => { hits += imageUses(n, name, to); }); return hits; }
+  if (!node || typeof node !== 'object') return 0;
+  for (const k of Object.keys(node)) {
+    const v = node[k];
+    if ((k === 'src' || k === 'image') && v === name) { hits++; if (to) node[k] = to; }
+    else if (v && typeof v === 'object') hits += imageUses(v, name, to);
+  }
+  return hits;
+}
+
+// Every stored layout that uses the image, with its JSON so it can be rewritten.
+async function imageRefs(name) {
+  const list = await api('/api/layouts');
+  const out = [];
+  for (const l of (list.layouts || [])) {
+    const doc = await api('/api/layouts?id=' + encodeURIComponent(l.id));
+    if (imageUses(doc, name)) out.push({ id: l.id, name: doc.name || l.name || l.id, doc });
+  }
+  return out;
+}
+
+async function renameImage(from, to) {
+  to = to.trim().toLowerCase();
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,21}[a-z0-9])?$/.test(to)) { msg('Names are 1-23 lowercase letters, digits and dashes.'); return; }
+  if (to === from) { imgRenaming = null; loadImages(); return; }
+  msg('Checking widgets for "' + from + '"\u2026');
+  let refs;
+  try { refs = await imageRefs(from); } catch (e) { msg(e.message); return; }
+  if (!refs.length) { doRename(from, to, []); return; }
+  msg('');
+  imgRenamePrompt = { from, to, refs };
+  loadImages();
+}
+
+// Renames on the device, then saves each layout in refs with the new name.
+async function doRename(from, to, refs) {
+  try {
+    await api('/api/images/rename?name=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to), 'POST');
+  } catch (e) { msg(e.message); return; }
+  imgRenaming = null;
+  imgRenamePrompt = null;
+  let updated = 0;
+  const failed = [];
+  for (const r of refs) {
+    imageUses(r.doc, from, to);
+    try { await api('/api/layouts?id=' + encodeURIComponent(r.id), 'PUT', r.doc); updated++; }
+    catch (e) { failed.push(r.name + ' (' + e.message + ')'); }
+  }
+  let t = 'Renamed image "' + from + '" to "' + to + '".';
+  if (updated) t += ' Updated ' + updated + ' widget' + (updated === 1 ? '' : 's') + '.';
+  if (failed.length) t += ' Could not update ' + failed.join(', ') + '.';
+  msg(t);
+  loadImages();
+}
+
 async function deleteImage(name) {
   if (imgDelPending !== name) {
     imgDelPending = name;
@@ -650,7 +900,6 @@ async function deleteImage(name) {
 }
 
 $('imgUpload').onclick = uploadImage;
-loadImages();
 
 // ---------- data sources ----------
 let sources = [];
@@ -688,6 +937,7 @@ function openForm(src) {
   $('srcKeys').className = '';
   $('srcForm').style.display = '';
   $('srcAdd').style.display = 'none';
+  $('srcPaste').style.display = 'none';
   $('srcForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -697,6 +947,7 @@ function closeForm() {
   $('srcKeys').className = '';
   $('srcForm').style.display = 'none';
   $('srcAdd').style.display = '';
+  $('srcPaste').style.display = '';
   editingId = null;
 }
 
@@ -805,6 +1056,232 @@ $('srcCancel').onclick = closeForm;
 $('srcSave').onclick = saveSource;
 $('srcFieldAdd').onclick = () => $('srcFields').appendChild(fieldRow(null));
 
+// ---------- paste import ----------
+// Takes the JSON the API accepts (one source, an array, {"sources":[...]} or
+// {"<id>":{...}}) or the text form used in examples/widgets/README.md:
+//   id:       weather
+//   url:      https://...
+//   interval: 600
+//   header:   Authorization = Bearer abc
+//   fields:   temp = current.temperature_2m (decimals 0)
+//             humidity = current.relative_humidity_2m
+// A **bold** id line from the README also names the source(s) that follow.
+// "name = path (decimals N)", with several pairs per line allowed.
+function parseFields(s) {
+  const out = [];
+  for (const m of s.matchAll(/([^\s=()]+)\s*=\s*([^\s=()]*)(?:\s*\(([^)]*)\))?/g)) {
+    const f = { name: m[1], path: m[2] };
+    const d = m[3] && /dec/i.test(m[3]) ? m[3].match(/\d+/) : null;
+    if (d) f.decimals = parseInt(d[0], 10);
+    out.push(f);
+  }
+  return out;
+}
+function parseField(s) { return parseFields(s)[0] || null; }
+function normalizeJsonSources(j) {
+  let list;
+  if (Array.isArray(j)) list = j;
+  else if (j && Array.isArray(j.sources)) list = j.sources;
+  else if (j && typeof j === 'object' && !j.url) list = Object.keys(j).map(k => Object.assign({ id: k }, j[k]));
+  else list = [j];
+  return list.map(x => {
+    const o = { id: String(x.id || x.name || ''), url: String(x.url || ''), fields: [] };
+    const iv = x.intervalS !== undefined ? x.intervalS : x.interval;
+    if (iv !== undefined) o.intervalS = parseInt(iv, 10);
+    if (x.header && x.header.name) o.header = { name: x.header.name, value: x.header.value || '' };
+    const fs = x.fields || [];
+    if (Array.isArray(fs)) fs.forEach(f => o.fields.push(typeof f === 'string' ? parseField(f) : { name: f.name, path: f.path || '', decimals: f.decimals }));
+    else Object.keys(fs).forEach(k => o.fields.push(typeof fs[k] === 'object' ? Object.assign({ name: k }, fs[k]) : { name: k, path: String(fs[k]) }));
+    o.fields = o.fields.filter(Boolean);
+    return o;
+  });
+}
+function parseSourceText(text) {
+  const t = text.trim();
+  if (!t) throw new Error('Paste one or more sources first.');
+  if (t[0] === '{' || t[0] === '[') {
+    try { return normalizeJsonSources(JSON.parse(t)); } catch (e) { throw new Error('Not valid JSON: ' + e.message); }
+  }
+  const out = [];
+  let cur = null, inFields = false, pending = [];
+  const start = id => { cur = { id: id || pending.shift() || '', fields: [] }; out.push(cur); inFields = false; };
+  for (const raw of t.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith('```')) { inFields = false; continue; }
+    let m;
+    if (inFields && line.indexOf('=') >= 0 && !/^(id|source|url|interval|intervals|refresh|every|header|fields?)\s*:/i.test(line)) { cur.fields.push(...parseFields(line)); continue; }
+    inFields = false;
+    const bold = [...line.matchAll(/\*\*([a-z0-9-]{1,16})\*\*/g)].map(x => x[1]);
+    if (bold.length) { pending = bold; cur = null; continue; }
+    if ((m = line.match(/^(?:id|source)\s*[:=]\s*(\S+)/i))) {
+      if (!cur || cur.id || cur.url) start(m[1]); else cur.id = m[1];
+      continue;
+    }
+    if ((m = line.match(/^url\s*[:=]\s*(\S+)/i))) {
+      if (!cur || cur.url) start();
+      cur.url = m[1];
+      continue;
+    }
+    if ((m = line.match(/^([a-z0-9-]{1,16})(?:\s*\(.*\))?$/)) && (!cur || cur.url)) { start(m[1]); continue; }
+    const setting = /^(?:interval|intervals|refresh|every|header|fields?)\s*[:=]/i.test(line);
+    if (setting && !cur) throw new Error('"' + line.slice(0, 40) + '": an id: or url: line must come first.');
+    if ((m = line.match(/^(?:interval|intervals|refresh|every)\s*[:=]\s*(\d+)/i))) { cur.intervalS = parseInt(m[1], 10); continue; }
+    if ((m = line.match(/^header\s*[:=]\s*(.*)$/i))) {
+      let h = m[1].replace(/\s*\((?:optional|[^)]*)\)\s*$/i, '').trim();
+      if (!h) continue;
+      let sep = h.indexOf('=');
+      if (sep < 0) sep = h.indexOf(':');
+      cur.header = sep < 0 ? { name: h, value: '' } : { name: h.slice(0, sep).trim(), value: h.slice(sep + 1).trim() };
+      continue;
+    }
+    if ((m = line.match(/^fields?\s*[:=]\s*(.*)$/i))) {
+      inFields = true;
+      cur.fields.push(...parseFields(m[1]));
+      continue;
+    }
+    if (/^[a-z][a-z0-9_-]{0,15}\s*[:=]\s*\S/i.test(line) && !/\s/.test(line.split(/[:=]/)[0].trim())) throw new Error('"' + line.slice(0, 30) + '": unknown setting. Use id, url, interval, header or fields.');
+    // anything else is prose between blocks
+  }
+  return out;
+}
+function sourcesToText(list) {
+  const pad = k => (k + ':').padEnd(10);
+  return list.map(x => {
+    const lines = [pad('id') + x.id, pad('url') + x.url, pad('interval') + x.intervalS];
+    if (x.header && x.header.name) lines.push(pad('header') + x.header.name + ' = ');
+    (x.fields || []).forEach((f, i) => lines.push((i ? ' '.repeat(10) : pad('fields')) + f.name + ' = ' + f.path + (f.decimals !== undefined ? ' (decimals ' + f.decimals + ')' : '')));
+    return lines.join('\n');
+  }).join('\n\n') + '\n';
+}
+// The same rules the device applies, checked here so the message can name the field.
+function checkSource(x) {
+  const id = (x.id || '').trim().toLowerCase();
+  if (!/^[a-z0-9-]{1,16}$/.test(id)) return 'id "' + id + '" must be 1-16 lowercase letters, digits or dashes';
+  if (!/^https?:\/\/\S+$/.test(x.url || '') || x.url.length > 511) return id + ': the url must start with http:// or https://';
+  if (!x.fields.length) return id + ': add at least one field';
+  if (x.fields.length > 24) return id + ': too many fields (max 24)';
+  const seen = {};
+  for (const f of x.fields) {
+    if (!/^[A-Za-z0-9_]{1,16}$/.test(f.name) || ['status', 'color', 'age', 'updated', 'error'].includes(f.name)) return id + ': field name "' + f.name + '" must be 1-16 letters, digits or _ and not a status key';
+    if (!/^[A-Za-z0-9_.\-\[\]]{0,63}$/.test(f.path)) return id + ': field ' + f.name + ' has an invalid path "' + f.path.slice(0, 40) + '"' + (f.path.indexOf(' ') >= 0 ? ' (one field per line)' : '');
+    if (seen[f.name]) return id + ': field name "' + f.name + '" is used twice';
+    seen[f.name] = true;
+  }
+  if (x.header && (!/^[A-Za-z0-9_-]{1,31}$/.test(x.header.name) || !/^[ -~]{0,127}$/.test(x.header.value))) return id + ': invalid header';
+  return '';
+}
+function closeImport() { $('srcImport').style.display = 'none'; $('srcPaste').style.display = ''; }
+async function importSources() {
+  let list;
+  try { list = parseSourceText($('srcText').value); } catch (e) { msg(e.message); return; }
+  if (!list.length) { msg('No sources found in the text.'); return; }
+  const done = [], failed = [];
+  for (const x of list) {
+    const id = x.id.trim().toLowerCase();
+    if (!id) { failed.push((x.url || '(no url)').slice(0, 40) + ': no id'); continue; }
+    const bad = checkSource(x);
+    if (bad) { failed.push(bad); continue; }
+    const body = { url: x.url, fields: x.fields };
+    if (x.intervalS !== undefined && !isNaN(x.intervalS)) body.intervalS = x.intervalS;
+    if (x.header) body.header = x.header;
+    try {
+      const r = await api('/api/sources?id=' + encodeURIComponent(id), 'PUT', body);
+      sources = r.sources || [];
+      done.push(id);
+    } catch (e) { failed.push(id + ': ' + e.message); }
+  }
+  renderSources();
+  if (!failed.length) { closeImport(); $('srcText').value = ''; }
+  msg((done.length ? 'Imported ' + done.join(', ') + '. ' : '') + (failed.length ? 'Not imported: ' + failed.join('; ') : 'Fetching now…'));
+  setTimeout(loadSources, 2500);
+  setTimeout(loadSources, 8000);
+}
+$('srcPaste').onclick = () => { $('srcImport').style.display = ''; $('srcPaste').style.display = 'none'; $('srcText').focus(); };
+$('srcImportCancel').onclick = closeImport;
+$('srcImportGo').onclick = importSources;
+$('srcFill').onclick = () => { $('srcText').value = sourcesToText(sources); };
+
+// ---------- history (series) ----------
+let series = [];
+let serDelPending = null;
+
+function spanText(s) {
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  return Math.floor(s / 86400) + 'd ' + Math.floor((s % 86400) / 3600) + 'h';
+}
+
+function renderSeries() {
+  const box = $('serList');
+  box.className = '';
+  if (!series.length) { box.innerHTML = '<div class="dim">Nothing is sampled yet.</div>'; return; }
+  box.innerHTML = '';
+  series.forEach(se => {
+    const d = document.createElement('div');
+    d.className = 'card src';
+    const st = se.count ? '<span class="ok">' + se.count + ' samples</span> <span class="dim">over ' + spanText(se.span) + ', last ' + esc(String(se.last)) + '</span>'
+                        : '<span class="dim">waiting for the first sample</span>';
+    d.innerHTML = '<b>' + esc(se.key) + '</b> &middot; ' + st +
+      '<div class="dim" style="font-size:13px">every ' + se.every + ' s, keeps ' + spanText(se.keep) + ' (' + se.cap + ' samples)' +
+      (se.count ? ' &middot; min ' + esc(String(se.min)) + ', max ' + esc(String(se.max)) : '') + '</div>' +
+      '<div class="btns"><button class="edit">Edit</button><button class="danger del">' + (serDelPending === se.key ? 'Tap again to delete' : 'Delete') + '</button></div>';
+    d.querySelector('.edit').onclick = () => { $('serKey').value = se.key; $('serEvery').value = se.every; $('serKeep').value = se.keep; $('serSave').textContent = 'Save'; $('serKey').focus(); };
+    d.querySelector('.del').onclick = () => deleteSeries(se.key);
+    box.appendChild(d);
+  });
+}
+
+async function loadSeries() {
+  try {
+    const r = await api('/api/series');
+    series = r.series || [];
+    renderSeries();
+    sub('history', series.length ? series.map(x => x.key).join(', ') : 'nothing sampled');
+    $('serSave').disabled = r.free === 0 && !series.some(x => x.key === $('serKey').value.trim());
+  } catch (e) { $('serList').textContent = e.message; }
+}
+
+async function saveSeries() {
+  const key = $('serKey').value.trim();
+  if (!key) { msg('Enter the key to sample, as you would write it in a layout without the braces.'); return; }
+  const body = {};
+  const ev = parseInt($('serEvery').value, 10), kp = parseInt($('serKeep').value, 10);
+  if (!isNaN(ev)) body.every = ev;
+  if (!isNaN(kp)) body.keep = kp;
+  try {
+    const r = await api('/api/series?key=' + encodeURIComponent(key), 'PUT', body);
+    series = r.series || [];
+    $('serKey').value = ''; $('serEvery').value = ''; $('serKeep').value = '';
+    $('serSave').textContent = 'Add';
+    renderSeries();
+    sub('history', series.map(x => x.key).join(', '));
+    msg('Sampling ' + key + '. Use {"type":"chart","series":"' + key + '"} in a layout.');
+  } catch (e) { msg(e.message); }
+}
+
+async function deleteSeries(key) {
+  if (serDelPending !== key) {
+    serDelPending = key;
+    renderSeries();
+    setTimeout(() => { if (serDelPending === key) { serDelPending = null; renderSeries(); } }, 4000);
+    return;
+  }
+  serDelPending = null;
+  try {
+    const r = await api('/api/series?key=' + encodeURIComponent(key), 'DELETE');
+    series = r.series || [];
+    renderSeries();
+    sub('history', series.length ? series.map(x => x.key).join(', ') : 'nothing sampled');
+    msg('Stopped sampling ' + key + '.');
+  } catch (e) { msg(e.message); }
+}
+
+$('serSave').onclick = saveSeries;
+$('serKey').onkeydown = e => { if (e.key === 'Enter') saveSeries(); };
+setInterval(() => { if (live('history')) loadSeries(); }, 10000);
+
 // ---------- key discovery ----------
 // The device fetches the URL (with the header, so private APIs work too)
 // and lists every JSON path with a sample value. Tap a path to add it.
@@ -872,15 +1349,25 @@ $('srcDiscover').onclick = async () => {
     discTimer = setTimeout(() => pollDiscovery(30), 800);
   } catch (e) { msg(e.message); }
 };
-setInterval(() => { if (!editingId && $('srcForm').style.display === 'none') loadSources(); }, 10000);
-loadSources();
+function sourcesIdle() { return !editingId && $('srcForm').style.display === 'none'; }
+setInterval(() => { if (live('sources') && sourcesIdle()) loadSources(); }, 10000);
 
 $('host').addEventListener('input', () => { $('hostPreview').textContent = $('host').value || 'deskwig'; });
 $('scan').onclick = scan;
 $('join').onclick = join;
 $('forget').onclick = forget;
 $('saveHost').onclick = saveHost;
-refresh();
+
+// First load: one request at a time, so opening the page costs the device
+// one connection's worth of memory instead of nine at once. Every loader
+// also fills the one-line summary on its section's header.
+(async () => {
+  await loginReady;
+  for (const load of [refresh, loadAccount, loadClock, loadFw, loadFonts, loadImages, loadSources, loadSeries]) {
+    try { await load(); } catch (e) {}
+  }
+  started = true;
+})();
 </script>
 </body>
 </html>
@@ -974,7 +1461,7 @@ async function load() {
 
 // ---------- drag to reorder ----------
 // Pointer events so the same code serves mouse and touch. The dragged
-// row is moved in the DOM as the pointer crosses its neighbours' midlines,
+// row is moved in the DOM as the pointer crosses its neighbors' midlines,
 // and the new order is sent when the pointer is released.
 function startDrag(e, row) {
   if (e.button !== undefined && e.button !== 0) return;
@@ -1096,7 +1583,7 @@ let paused = false;
 let polling = false;
 
 async function poll() {
-  if (paused || polling) return;
+  if (paused || polling || document.hidden) return;
   polling = true;
   try {
     const r = await fetch('/api/log?since=' + since);
@@ -1140,6 +1627,7 @@ function tile(k, v, used, total, note) {
     (note ? '<div class="k" style="text-transform:none;margin-top:4px">' + note + '</div>' : '') + '</div>';
 }
 async function loadResources() {
+  if (document.hidden) return;
   try {
     const r = await fetch('/api/status');
     if (!r.ok) return;

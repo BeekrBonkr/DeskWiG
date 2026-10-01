@@ -8,15 +8,16 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
+    "gap": 6,
     "padding": 6
   },
   "styles": {
     "card": {
       "background": "#0f1a24",
+      "gradient": "#0a1017",
       "border": "#24425a",
       "radius": 10,
-      "padding": 8,
+      "padding": 7,
       "gap": 4
     },
     "label": {
@@ -24,58 +25,63 @@
     },
     "value": {
       "font": "bold",
-      "size": 24,
+      "size": 22,
       "align": "right"
     },
     "pill": {
       "background": "accent",
+      "gradient": "#0b5ea8",
       "radius": 8,
-      "padding": 4,
-      "align": "center"
+      "padding": 4
     }
   },
   "elements": [
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "text",
-          "text": "CLASSES",
-          "class": "label"
+          "class": "label",
+          "text": "CLASSES"
         },
         {
           "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "time",
-              "class": "label"
-            },
-            {
-              "type": "text",
-              "text": "{time}",
-              "class": "value"
-            }
-          ],
           "style": {
             "direction": "row",
             "justify": "between",
             "align": "center"
-          }
+          },
+          "children": [
+            {
+              "type": "text",
+              "class": "label",
+              "text": "time"
+            },
+            {
+              "type": "text",
+              "class": "value",
+              "text": "{time}"
+            }
+          ]
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "text",
-          "text": "JUSTIFY BETWEEN",
-          "class": "label"
+          "class": "label",
+          "text": "JUSTIFY BETWEEN"
         },
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
           "children": [
             {
               "type": "text",
@@ -93,25 +99,26 @@
               "type": "text",
               "text": "D"
             }
-          ],
-          "style": {
-            "direction": "row",
-            "justify": "between"
-          }
+          ]
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "text",
-          "text": "JUSTIFY CENTER + GAP",
-          "class": "label"
+          "class": "label",
+          "text": "JUSTIFY CENTER + GAP"
         },
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "center",
+            "gap": 20
+          },
           "children": [
             {
               "type": "text",
@@ -125,117 +132,165 @@
               "type": "text",
               "text": "z"
             }
-          ],
-          "style": {
-            "direction": "row",
-            "justify": "center",
-            "gap": 20
-          }
+          ]
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "text",
-          "text": "ALIGN",
-          "class": "label"
+          "class": "label",
+          "text": "ALIGN"
         },
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "end"
+          },
           "children": [
             {
               "type": "text",
               "text": "top",
-              "color": "dim"
+              "color": "#7c8794"
             },
             {
               "type": "text",
               "text": "mid",
               "font": "bold",
-              "size": 28
+              "size": 24
             },
             {
               "type": "text",
               "text": "end",
-              "color": "dim"
+              "color": "#7c8794"
             }
-          ],
-          "style": {
-            "direction": "row",
-            "gap": 8,
-            "align": "end"
-          }
+          ]
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "box",
+      "class": "card",
       "children": [
         {
           "type": "text",
-          "text": "PILLS",
-          "class": "label"
+          "class": "label",
+          "text": "PILLS"
         },
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
           "children": [
             {
               "type": "box",
+              "class": "pill",
+              "w": 40,
               "children": [
                 {
                   "type": "text",
                   "text": "{wifi.pct}%",
                   "align": "center"
                 }
-              ],
-              "w": 44,
-              "class": "pill"
+              ]
             },
             {
               "type": "box",
+              "class": "pill",
+              "w": 40,
               "children": [
                 {
                   "type": "text",
                   "text": "{heap}",
                   "align": "center"
                 }
-              ],
-              "w": 44,
-              "class": "pill"
+              ]
             },
             {
               "type": "box",
+              "class": "pill",
+              "w": 48,
               "children": [
                 {
                   "type": "text",
                   "text": "{ping.count} tgt",
                   "align": "center"
                 }
-              ],
-              "w": 58,
-              "class": "pill"
+              ]
             }
-          ],
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "class": "card",
+      "children": [
+        {
+          "type": "text",
+          "class": "label",
+          "text": "GRADIENT"
+        },
+        {
+          "type": "box",
           "style": {
             "direction": "row",
-            "gap": 6
-          }
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 42,
+              "h": 14,
+              "style": {
+                "radius": 4,
+                "background": "#7a5cff",
+                "gradient": "#22d3ee"
+              }
+            },
+            {
+              "type": "rect",
+              "w": 42,
+              "h": 14,
+              "style": {
+                "radius": 4,
+                "background": "#7a5cff",
+                "gradient": "#22d3ee",
+                "gradientDir": "right"
+              }
+            },
+            {
+              "type": "bar",
+              "w": 44,
+              "h": 14,
+              "value": "{wifi.pct}",
+              "color": "#1d4ed8",
+              "style": {
+                "gradient": "#7fb4ff",
+                "gradientDir": "right",
+                "radius": 4,
+                "background": "#1a2029"
+              }
+            }
+          ]
         }
-      ],
-      "class": "card"
+      ]
     },
     {
       "type": "text",
+      "class": "label",
       "text": "inline style beats class",
       "style": {
         "color": "warn",
         "align": "center"
-      },
-      "class": "label"
+      }
     }
   ]
 }

@@ -20,120 +20,291 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "gap": 10,
-    "padding": 10
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "AIR QUALITY",
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
+          "text": "AIR QUALITY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.aqi.age}",
+          "align": "right",
+          "color": "{api.aqi.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "w": 154,
+      "h": 138,
+      "children": [
+        {
+          "type": "arc",
+          "x": 7,
+          "y": 0,
+          "w": 140,
+          "value": 100,
+          "start": 225,
+          "end": 331,
+          "color": "#124d29",
+          "style": {
+            "thickness": 9
+          }
+        },
+        {
+          "type": "arc",
+          "x": 7,
+          "y": 0,
+          "w": 140,
+          "value": 100,
+          "start": 335,
+          "end": 439,
+          "color": "#5c4408",
+          "style": {
+            "thickness": 9
+          }
+        },
+        {
+          "type": "arc",
+          "x": 7,
+          "y": 0,
+          "w": 140,
+          "value": 100,
+          "start": 443,
+          "end": 495,
+          "color": "#5e1616",
+          "style": {
+            "thickness": 9
+          }
+        },
+        {
+          "type": "arc",
+          "x": 3,
+          "y": -4,
+          "w": 148,
+          "value": 100,
+          "start": "{221+clamp(api.aqi.aqi,0,100)*2.7}",
+          "end": "{229+clamp(api.aqi.aqi,0,100)*2.7}",
+          "color": "text",
+          "style": {
+            "thickness": 17
+          }
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 36,
           "text": "{api.aqi.aqi}",
           "font": "bold",
-          "size": 72
+          "size": 52,
+          "align": "center",
+          "color": "{hsv(clamp(130-api.aqi.aqi*1.4,0,130),85,100)}"
         },
         {
           "type": "text",
+          "x": 77,
+          "y": 90,
           "text": "EU AQI",
-          "font": "sans",
-          "size": 14,
-          "color": "dim"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "end",
-        "gap": 8
-      }
-    },
-    {
-      "type": "bar",
-      "h": 12,
-      "value": "{min(api.aqi.aqi, 100)}",
-      "color": "{api.aqi.color}",
-      "style": {
-        "radius": 4
-      }
-    },
-    {
-      "type": "box",
-      "children": [
+          "align": "center",
+          "color": "#c4ccd6"
+        },
         {
           "type": "text",
+          "x": 18,
+          "y": 126,
           "text": "good",
-          "color": "ok"
+          "color": "#3ddc84"
         },
         {
           "type": "text",
-          "text": "fair",
-          "color": "warn"
-        },
-        {
-          "type": "text",
+          "x": 136,
+          "y": 126,
           "text": "poor",
-          "color": "bad"
+          "align": "right",
+          "color": "#ff5a5a"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      ]
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "PM2.5",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.aqi.pm25, 1)} µg/m³",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "box",
+        "gap": 6
+      },
       "children": [
         {
-          "type": "text",
-          "text": "PM10",
-          "color": "dim"
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 4,
+            "padding": 7,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "PM2.5",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.aqi.pm25,1)}",
+              "font": "bold",
+              "size": 22
+            },
+            {
+              "type": "bar",
+              "h": 6,
+              "value": "{min(api.aqi.pm25*2,100)}",
+              "color": "#1c8a4a",
+              "style": {
+                "gradient": "#ffb020",
+                "gradientDir": "right",
+                "radius": 3,
+                "background": "#1a2029"
+              }
+            }
+          ]
         },
         {
-          "type": "text",
-          "text": "{round(api.aqi.pm10, 1)} µg/m³",
-          "align": "right"
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 4,
+            "padding": 7,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "PM10",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.aqi.pm10,1)}",
+              "font": "bold",
+              "size": 22
+            },
+            {
+              "type": "bar",
+              "h": 6,
+              "value": "{min(api.aqi.pm10,100)}",
+              "color": "#1c8a4a",
+              "style": {
+                "gradient": "#ffb020",
+                "gradientDir": "right",
+                "radius": 3,
+                "background": "#1a2029"
+              }
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "text",
-      "text": "{api.aqi.status} · {api.aqi.age} ago",
-      "color": "dim",
-      "align": "center"
+      "text": "µg/m³ · bars to 50 and 100",
+      "align": "center",
+      "color": "#7c8794"
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 7,
+        "radius": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "0-40",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "good",
+              "align": "right",
+              "color": "#3ddc84"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "40-80",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "fair",
+              "align": "right",
+              "color": "#ffb020"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "80+",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "poor",
+              "align": "right",
+              "color": "#ff5a5a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

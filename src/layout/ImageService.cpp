@@ -8,10 +8,11 @@
 #include <esp_heap_caps.h>
 
 #include "../net/WifiManager.h"
+#include "../net/FetchLock.h"
 #include "../app/Log.h"
 
 static const char* IMG_DIR = "/img";
-static const uint16_t TRANSP = 0x0821;          // sprite colour treated as "nothing drawn"
+static const uint16_t TRANSP = 0x0821;          // sprite color treated as "nothing drawn"
 static const uint32_t CONNECT_TIMEOUT_MS = 5000;
 static const uint32_t READ_TIMEOUT_MS = 10000;
 static const uint32_t RETRY_AFTER_ERROR_S = 60;
@@ -321,7 +322,7 @@ static void gifDraw(GIFDRAW* p) {
     uint8_t idx = px[sx - fx0];
     if (p->ucHasTransparency && idx == p->ucTransparent) continue;
     uint16_t c = pal[idx];
-    if (c == TRANSP_SWAPPED) c ^= 0x0100;   // keep the key colour for "nothing drawn"
+    if (c == TRANSP_SWAPPED) c ^= 0x0100;   // keep the key color for "nothing drawn"
     row[ox] = c;
   }
   // Rows sharing this source line are copies of the first.
@@ -494,6 +495,26 @@ bool imageDelete(const char* name, char* err, size_t errLen) {
   return true;
 }
 
+bool imageRename(const char* from, const char* to, char* err, size_t errLen) {
+  if (!imageValidName(to)) { strlcpy(err, "invalid name: use 1-23 lowercase letters, digits and dashes", errLen); return false; }
+  take();
+  String path = imagePath(from);
+  if (!path.length()) { give(); strlcpy(err, "no such image", errLen); return false; }
+  if (!strcmp(from, to)) { give(); return true; }
+  if (imagePath(to).length()) { give(); strlcpy(err, "an image with that name already exists", errLen); return false; }
+  String dest = String(IMG_DIR) + "/" + to + "." + imageExt(from);
+  if (!LittleFS.rename(path, dest)) { give(); strlcpy(err, "rename failed", errLen); return false; }
+  // Whatever was cached under the old name is stale; the new name loads fresh on first use.
+  RawImage* r = rawFind(from);
+  if (r) {
+    for (auto& d : decoded) if (d.used && d.raw == r) decodedFree(d);
+    rawFree(*r);
+  }
+  scanLocked();
+  give();
+  return true;
+}
+
 void imagesRescan() {
   take();
   scanLocked();
@@ -571,6 +592,7 @@ static void fetchTask(void*) {
     size_t len = 0;
     {
       bool https = !strncmp(url, "https://", 8);
+      FetchGuard oneAtATime;   // shared with the data source task; released at the end of this block
       WiFiClientSecure secure;
       WiFiClient plain;
       if (https) secure.setInsecure();

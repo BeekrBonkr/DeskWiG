@@ -134,7 +134,7 @@ void layoutsBegin(ScreenManager& sm) {
       continue;
     }
 
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);   // layout files can run to tens of KB
     if (!parseFile(path, doc, err, sizeof(err))) {
       Log.printf("[LAYOUT] Skipping %s: %s\n", path.c_str(), err);
       continue;

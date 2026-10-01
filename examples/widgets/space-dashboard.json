@@ -15,135 +15,488 @@
   },
   "style": {
     "direction": "column",
-    "gap": 12,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "SPACE TODAY",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "🛰",
-          "font": "emoji",
-          "size": 28
+          "text": "SPACE TODAY",
+          "color": "#7c8794"
         },
         {
+          "type": "text",
+          "text": "{api.iss.age}",
+          "align": "right",
+          "color": "{api.iss.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 7,
+        "radius": 12,
+        "background": "#0a1a30",
+        "border": "#1c3a5c"
+      },
+      "children": [
+        {
           "type": "box",
+          "w": 138,
+          "h": 69,
+          "style": {
+            "background": "#0a1a30",
+            "gradient": "#06101c"
+          },
           "children": [
             {
+              "type": "polygon",
+              "x": 5,
+              "y": 7,
+              "points": [
+                [
+                  0,
+                  2
+                ],
+                [
+                  28,
+                  0
+                ],
+                [
+                  41,
+                  6
+                ],
+                [
+                  33,
+                  17
+                ],
+                [
+                  26,
+                  21
+                ],
+                [
+                  19,
+                  15
+                ],
+                [
+                  15,
+                  8
+                ],
+                [
+                  3,
+                  5
+                ]
+              ],
+              "color": "#1d5a44"
+            },
+            {
+              "type": "polygon",
+              "x": 48,
+              "y": 3,
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  13,
+                  1
+                ],
+                [
+                  13,
+                  5
+                ],
+                [
+                  4,
+                  9
+                ],
+                [
+                  0,
+                  5
+                ]
+              ],
+              "color": "#1d5a44"
+            },
+            {
+              "type": "polygon",
+              "x": 38,
+              "y": 31,
+              "points": [
+                [
+                  0,
+                  0
+                ],
+                [
+                  12,
+                  3
+                ],
+                [
+                  18,
+                  7
+                ],
+                [
+                  10,
+                  17
+                ],
+                [
+                  4,
+                  24
+                ],
+                [
+                  2,
+                  11
+                ]
+              ],
+              "color": "#1d5a44"
+            },
+            {
+              "type": "polygon",
+              "x": 62,
+              "y": 21,
+              "points": [
+                [
+                  0,
+                  6
+                ],
+                [
+                  11,
+                  0
+                ],
+                [
+                  19,
+                  2
+                ],
+                [
+                  27,
+                  9
+                ],
+                [
+                  22,
+                  19
+                ],
+                [
+                  15,
+                  27
+                ],
+                [
+                  12,
+                  15
+                ],
+                [
+                  3,
+                  12
+                ]
+              ],
+              "color": "#1d5a44"
+            },
+            {
+              "type": "polygon",
+              "x": 66,
+              "y": 5,
+              "points": [
+                [
+                  0,
+                  15
+                ],
+                [
+                  1,
+                  7
+                ],
+                [
+                  13,
+                  3
+                ],
+                [
+                  43,
+                  0
+                ],
+                [
+                  71,
+                  4
+                ],
+                [
+                  55,
+                  16
+                ],
+                [
+                  43,
+                  26
+                ],
+                [
+                  22,
+                  24
+                ]
+              ],
+              "color": "#1d5a44"
+            },
+            {
+              "type": "polygon",
+              "x": 113,
+              "y": 39,
+              "points": [
+                [
+                  0,
+                  4
+                ],
+                [
+                  6,
+                  0
+                ],
+                [
+                  12,
+                  3
+                ],
+                [
+                  15,
+                  6
+                ],
+                [
+                  12,
+                  10
+                ],
+                [
+                  0,
+                  9
+                ]
+              ],
+              "color": "#1d5a44"
+            },
+            {
+              "type": "rect",
+              "x": "{(api.iss.lon+180)*0.383}",
+              "y": 0,
+              "w": 1,
+              "h": 69,
+              "color": "#2f6f9f",
+              "fill": true
+            },
+            {
+              "type": "rect",
+              "x": 0,
+              "y": "{(90-api.iss.lat)*0.383}",
+              "w": 138,
+              "h": 1,
+              "color": "#2f6f9f",
+              "fill": true
+            },
+            {
+              "type": "circle",
+              "x": "{(api.iss.lon+180)*0.383-3}",
+              "y": "{(90-api.iss.lat)*0.383-3}",
+              "r": 3,
+              "color": "#ffd24a"
+            },
+            {
               "type": "text",
+              "x": 3,
+              "y": 3,
               "text": "ISS",
-              "color": "dim"
+              "color": "#c4ccd6"
             },
             {
               "type": "text",
-              "text": "{round(api.iss.lat, 1)}, {round(api.iss.lon, 1)}",
-              "font": "bold",
-              "size": 16
+              "x": 135,
+              "y": 58,
+              "text": "{round(api.iss.lat,1)}, {round(api.iss.lon,1)}",
+              "align": "right",
+              "color": "#c4ccd6"
             }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "gap": 10,
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 8,
+        "radius": 12,
+        "background": "#1b1440",
+        "gradient": "#05040c",
+        "border": "#2a2260"
+      },
       "children": [
         {
-          "type": "text",
-          "text": "🚀",
-          "font": "emoji",
-          "size": 28
-        },
-        {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 10,
+            "align": "center"
+          },
           "children": [
             {
               "type": "text",
-              "text": "in orbit",
-              "color": "dim"
+              "text": "🚀",
+              "font": "emoji",
+              "size": 22,
+              "color": "#9f8cff"
             },
             {
-              "type": "text",
-              "text": "{api.astros.count} people",
-              "font": "bold",
-              "size": 16
+              "type": "box",
+              "style": {
+                "gap": 3
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "IN ORBIT",
+                  "color": "#7c8794"
+                },
+                {
+                  "type": "text",
+                  "text": "{api.astros.count} people",
+                  "font": "bold",
+                  "size": 18
+                }
+              ]
             }
-          ],
+          ]
+        },
+        {
+          "type": "box",
           "style": {
-            "direction": "column",
-            "gap": 2
-          }
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=1,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=2,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=3,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=4,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=5,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=6,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=7,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=8,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=9,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=10,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=11,rgb(159,140,255),rgb(30,28,52))}"
+            },
+            {
+              "type": "circle",
+              "r": 3,
+              "color": "{if(api.astros.count>=12,rgb(159,140,255),rgb(30,28,52))}"
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "gap": 10,
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 10,
+        "align": "center",
+        "padding": 10,
+        "radius": 12,
+        "background": "#2a1608",
+        "gradient": "#08050a",
+        "border": "#3a2412"
+      },
       "children": [
         {
           "type": "text",
           "text": "☄",
           "font": "emoji",
-          "size": 28
+          "size": 22,
+          "color": "#ffb070"
         },
         {
           "type": "box",
+          "style": {
+            "gap": 3
+          },
           "children": [
             {
               "type": "text",
-              "text": "near-Earth objects",
-              "color": "dim"
+              "text": "NEAR-EARTH ROCKS",
+              "color": "#7c8794"
             },
             {
               "type": "text",
-              "text": "{api.neo.count} passing today",
+              "text": "{api.neo.count} today",
               "font": "bold",
-              "size": 16
+              "size": 18
             }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
+          ]
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
       "style": {
-        "direction": "row",
-        "gap": 10,
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "{date.day} {date.md} · {time}",
-      "color": "dim",
-      "align": "center"
+        "gap": 2,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "{time}",
+          "font": "bold",
+          "size": 30,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "{date.dow} {date.md}",
+          "align": "center",
+          "color": "#c4ccd6"
+        }
+      ]
     }
   ]
 }
