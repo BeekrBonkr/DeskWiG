@@ -13,36 +13,58 @@
   },
   "style": {
     "direction": "column",
-    "padding": 8,
-    "gap": 8
+    "gap": 4,
+    "padding": 8
   },
   "elements": [
     {
       "type": "box",
+      "style": {
+        "padding": 10,
+        "radius": 12,
+        "background": "#ff453a",
+        "gradient": "#9c1610"
+      },
       "children": [
         {
           "type": "text",
           "text": "{date.dow}",
           "font": "bold",
-          "size": 22,
-          "align": "center",
-          "color": "text"
+          "size": 24,
+          "align": "center"
+        },
+        {
+          "type": "circle",
+          "x": 24,
+          "y": -6,
+          "r": 4,
+          "color": "bg"
+        },
+        {
+          "type": "circle",
+          "x": 102,
+          "y": -6,
+          "r": 4,
+          "color": "bg"
         }
-      ],
-      "style": {
-        "background": "bad",
-        "radius": 10,
-        "padding": 8
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "padding": 12,
+        "gap": 2,
+        "radius": 12,
+        "background": "#1f2631",
+        "gradient": "#0d1015",
+        "border": "#343e4e"
+      },
       "children": [
         {
           "type": "text",
           "text": "{date.md}",
           "font": "bold",
-          "size": 40,
+          "size": 42,
           "align": "center"
         },
         {
@@ -51,27 +73,87 @@
           "font": "sans",
           "size": 18,
           "align": "center",
-          "color": "dim"
+          "color": "#7c8794"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
       "style": {
-        "background": "#181818",
-        "border": "#333333",
+        "gap": 6,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
         "radius": 10,
-        "padding": 12,
-        "gap": 4
-      }
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "NOW",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{date}",
+              "align": "right",
+              "color": "#7c8794"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{time}",
+          "font": "bold",
+          "size": 40,
+          "align": "center"
+        },
+        {
+          "type": "bar",
+          "h": 8,
+          "value": "{(time.hour*60+time.min)/14.4}",
+          "color": "#9c1610",
+          "style": {
+            "gradient": "#ff6a5e",
+            "gradientDir": "right",
+            "radius": 4,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "day",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round((time.hour*60+time.min)/14.4)}%",
+              "align": "right",
+              "color": "#c4ccd6"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "{time}",
-      "font": "sans",
-      "size": 28,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "{date}",
+      "x": 77,
+      "y": 296,
+      "text": "{wifi.ssid}",
       "align": "center",
       "color": "dim"
     }

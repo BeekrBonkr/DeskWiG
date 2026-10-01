@@ -15,78 +15,481 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "gap": 10,
-    "padding": 8,
-    "align": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "🛰",
-      "font": "emoji",
-      "size": 64
-    },
-    {
-      "type": "text",
-      "text": "INTERNATIONAL SPACE STATION",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "lat",
-          "color": "dim"
+          "text": "ISS LIVE",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{round(api.iss.lat, 2)}°",
-          "font": "bold",
-          "size": 24,
-          "align": "right"
+          "text": "{api.iss.age}",
+          "align": "right",
+          "color": "{api.iss.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "w": 154,
+      "h": 77,
+      "style": {
+        "radius": 6,
+        "background": "#0a1a30",
+        "gradient": "#06101c",
+        "border": "#1c3a5c"
+      },
       "children": [
         {
-          "type": "text",
-          "text": "lon",
-          "color": "dim"
+          "type": "polygon",
+          "x": 5,
+          "y": 8,
+          "points": [
+            [
+              0,
+              2
+            ],
+            [
+              31,
+              0
+            ],
+            [
+              46,
+              7
+            ],
+            [
+              38,
+              19
+            ],
+            [
+              29,
+              23
+            ],
+            [
+              22,
+              16
+            ],
+            [
+              17,
+              9
+            ],
+            [
+              4,
+              6
+            ]
+          ],
+          "color": "#1d5a44"
         },
         {
-          "type": "text",
-          "text": "{round(api.iss.lon, 2)}°",
-          "font": "bold",
-          "size": 24,
-          "align": "right"
+          "type": "polygon",
+          "x": 53,
+          "y": 3,
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              15,
+              1
+            ],
+            [
+              15,
+              6
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              0,
+              6
+            ]
+          ],
+          "color": "#1d5a44"
+        },
+        {
+          "type": "polygon",
+          "x": 43,
+          "y": 34,
+          "points": [
+            [
+              0,
+              0
+            ],
+            [
+              13,
+              4
+            ],
+            [
+              19,
+              8
+            ],
+            [
+              10,
+              19
+            ],
+            [
+              4,
+              28
+            ],
+            [
+              2,
+              13
+            ]
+          ],
+          "color": "#1d5a44"
+        },
+        {
+          "type": "polygon",
+          "x": 70,
+          "y": 23,
+          "points": [
+            [
+              0,
+              7
+            ],
+            [
+              11,
+              0
+            ],
+            [
+              21,
+              2
+            ],
+            [
+              29,
+              11
+            ],
+            [
+              24,
+              22
+            ],
+            [
+              16,
+              30
+            ],
+            [
+              12,
+              18
+            ],
+            [
+              3,
+              13
+            ]
+          ],
+          "color": "#1d5a44"
+        },
+        {
+          "type": "polygon",
+          "x": 73,
+          "y": 6,
+          "points": [
+            [
+              0,
+              16
+            ],
+            [
+              2,
+              8
+            ],
+            [
+              15,
+              3
+            ],
+            [
+              49,
+              0
+            ],
+            [
+              80,
+              4
+            ],
+            [
+              62,
+              18
+            ],
+            [
+              49,
+              28
+            ],
+            [
+              25,
+              27
+            ]
+          ],
+          "color": "#1d5a44"
+        },
+        {
+          "type": "polygon",
+          "x": 126,
+          "y": 44,
+          "points": [
+            [
+              0,
+              4
+            ],
+            [
+              7,
+              0
+            ],
+            [
+              13,
+              3
+            ],
+            [
+              16,
+              6
+            ],
+            [
+              13,
+              11
+            ],
+            [
+              1,
+              9
+            ]
+          ],
+          "color": "#1d5a44"
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 38,
+          "w": 154,
+          "h": 1,
+          "color": "#1c3a5c",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 77,
+          "y": 0,
+          "w": 1,
+          "h": 77,
+          "color": "#1c3a5c",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": "{(api.iss.lon+180)*0.428}",
+          "y": 0,
+          "w": 1,
+          "h": 77,
+          "color": "#2f6f9f",
+          "fill": true
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": "{(90-api.iss.lat)*0.428}",
+          "w": 154,
+          "h": 1,
+          "color": "#2f6f9f",
+          "fill": true
+        },
+        {
+          "type": "circle",
+          "x": "{(api.iss.lon+180)*0.428-7}",
+          "y": "{(90-api.iss.lat)*0.428-7}",
+          "r": 7,
+          "color": "#ffd24a",
+          "fill": false
+        },
+        {
+          "type": "circle",
+          "x": "{(api.iss.lon+180)*0.428-3}",
+          "y": "{(90-api.iss.lat)*0.428-3}",
+          "r": 3,
+          "color": "#ffd24a"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
-      "type": "line",
-      "h": 1,
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "LATITUDE",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.iss.lat,1)}°",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "LONGITUDE",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.iss.lon,1)}°",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 9,
+        "radius": 12,
+        "background": "#1b1440",
+        "gradient": "#05040c",
+        "border": "#2a2260"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 10,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "🛰",
+              "font": "emoji",
+              "size": 26,
+              "color": "#9f8cff"
+            },
+            {
+              "type": "box",
+              "style": {
+                "gap": 4
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "INTERNATIONAL",
+                  "color": "#c4ccd6"
+                },
+                {
+                  "type": "text",
+                  "text": "SPACE STATION",
+                  "color": "#c4ccd6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "altitude",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "~408 km",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "speed",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "27,600 km/h",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "one orbit",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "92 min",
+              "align": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "updates every 30 s",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "{api.iss.age} ago · every 30 s",
-      "color": "dim",
-      "align": "center"
     }
   ]
 }

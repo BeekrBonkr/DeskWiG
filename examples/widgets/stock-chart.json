@@ -1,0 +1,171 @@
+{
+  "name": "NVDA Today",
+  "led": {
+    "color": "ok",
+    "mode": "solid",
+    "brightness": 30,
+    "rules": [
+      {
+        "when": "api.nvda.c.delta < 0",
+        "color": "bad",
+        "mode": "solid"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "NVDA",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.nvda.age}",
+          "align": "right",
+          "color": "{api.nvda.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "{round(api.nvda.c,2)}",
+          "font": "bold",
+          "size": 34
+        },
+        {
+          "type": "box",
+          "style": {
+            "gap": 3
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{round(api.nvda.c.delta,2)}",
+              "font": "bold",
+              "size": 16,
+              "align": "right",
+              "color": "{if(api.nvda.c.delta<0,rgb(255,77,94),rgb(47,211,122))}"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.nvda.c.span/60)} min",
+              "align": "right",
+              "color": "#7c8794"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 96,
+      "series": "api.nvda.c",
+      "window": 14400,
+      "color": "{if(api.nvda.c.delta<0,rgb(255,77,94),rgb(47,211,122))}",
+      "style": {
+        "kind": "area",
+        "gradient": "{if(api.nvda.c.delta<0,rgb(52,16,22),rgb(10,42,28))}",
+        "background": "#0c1016",
+        "radius": 6
+      }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "lo {round(api.nvda.c.min,2)}",
+          "color": "#ff8a96"
+        },
+        {
+          "type": "text",
+          "text": "hi {round(api.nvda.c.max,2)}",
+          "align": "right",
+          "color": "#7be3ac"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 36,
+      "series": "api.nvda.c",
+      "window": 14400,
+      "color": "{if(api.nvda.c.delta<0,rgb(255,77,94),rgb(47,211,122))}",
+      "style": {
+        "kind": "bars",
+        "gradient": "#0c1016",
+        "min": "{api.nvda.c.min - 1}",
+        "max": "{api.nvda.c.max + 1}"
+      }
+    },
+    {
+      "type": "text",
+      "text": "DAY RANGE",
+      "color": "#7c8794"
+    },
+    {
+      "type": "bar",
+      "h": 10,
+      "value": "{(api.nvda.c-api.nvda.l)/(api.nvda.h-api.nvda.l)*100}",
+      "color": "#1d4ed8",
+      "style": {
+        "gradient": "#7fb4ff",
+        "gradientDir": "right",
+        "radius": 5,
+        "background": "#1a2029"
+      }
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "{round(api.nvda.l,2)}",
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "text": "{round(api.nvda.h,2)}",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "4 h · every 2 min · {time}",
+      "align": "center",
+      "color": "dim"
+    }
+  ]
+}

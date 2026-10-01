@@ -16,139 +16,240 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "align": "center",
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "DAYLIGHT",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
-      "w": 150,
-      "h": 84,
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
-          "type": "arc",
-          "w": 150,
-          "value": "{(api.sun.t-api.sun.r)/(api.sun.s-api.sun.r)*100}",
-          "color": "warn",
-          "style": {
-            "thickness": 12
-          },
-          "start": 270,
-          "end": 450,
-          "x": 0,
-          "y": 0
+          "type": "text",
+          "text": "DAYLIGHT",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "☀",
-          "x": 75,
-          "y": 40,
-          "align": "center",
-          "font": "emoji",
-          "size": 32
+          "text": "{api.sun.age}",
+          "align": "right",
+          "color": "{api.sun.color}"
         }
       ]
     },
     {
       "type": "box",
+      "h": 92,
+      "style": {
+        "padding": 8,
+        "radius": 12,
+        "background": "{if(api.sun.day>0,rgb(30,70,130),rgb(14,16,44))}",
+        "gradient": "#05070a"
+      },
+      "children": [
+        {
+          "type": "arc",
+          "x": 4,
+          "y": 10,
+          "w": 130,
+          "value": "{(api.sun.t-api.sun.r)/(api.sun.s-api.sun.r)*100}",
+          "start": 270,
+          "end": 450,
+          "color": "#ffb020",
+          "style": {
+            "thickness": 4,
+            "background": "#3a4a66"
+          }
+        },
+        {
+          "type": "arc",
+          "x": -1,
+          "y": 5,
+          "w": 140,
+          "value": 100,
+          "start": "{263+180*(api.sun.t-api.sun.r)/(api.sun.s-api.sun.r)}",
+          "end": "{277+180*(api.sun.t-api.sun.r)/(api.sun.s-api.sun.r)}",
+          "color": "#ffd24a",
+          "style": {
+            "thickness": 14
+          }
+        },
+        {
+          "type": "text",
+          "x": "{if(api.sun.day>0,69,-500)}",
+          "y": 38,
+          "text": "☀",
+          "font": "emoji",
+          "size": 30,
+          "align": "center",
+          "color": "#ffd24a"
+        },
+        {
+          "type": "text",
+          "x": "{if(api.sun.day>0,-500,69)}",
+          "y": 38,
+          "text": "🌙",
+          "font": "emoji",
+          "size": 30,
+          "align": "center",
+          "color": "#aab8ff"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center"
+      },
       "children": [
         {
           "type": "text",
           "text": "🌅",
           "font": "emoji",
-          "size": 16
+          "size": 14,
+          "color": "#ffb070"
+        },
+        {
+          "type": "text",
+          "text": "sunrise to sunset",
+          "color": "#c4ccd6"
         },
         {
           "type": "text",
           "text": "🌇",
           "font": "emoji",
-          "size": 16,
-          "align": "right"
+          "size": 14,
+          "color": "#c9a0ff"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "daylight",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round((api.sun.s - api.sun.r) / 3600, 1)} h",
-          "align": "right"
-        }
-      ],
+      "type": "bar",
+      "h": 10,
+      "value": "{(api.sun.t-api.sun.r)/(api.sun.s-api.sun.r)*100}",
+      "color": "#ff8a3d",
       "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
+        "gradient": "#ffd24a",
+        "gradientDir": "right",
+        "radius": 5,
+        "background": "#1a2029"
       }
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "to sunset",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{max(round((api.sun.s - api.sun.t) / 60), 0)} min",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "DAYLIGHT",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round((api.sun.s-api.sun.r)/3600,1)} h",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "TO SUNSET",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 4,
+                "justify": "center"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{floor(max(api.sun.s-api.sun.t,0)/3600)}h",
+                  "font": "bold",
+                  "size": 20
+                },
+                {
+                  "type": "text",
+                  "text": "{floor(max(api.sun.s-api.sun.t,0)%3600/60)}m",
+                  "font": "bold",
+                  "size": 20
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "gap": 0,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
       "children": [
         {
           "type": "text",
-          "text": "day",
-          "color": "dim"
+          "text": "NOW",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{api.sun.day}",
-          "align": "right"
+          "text": "{time}",
+          "font": "bold",
+          "size": 34,
+          "align": "center"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "text",
-      "text": "Open-Meteo · {api.sun.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{date.dow} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

@@ -28,72 +28,197 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "gap": 10,
-    "padding": 10
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "🏠 LIVING ROOM",
-      "font": "sans",
-      "size": 16,
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
+          "text": "HOME ASSISTANT",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.ha.age}",
+          "align": "right",
+          "color": "{api.ha.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "w": 154,
+      "h": 138,
+      "children": [
+        {
+          "type": "arc",
+          "x": 7,
+          "y": 0,
+          "w": 140,
+          "value": 0,
+          "start": 225,
+          "end": 495,
+          "style": {
+            "thickness": 8,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "arc",
+          "x": 7,
+          "y": 0,
+          "w": 140,
+          "value": 100,
+          "start": 360,
+          "end": 414,
+          "color": "#14592e",
+          "style": {
+            "thickness": 8
+          }
+        },
+        {
+          "type": "arc",
+          "x": 3,
+          "y": -4,
+          "w": 148,
+          "value": 100,
+          "start": "{221+clamp(api.ha.state-10,0,20)*13.5}",
+          "end": "{229+clamp(api.ha.state-10,0,20)*13.5}",
+          "color": "{hsv(clamp(220-(api.ha.state-10)*11,0,220),80,100)}",
+          "style": {
+            "thickness": 16
+          }
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 22,
+          "text": "🏠",
+          "font": "emoji",
+          "size": 18,
+          "align": "center",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 42,
           "text": "{api.ha.state}",
           "font": "bold",
-          "size": 64
+          "size": 46,
+          "align": "center",
+          "color": "{hsv(clamp(220-(api.ha.state-10)*11,0,220),80,100)}"
         },
         {
           "type": "text",
+          "x": 77,
+          "y": 92,
           "text": "{api.ha.unit}",
           "font": "sans",
-          "size": 20,
-          "color": "dim"
+          "size": 16,
+          "align": "center",
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": 22,
+          "y": 126,
+          "text": "10",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 132,
+          "y": 126,
+          "text": "30",
+          "align": "right",
+          "color": "#7c8794"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 4
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 150,
+          "h": 8,
+          "children": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "text": "{api.ha.name}",
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 150,
+          "h": 8,
+          "children": [
+            {
+              "type": "text",
+              "x": -150,
+              "y": 0,
+              "text": "{api.ha.name}",
+              "color": "#c4ccd6"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
       "style": {
         "direction": "row",
-        "align": "end",
-        "gap": 6
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LAST 6 H",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.ha.state.min} to {api.ha.state.max}",
+          "align": "right",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "chart",
+      "h": 84,
+      "series": "api.ha.state",
+      "window": 21600,
+      "color": "{hsv(clamp(220-(api.ha.state-10)*11,0,220),80,100)}",
+      "style": {
+        "kind": "area",
+        "gradient": "#15202c",
+        "background": "#0c1016",
+        "radius": 6
       }
     },
     {
       "type": "text",
-      "text": "{api.ha.name}",
-      "font": "sans",
-      "size": 14,
+      "x": 77,
+      "y": 296,
+      "text": "green band = comfort 20-24",
+      "align": "center",
       "color": "dim"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "circle",
-          "w": 10,
-          "color": "{api.ha.color}"
-        },
-        {
-          "type": "text",
-          "text": "{api.ha.status} · updated {api.ha.updated}",
-          "color": "dim"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 6
-      }
     }
   ]
 }

@@ -8,54 +8,105 @@
   },
   "style": {
     "direction": "column",
-    "justify": "center",
-    "align": "center",
-    "gap": 10,
+    "gap": 8,
     "padding": 8
   },
   "styles": {
     "tile": {
-      "background": "#161616",
-      "border": "#333333",
-      "radius": 12,
-      "padding": 6,
+      "background": "#2a3240",
+      "gradient": "#0f1319",
+      "radius": 14,
+      "border": "#343e4e"
+    },
+    "digit": {
+      "font": "bold",
+      "size": 104,
       "align": "center"
     }
   },
   "elements": [
     {
       "type": "box",
+      "class": "tile",
+      "h": 128,
       "children": [
         {
           "type": "text",
-          "text": "{time.hour}",
-          "font": "bold",
-          "size": 104,
-          "align": "center"
+          "class": "digit",
+          "x": 77,
+          "y": 12,
+          "text": "{time.hour}"
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 63,
+          "w": 154,
+          "h": 2,
+          "color": "bg",
+          "fill": true
+        },
+        {
+          "type": "circle",
+          "x": -6,
+          "y": 58,
+          "r": 6,
+          "color": "bg"
+        },
+        {
+          "type": "circle",
+          "x": 148,
+          "y": 58,
+          "r": 6,
+          "color": "bg"
         }
-      ],
-      "class": "tile"
+      ]
     },
     {
       "type": "box",
+      "class": "tile",
+      "h": 128,
       "children": [
         {
           "type": "text",
+          "class": "digit",
+          "x": 77,
+          "y": 12,
           "text": "{time.min}",
-          "font": "bold",
-          "size": 104,
-          "align": "center",
           "color": "accent"
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 63,
+          "w": 154,
+          "h": 2,
+          "color": "bg",
+          "fill": true
+        },
+        {
+          "type": "circle",
+          "x": -6,
+          "y": 58,
+          "r": 6,
+          "color": "bg"
+        },
+        {
+          "type": "circle",
+          "x": 148,
+          "y": 58,
+          "r": 6,
+          "color": "bg"
         }
-      ],
-      "class": "tile"
+      ]
     },
     {
       "type": "text",
       "text": "{time.ampm}  {date.day} {date.md}",
       "font": "sans",
-      "size": 16,
-      "color": "dim"
+      "size": 18,
+      "align": "center",
+      "color": "#7c8794"
     }
   ]
 }

@@ -43,20 +43,22 @@ Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://maker
   <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
 </p>
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)).
+The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 14 dims the backlight (see [Display brightness](#display-brightness)).
 
 ### Wiring
 
-| Display pin | ESP32-S3 GPIO                                       |
-| ----------- | --------------------------------------------------- |
-| SCLK        | 12                                                  |
-| MOSI        | 11                                                  |
-| CS          | 10                                                  |
-| DC          | 9                                                   |
-| RST         | 8                                                   |
-| VCC         | 3V3                                                 |
-| GND         | GND                                                 |
-| BL          | 3V3 (or a spare GPIO if you want backlight control) |
+| Display pin | ESP32-S3 GPIO |
+| ----------- | ------------- |
+| SCLK (SLK)  | 12            |
+| MOSI (DIN)  | 11            |
+| CS          | 10            |
+| DC          | 9             |
+| RST         | 8             |
+| BL          | 14            |
+| VCC         | 3V3           |
+| GND         | GND           |
+
+BL can go to 3V3 instead if you don't want brightness control; the display then stays at full brightness and the setting has no effect.
 
 | Encoder pin | ESP32-S3 GPIO |
 | ----------- | ------------- |
@@ -73,7 +75,24 @@ All pins are defined in `src/app/Board.h`.
 A KY-040 style encoder (or a bare encoder plus a button) turns the knob into a widget selector, no phone needed. The knob steps through widgets in the order shown on `/widgets`, where rows can be dragged to rearrange them:
 
 - **Turn** goes to the next or previous widget, in the order the Widgets page lists them, wrapping at the ends. A banner with the widget's name and position appears for a moment, and the choice is saved so it survives a reboot. Turning also ends an editor preview.
-- **Click** shows the connection screen (address and API key) for 15 seconds; click again to dismiss it.
+- **Click** shows the name banner for the widget on screen.
+- **Hold** the button for about a second and a half to open the settings menu.
+
+### Settings menu
+
+Holding the knob opens a text menu on the device, so the everyday settings can be changed without a phone. Turn to move the highlight, click to open an item or set a value, and hold to go back a level or leave the menu. It closes by itself after 45 seconds without input. Changes take effect at once and are saved, the same as from the setup page.
+
+| Item | What it does |
+| --- | --- |
+| **Display** | Backlight brightness, 1 to 100 percent, live as the knob turns; **Upside down** for a display mounted the other way round |
+| **Clock** | Current time, 12 or 24-hour, timezone from the same list as the setup page, time source (internet, router or a custom NTP server) and the server name |
+| **Status LED** | On or off, and brightness |
+| **WiFi** | Network, address and signal; **Join network** scans and joins (a password is typed with the knob); **Forget** returns to the setup hotspot |
+| **Device** | **Connection** shows the address and API key; the device name; ping interval; firmware, uptime and memory; **Restart**; **Factory reset** |
+
+Joining a network from the knob: pick it from the scan list, then type the password one character at a time. Turning selects a character, clicking adds it. Turning back past the first letter reaches **Delete**, **Cancel** and **OK**. The menu works in setup hotspot mode too, so a device that has never been on a network can be joined to one from the knob alone.
+
+Fonts, images, data sources, history, the account and firmware updates stay on the setup page; they need files or a keyboard.
 
 Wire CLK, DT and SW to GPIO 5, 6 and 7, the module's `+` to 3V3 and `GND` to ground. The firmware enables the internal pull-ups, so a bare encoder works with its common pins to ground and no resistors; the KY-040's own pull-ups are fine alongside. Nothing needs configuring: with no encoder connected the pins simply stay high.
 
@@ -86,7 +105,7 @@ If clockwise goes the wrong way, swap CLK and DT or set `ENC_REVERSE` in `src/ap
 Every [release](https://github.com/BeekrBonkr/DeskWiG/releases/latest) includes `deskwig-vX.Y.Z-factory.bin`, one image with the bootloader, partition table and firmware. Flashing it needs nothing installed, only Chrome or Edge (Firefox and Safari don't support Web Serial):
 
 1. Download `deskwig-vX.Y.Z-factory.bin` from the latest release.
-2. Connect the DevKitC's **UART** USB port to the computer (the board has two; the other, labelled **USB**, works too but needs the BOOT button more often).
+2. Connect the DevKitC's **UART** USB port to the computer (the board has two; the other, labeled **USB**, works too but needs the BOOT button more often).
 3. Open [espressif.github.io/esptool-js](https://espressif.github.io/esptool-js/), leave the baud rate as it is, and click **Connect**. Pick the serial port the browser offers (CP210x or USB JTAG/serial). If nothing shows up, hold **BOOT**, tap **RESET**, release **BOOT** and try again. On Linux, add your user to the `dialout` (or `uucp`) group if the port is missing.
 4. Set **Flash Address** to `0x0`, choose the downloaded file and click **Program**. It takes about a minute at the default speed.
 5. Click **Disconnect** and press **RESET**. The screen lights up in setup mode; continue at [First boot and WiFi setup](#first-boot-and-wifi-setup).
@@ -129,7 +148,7 @@ WiFi credentials, the API key and the login account are stored in the ESP32's NV
 1. Join the hotspot from a phone or laptop. A setup page should open automatically (captive portal). If it doesn't, browse to the URL above.
 2. Tap **Scan for networks**, pick yours, enter the password, and tap **Join**.
 3. The page reports when the device has connected and shows its new address. The hotspot stays up for 20 seconds after connecting so you can read it, then turns off.
-4. The device screen shows the address and an 8-character API key for 30 seconds, then switches to the active widget.
+4. The device screen shows the address and an 8-character API key for 30 seconds, then switches to the active widget. This screen only appears while no account exists; afterwards the same details are under **Device > Connection** in the [knob menu](#settings-menu).
 5. Open the address in a browser. The login page asks for that key once, then for a username and password of your choice. Nothing on the device can be changed until the account exists.
 
 The device is reachable at `http://deskwig.local` (mDNS) or its IP. The name is changeable on the setup page.
@@ -148,6 +167,21 @@ If the saved network can't be reached within 15 seconds the hotspot comes back, 
 
 Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
 
+### Display brightness and orientation
+
+`display.flip` turns the picture 180 degrees for a display that has to be mounted upside down. Tick **Upside down** under **Display** on the setup page, or use the same setting in the knob menu; it applies at once.
+
+With BL on GPIO 14, the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
+
+```bash
+curl -X PUT http://<device-ip>/api/config \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '{"display":{"brightness":40}}'
+```
+
+`display.brightness` is 1 to 100 percent (default 100). The level is saved and restored at boot; the screen runs at full brightness for the moment between power-on and the config loading. `POST /api/display/preview` with a form field `brightness=N` sets the level without saving it, which is what the slider uses while it is being dragged.
+
 ### Recovery jumper
 
 Bridge GPIO 4 to GND and press reset:
@@ -159,7 +193,7 @@ A tactile switch or two exposed pads on the enclosure work equally well.
 
 ## Web interface
 
-Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, data sources and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
+Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, data sources, history and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
 
 <p align="center">
   <img src="docs/images/web-setup.png" alt="Setup page: WiFi network, device name, clock, fonts, images, data sources, account and firmware" width="49%">
@@ -191,7 +225,7 @@ The routes:
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
 | `POST /api/wifi/join`           | yes  | JSON `{"ssid","pass"}`. Saves and connects, hotspot stays up   |
 | `POST /api/wifi/forget`         | yes  | Clears credentials, returns to hotspot                         |
-| `GET /api/config`               | no   | Hostname, ping interval, clock, LED settings                   |
+| `GET /api/config`               | no   | Hostname, ping interval, clock, LED and display settings       |
 | `PUT /api/config`               | yes  | JSON with any subset of the above; saved immediately           |
 | `GET /api/fonts`                | no   | Fonts on the device with size and whether built in             |
 | `POST /api/fonts?name=<name>`   | yes  | Multipart upload of a `.ttf` (field `file`), up to 2 MB       |
@@ -200,6 +234,7 @@ The routes:
 | `GET /api/images`               | no   | Uploaded images with type and size                             |
 | `POST /api/images?name=<name>`  | yes  | Multipart upload of a PNG, JPEG or GIF (field `file`), up to 512 KB |
 | `DELETE /api/images?name=<name>`| yes  | Remove an image                                                |
+| `POST /api/images/rename?name=<name>&to=<new>` | yes | Rename an image; layouts that use the old name are left to the caller |
 | `GET /img/<name>`               | no   | The image file, used by the editor's preview                   |
 | `GET /api/sources`              | no   | Data sources with fetch state and current values (header value redacted) |
 | `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
@@ -207,8 +242,12 @@ The routes:
 | `POST /api/sources/test?id=<id>`| yes  | Fetch it now; poll `GET /api/sources` for the result           |
 | `POST /api/sources/discover`    | yes  | JSON `{"url","header":{"name","value"}}`. Fetch once and list every JSON path; poll the GET |
 | `GET /api/sources/discover`     | yes  | State of the last discovery and its paths with sample values   |
+| `GET /api/series`               | no   | Sampled keys with their settings and statistics; `?key=<key>` adds that key's samples |
+| `PUT /api/series?key=<key>`     | yes  | JSON `{"every","keep"}` in seconds. Start sampling a key, or change how (see [History](#history)) |
+| `DELETE /api/series?key=<key>`  | yes  | Stop sampling a key and drop its samples                       |
 | `GET /api/widgets`              | no   | JSON list of widgets (`name`, `key`, `builtin`), the active index and deleted built-ins |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
+| `POST /api/display/preview` (`brightness=N`) | yes | Set the backlight to N percent without saving it (see [Display brightness](#display-brightness)) |
 | `DELETE /api/widgets?key=<key>` | yes  | Remove a widget: a built-in is hidden, a layout is deleted     |
 | `PUT /api/widgets/order`        | yes  | JSON `{"order":["key",...]}`. Order for the list and the encoder knob; persisted |
 | `POST /api/widgets/restore` (`key=K`) | yes | Bring back a deleted built-in widget                       |
@@ -222,18 +261,34 @@ The routes:
 | `GET /api/layouts/templates`    | no   | Built-in templates with their layout JSON                      |
 | `GET /api/log?since=N`          | yes  | Serial output after byte N as text; `X-Log-Seq` header gives the next N |
 | `POST /api/system/update`       | yes  | Multipart upload of `firmware.bin` (field `file`); writes the spare OTA slot and reboots |
+| `GET /api/backup`               | yes  | One JSON file with the config, widgets, WiFi, account and API key (see [Backup and restore](#backup-and-restore)) |
+| `POST /api/restore?parts=<list>`| yes  | Multipart upload of a backup (field `file`); writes the listed parts and restarts |
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
 Authenticated routes accept either the session cookie the login page sets or an `Authorization: Bearer <key>` header, except when the request comes in over the setup hotspot. Neither works until a username and password have been created. The key is 8 characters from the device screen; the setup page shows it again to a logged-in user. Five wrong passwords or keys in a row lock logins for a minute.
 
-Forgot the password? The **Forgot your password?** link on the login page puts the key on the device screen for a minute. Enter it with a new username and password; the key is replaced afterwards, so update any scripts that use it.
+Forgot the password? The **Forgot your password?** link on the login page puts the key on the device screen for a minute. Enter it with a new username and password; the key is replaced afterward, so update any scripts that use it.
 
 ```bash
 curl -X POST http://<device-ip>/api/widgets \
   -H "Authorization: Bearer <key>" \
   -d index=1
 ```
+
+### Backup and restore
+
+**Backup** on the setup page downloads one JSON file holding everything that can be put back without a file upload: the config (settings, data sources with their secret headers, ping targets, history keys, widget order), every widget layout, the WiFi network and password, the login account and the API key. It is a sensitive file, so keep it private. Fonts and images are not in it, only their names, so they have to be uploaded again on a new device.
+
+To restore, choose the file under **Backup**, untick anything you do not want, and tap **Restore** twice. The device writes the chosen parts and restarts. Restoring the widgets replaces the ones on the device; restoring the account logs every browser out, so sign in again with the backup's username and password. The same works from a script:
+
+```bash
+curl -H "Authorization: Bearer <key>" http://deskwig.local/api/backup -o deskwig-backup.json
+curl -X POST -H "Authorization: Bearer <key>" -F file=@deskwig-backup.json \
+  "http://deskwig.local/api/restore?parts=config,widgets,wifi,auth"
+```
+
+`parts` is any of `config`, `widgets`, `wifi` and `auth`; without it everything is restored. The file is plain JSON, so a text editor can trim it, say to move only the widgets to a second device.
 
 ## Configuring ping targets
 
@@ -257,8 +312,9 @@ Everything except WiFi credentials, the key and the account lives in `/config.js
   "activeWidget": 0,
   "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
+  "display": { "brightness": 100, "flip": false },
   "sources": [
-    { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
+    { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
       "intervalS": 600,
       "fields": [ { "name": "temp", "path": "current.temperature_2m", "decimals": 0 },
                   { "name": "humidity", "path": "current.relative_humidity_2m" },
@@ -313,7 +369,7 @@ curl -X PUT "http://<device-ip>/api/sources?id=weather" \
   -H "Authorization: Bearer <key>" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
     "intervalS": 600,
     "fields": [
       { "name": "temp",     "path": "current.temperature_2m", "decimals": 0 },
@@ -323,9 +379,22 @@ curl -X PUT "http://<device-ip>/api/sources?id=weather" \
   }'
 ```
 
+Or paste them: **Paste data sources as text** on the same page takes one or more sources at once, either as that JSON (a single object, an array, or the `{"sources":[...]}` that `GET /api/sources` returns) or as plain text in this form:
+
+```
+id:       weather
+url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m
+interval: 600
+header:   Authorization = Bearer abc123
+fields:   temp = current.temperature_2m (decimals 0)
+          humidity = current.relative_humidity_2m
+```
+
+`header` is optional, and `fields` continues on the following lines, one `name = path` each. Every block in [examples/widgets/README.md](examples/widgets/README.md#data-sources-used) is in this form, so a widget's sources can be copied straight from there. Pasting an `id` that already exists replaces that source; a blank header value keeps the stored one. **Fill with the current sources** puts the device's sources into the box in the same form, for editing or for moving them to another device (header values are not included).
+
 | Field            | Meaning                                                                                              |
 | ---------------- | ---------------------------------------------------------------------------------------------------- |
-| `id`             | Name used in layouts: 1–16 lowercase letters, digits or dashes. Up to 6 sources                      |
+| `id`             | Name used in layouts: 1–16 lowercase letters, digits or dashes. Up to 32 sources                     |
 | `url`            | `http://` or `https://`, up to 511 characters. Put API keys that go in the query string here          |
 | `intervalS`      | Seconds between fetches, minimum 10, default 300                                                     |
 | `header`         | Optional `{ "name": "Authorization", "value": "Bearer ..." }` for APIs that want a key in a header    |
@@ -336,26 +405,56 @@ A layout then uses `{api.<id>.<field>}`, for example `{api.weather.temp}`. Every
 | Key                    | Value                                                                                   |
 | ---------------------- | --------------------------------------------------------------------------------------- |
 | `api.<id>.status`      | `ok`, `stale` (last fetch failed or is overdue, old values still shown), `error`, `wait` |
-| `api.<id>.color`       | `ok`, `warn`, `bad` or `dim` for the same states, so a colour can track the fetch state  |
+| `api.<id>.color`       | `ok`, `warn`, `bad` or `dim` for the same states, so a color can track the fetch state  |
 | `api.<id>.age`         | Time since the last successful fetch: `12s`, `5m`, `2h`                                 |
 | `api.<id>.updated`     | Clock time of the last successful fetch                                                 |
 | `api.<id>.error`       | The last error, e.g. `HTTP 401` or `not JSON: InvalidInput`                             |
 
-Values are strings of up to 31 characters; nested objects and arrays are serialised and truncated. Like pings, a source is only fetched while a widget that references it is on screen, so an API quota is not spent on screens nobody is looking at. Saving a source or pressing **Test** on the setup page fetches it immediately and shows the extracted values. Fetches run in a background task, so a slow API never stalls the display, and the response is parsed with a filter that keeps only the requested paths, so large API responses cost little memory. Responses over 64 KB are rejected.
+Those five names always read the fetch state, so call a field something else: an API's own `status` value goes in a field named `state`, for example.
+
+Values are strings of up to 31 characters; nested objects and arrays are serialized and truncated. Like pings, a source is only fetched while a widget that references it is on screen, so an API quota is not spent on screens nobody is looking at. Saving a source or pressing **Test** on the setup page fetches it immediately and shows the extracted values. Fetches run in a background task, so a slow API never stalls the display, and the response is parsed with a filter that keeps only the requested paths, so large API responses cost little memory. Responses over 64 KB are rejected.
 
 HTTPS connections are encrypted but the server certificate is **not** verified. Header values are stored in `/config.json` and never returned by the API; `GET /api/config` omits sources entirely. The editor's template picker includes a **Weather** layout built for the Open-Meteo source above.
+
+## History
+
+Any key can be sampled over time, so a screen can show where a value has been, not just where it is: the stock price over the day, the temperature over the last hours, ping latency for the last half hour. Add a key under **History** on the setup page, or with the API:
+
+```bash
+curl -X PUT "http://<device-ip>/api/series?key=api.weather.temp" \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '{"every": 300, "keep": 43200}'
+```
+
+| Field   | Meaning                                                                                           |
+| ------- | ------------------------------------------------------------------------------------------------- |
+| `key`   | Any layout key, written without braces: `api.weather.temp`, `ping.0.ms`, `wifi.rssi`, `heap`. Up to 12 keys |
+| `every` | Seconds between samples, minimum 5, default 60                                                     |
+| `keep`  | Seconds of history to keep, default 3600. At most 720 samples per key, so `keep / every` must be 720 or less |
+
+A sampled key keeps its source polling and its ping running whatever is on screen, so the history has no gaps while the device is up. Samples live in RAM and start over after a reboot. While a key is sampled, every layout can read:
+
+| Key                             | Value                                                         |
+| ------------------------------- | ------------------------------------------------------------- |
+| `<key>.min`, `<key>.max`, `<key>.avg` | Lowest, highest and mean of the kept samples            |
+| `<key>.first`, `<key>.last`     | Oldest and newest sample                                      |
+| `<key>.delta`                   | `last` minus `first`: how much the value moved                |
+| `<key>.count`, `<key>.span`     | Number of samples, and seconds between the first and the last |
+
+So `{round(api.nvda.c.delta, 2)}` is today's move and `{api.weather.temp.max}` the day's high. These work inside math and LED rules like any other key. The chart element below draws the samples themselves.
 
 ## JSON layout widgets
 
 A layout widget is a JSON file that lists what to draw. No compiler, no flashing: open `http://deskwig.local/editor`, pick a template, edit the text, and watch the preview. "Show on device" puts it on the real screen for 60 seconds, "Save" stores it at `/widgets/<id>.json` on the device and adds it to the widget list. Up to 12 layouts can be stored.
 
-Fifty-two more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole and OctoPrint, each showing a different feature and a matching LED behaviour, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
+Fifty-six more example layouts live in [`examples/widgets/`](examples/widgets/), from stock tickers, crypto boards and exchange rates to launches, earthquakes, space weather, surf and rain forecasts, Pi-hole, OctoPrint and charts of values over time, each showing a different feature and a matching LED behavior, with the data sources they need documented alongside. They are not preloaded; paste one into the editor or push it with the API.
 
 Eight layouts are preloaded on first boot so the device is useful out of the box: Big Clock, Stacked Clock, Ping Board, Status Lights, Latency Hero, Latency Meters, Dashboard and Network. Edit or delete them like any other widget; they are only written once, so your changes stick. The editor's template picker also offers Blank, Night Clock, Date Card, Server Rack, Signal Meter, Weather and Cards. Templates live in `src/layout/LayoutTemplates.cpp`, and adding one there makes it appear in the picker and, if marked `preload`, on new devices.
 
 ```json
 {
-  "name": "Big Clock",
+  "name": "Simple Clock",
   "elements": [
     {"type":"text","x":85,"y":96,"size":4,"align":"center","color":"text","text":"{time}"},
     {"type":"text","x":85,"y":176,"size":2,"align":"center","color":"text","text":"{date.day} {date.md}"},
@@ -366,7 +465,7 @@ Eight layouts are preloaded on first boot so the device is useful out of the box
 }
 ```
 
-The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 63 elements per layout, nested up to 6 deep.
+The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 127 elements per layout, nested up to 6 deep, and up to 96 templated numbers; a saved layout can be up to 32 KB of JSON.
 
 ### Elements
 
@@ -383,6 +482,7 @@ The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel bui
 | `triangle` | `points: [[x,y],[x,y],[x,y]]`           | Points are relative to the element's own top-left                           |
 | `polygon`  | `points: [[x,y], ...]`                  | 3 to 8 points                                                               |
 | `image`    | `src`, `w` `h`, `refresh`               | An uploaded image by name or an http(s) URL; see [Images](#images)          |
+| `chart`    | `series`, `window`, `w` `h`             | The samples of a key from [History](#history) as a line, area, bars or dots; see [Charts](#charts) |
 
 ### Flow layout
 
@@ -409,7 +509,7 @@ Elements are laid out like blocks in HTML: the screen is a column, and each elem
 }
 ```
 
-An element with both `x` and `y` is positioned absolutely inside its parent's content box instead of flowing, which is how every layout written before this model still renders unchanged. Absolute text without `w` keeps its old anchor semantics: `x` is the left, centre or right edge according to `align`.
+An element with both `x` and `y` is positioned absolutely inside its parent's content box instead of flowing, which is how every layout written before this model still renders unchanged. Absolute text without `w` keeps its old anchor semantics: `x` is the left, center or right edge according to `align`.
 
 Box properties, all in `style`:
 
@@ -434,7 +534,7 @@ Text uses the built-in 6 × 8 bitmap font scaled by `size` (1–40) unless `font
 
 Three fonts are built into the firmware: **sans** and **bold** (Inter, Latin subset) and **emoji** (Noto Emoji, monochrome, about 1,300 common emoji). Upload more `.ttf` files (up to 2 MB each, 12 fonts total) under **Fonts** on the setup page or with `POST /api/fonts?name=<name>` as a multipart form with a `file` field. Uploaded fonts live in `/fonts` on the filesystem and are loaded into PSRAM the first time a layout uses them.
 
-Any character a font lacks falls back to the emoji font and then to sans, so emoji work in every font, including the bitmap one, and render in the element's colour. Glyphs are rasterised on the device with [stb_truetype](https://github.com/nothings/stb) into a cache in PSRAM. That library does no bounds checking on the font file, so only upload fonts you trust. The editor loads the same font files from the device, so the preview matches. Built-in fonts are subset with `tools/make_fonts.py`; regenerate them from the full fonts if you want a different character set.
+Any character a font lacks falls back to the emoji font and then to sans, so emoji work in every font, including the bitmap one, and render in the element's color. Glyphs are rasterized on the device with [stb_truetype](https://github.com/nothings/stb) into a cache in PSRAM. That library does no bounds checking on the font file, so only upload fonts you trust. The editor loads the same font files from the device, so the preview matches. Built-in fonts are subset with `tools/make_fonts.py`; regenerate them from the full fonts if you want a different character set.
 
 ### Images
 
@@ -446,11 +546,53 @@ Upload PNG, JPEG or animated GIF files (up to 512 KB each, 24 in total) under **
 {"type":"box","style":{"image":"sky"},"children":[ ... ]}
 ```
 
+Images can be renamed from the setup page. Since layouts refer to them by name, the page first checks every stored widget for the old name, lists the ones that use it, and offers to rewrite and save them with the new name.
+
 An image element sizes itself to the picture, or keeps the aspect ratio when only `w` or `h` is given. `style.fit` is `contain` (default), `cover` or `stretch`. A box's `style.image` is drawn to cover the box behind its children, which is how a layout gets a picture background. Animated GIFs play at their own frame rate.
 
 `src` can be an http(s) URL. Like data sources, a URL image is downloaded only while a layout showing it is on screen, then every `refresh` seconds (default 600, minimum 30), so a weather radar or a camera still stays current without hammering the server. HTTPS is encrypted but the certificate is not verified. Until the first download finishes the element shows a dim frame.
 
 Images are decoded once per size into sprites cached in PSRAM, so drawing them each frame is cheap; a full-screen background costs about 108 KB of PSRAM. The editor's preview loads stored images from the device and URLs directly (a GIF shows its first frame there).
+
+### Charts
+
+A `chart` draws the samples of a key that is being recorded under [History](#history). Time runs left to right across the last `window` seconds (or across everything kept), and values are scaled between `style.min` and `style.max`, or to fit the data with a little headroom when they are not given:
+
+```json
+{"type":"chart","series":"api.nvda.c","window":14400,"h":90,"color":"ok","style":{"kind":"area","background":"#0c1016","radius":6}}
+{"type":"chart","series":"ping.0.ms","window":1800,"h":50,"style":{"kind":"dots","min":0,"thickness":2}}
+{"type":"chart","series":"wifi.rssi","h":40,"style":{"kind":"bars","min":-90,"max":-30,"gradient":"#102030"}}
+```
+
+| Property                | Meaning                                                                     |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `series`                | The sampled key, exactly as entered under History                           |
+| `window`                | Seconds of history shown, from the right edge back. Omit for everything kept |
+| `style.kind`            | `line` (default), `area` (line with the space under it filled), `bars`, `dots` |
+| `style.min`, `style.max`| Value range. Either can be omitted to follow the data; they can be templates, e.g. `"{api.nvda.c.min - 1}"` |
+| `style.thickness`       | Line width, or dot radius (default 2)                                       |
+| `style.color`           | The line, bars or dots. `background` fills the plot area, `radius` rounds it |
+| `style.gradient`        | For `area` the fill color under the line; for `bars` the bars fade into it  |
+
+Until the first sample arrives a chart shows only a dim baseline. In flow layout a chart is as wide as its box and 40 px tall unless `h` is given.
+
+### Live numbers
+
+Every number in a layout can be a template instead, evaluated each frame: `x`, `y`, `w`, `h`, `r`, `x2`, `y2`, `start`, `end`, the entries of `points`, `window`, and the style properties `size`, `thickness`, `radius`, `borderWidth`, `padding`, `gap`, `min` and `max`. That is how shapes and positions follow data rather than just text and colors:
+
+```json
+{"type":"circle","x":"{clamp((api.weather.temp + 10) * 4, 0, 160)}","y":40,"r":5,"color":"accent"}
+{"type":"rect","x":0,"y":60,"w":"{ping.0.ms / 2}","h":6,"fill":true,"color":"{ping.0.color}"}
+{"type":"line","x":0,"y":"{160 - api.weather.temp.delta * 4}","x2":160,"y2":"{160 - api.weather.temp.delta * 4}","color":"dim"}
+{"type":"text","text":"{api.btc.price}","size":"{if(api.btc.change > 5, 4, 3)}"}
+{"type":"polygon","points":[[0,40],["{api.baro.hpa - 950}",0],[80,40]],"color":"warn"}
+```
+
+A template that cannot be resolved counts as 0. Up to 40 numbers per layout can be templates, each up to 55 characters; named `styles` entries take plain numbers only.
+
+Colors can be computed too. `rgb(r, g, b)`, `hsv(h, s, v)` and `mix(c1, c2, t)` in an expression produce a color any color property accepts, so `"color":"{if(api.nvda.dp < 0, rgb(255,60,60), rgb(40,220,120))}"` turns red on a down day, and `"color":"{mix(rgb(0,120,255), rgb(255,80,0), clamp((api.weather.temp + 10) / 45, 0, 1))}"` slides from blue to orange with the temperature. The same works for the LED color.
+
+Boxes, rects and bars can fade between two colors with `style.gradient`: `{"type":"box","style":{"background":"#101820","gradient":"#1c2a3a","radius":8}}` runs from the background at the top to the gradient color at the bottom; `"gradientDir":"right"` runs it left to right. On a bar the fill fades from `color` to `gradient`.
 
 ### Status LED
 
@@ -483,9 +625,9 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 
 | Property                    | Applies to                | Meaning                                                 |
 | --------------------------- | ------------------------- | ------------------------------------------------------- |
-| `color`                     | all                       | Text, fill or outline colour                            |
+| `color`                     | all                       | Text, fill or outline color                            |
 | `background` (or `bg`)      | box, rect, text, shapes, bar, arc | Fill behind the element; the track for bar and arc |
-| `border`, `borderWidth`     | box, rect, shapes         | Outline colour and width                                |
+| `border`, `borderWidth`     | box, rect, shapes         | Outline color and width                                |
 | `radius`                    | box, rect, bar            | Corner radius                                           |
 | `font`                      | text                      | TrueType font name; empty for the bitmap font           |
 | `size`                      | text                      | Bitmap scale 1–40, or pixel line height 6–160 with a font |
@@ -493,10 +635,12 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `fill`                      | rect, shapes              | Fill with `color`                                       |
 | `thickness` (or `width`)    | arc, line                 | Ring width or line width                                |
 | `position`                  | any                       | `absolute` positions at `x`/`y` even if one is missing  |
+| `gradient`, `gradientDir`   | box, rect, bar, chart     | Second color of a gradient fill, and `down` (default) or `right` |
+| `kind`, `min`, `max`        | chart                     | `line`, `area`, `bars` or `dots`, and the value range  |
 | `fit`                       | image                     | `contain`, `cover` or `stretch`                         |
 | `image`                     | box                       | Background image (name or URL), drawn to cover the box  |
 
-`color`, `background` and `border` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}`. That is how a layout changes colour with the data without needing conditionals. A colour template that can't be resolved (for example a ping target that isn't configured) renders dim.
+`color`, `background`, `border` and `gradient` take a role name (`bg`, `text`, `dim`, `ok`, `warn`, `bad`, `accent`), a `#rrggbb` hex value, or a template that resolves to a role name such as `{ping.0.color}` or to a color computed with `rgb()`, `hsv()` or `mix()` (see [Live numbers](#live-numbers)). That is how a layout changes color with the data. A color template that can't be resolved (for example a ping target that isn't configured) renders dim.
 
 ### Keys
 
@@ -505,18 +649,19 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | Key                                            | Value                                                       |
 | ---------------------------------------------- | ----------------------------------------------------------- |
 | `time`, `time.sec`, `time.ampm`                | `09:41`, `09:41:07`, `AM` (empty in 24-hour mode)           |
-| `time.hour`, `time.min`                        | `09`, `41`, for stacked clocks                              |
+| `time.hour`, `time.min`, `time.second`         | `09`, `41`, `07`, for stacked and binary clocks             |
 | `date`, `date.day`, `date.md`, `date.dow`      | `2026-09-26`, `Sat`, `Sep 26`, `Saturday`                   |
-| `date.year`                                    | `2026`                                                      |
+| `date.year`, `date.month`, `date.dom`          | `2026`, `09`, `26`, numeric for arithmetic                  |
 | `wifi.ssid`, `wifi.ip`, `wifi.rssi`            | Network name, IP address, signal in dBm                     |
 | `wifi.pct`, `wifi.bars`, `wifi.color`          | Signal as 0–100, `\|\|\|.`, and `ok`/`warn`/`bad`/`dim`     |
 | `hostname`, `uptime`, `heap`                   | Device name, `3d 4h`, free heap in KB                       |
 | `ping.count`                                   | Number of configured targets                                |
 | `ping.N.name`, `ping.N.host`                   | Target N (0-based) as configured                            |
-| `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; colour role            |
+| `ping.N.ms`, `ping.N.status`, `ping.N.color`   | Latency or `--`; `ok`/`wait`/`down`; color role            |
 | `ping.N.bars`, `ping.N.trend`                  | Last 8 results as `\|\|.\|\|\|\|\|`; `^`, `v` or `>`            |
 | `api.<id>.<field>`                             | A value from a [data source](#data-sources)                |
 | `api.<id>.status`, `.color`, `.age`, `.updated`| Fetch state of that source                                  |
+| `<key>.min`, `.max`, `.avg`, `.first`, `.last`, `.delta`, `.count`, `.span` | Statistics of a key sampled under [History](#history) |
 
 `N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen, and the same goes for data sources.
 
@@ -540,12 +685,15 @@ A brace that is not a plain key is evaluated as arithmetic, with keys as variabl
 | `< > <= >= == !=`                             | Comparisons give `1` or `0`                                                      |
 | `&&`, `\|\|`, `!`                              | Logic on those                                                                   |
 | `if(cond, a, b)`                              | `a` when `cond` is non-zero, else `b`                                            |
+| `lerp(a, b, t)`                               | `a + (b - a) * t`                                                                |
+| `rgb(r, g, b)`, `hsv(h, s, v)`                | A color as a number, for color properties. `h` in degrees, `s` and `v` 0-100  |
+| `mix(c1, c2, t)`                              | Blends two colors, `t` from 0 to 1                                              |
 
 Values are read as numbers, and a leading number is enough, so `{api.weather.age}` reading `12s` gives 12. Without `round`, whole numbers print without decimals and anything else with up to two. Any unknown key, non-numeric value or division by zero makes the whole brace `--`, the same as an unknown key. Put spaces around a minus after a key that contains dashes (`{api.my-source.temp - 3}`), since `my-source` is read as one name first.
 
-The editor page has a **Design** panel next to the code: click an element on the preview or in the element tree to select it, edit its properties in the inspector (type, text, font, colours with a picker, size, alignment, fill, radius, borders, flow settings, image, points, arc angles), drag fixed-position elements on the preview, and drag rows in the tree to reorder them or drop them into a box. The toolbar adds, duplicates, moves and deletes elements, and the widget's own entry edits the name, root layout and the LED rules. Every change is written into the JSON, and typing in the JSON updates the tree, so both views always agree and undo covers both.
+The editor page has a **Design** panel next to the code: click an element on the preview or in the element tree to select it, edit its properties in the inspector (type, text, font, colors with a picker, size, alignment, fill, radius, borders, flow settings, image, points, arc angles), drag fixed-position elements on the preview, and drag rows in the tree to reorder them or drop them into a box. The toolbar adds, duplicates, moves and deletes elements, and the widget's own entry edits the name, root layout and the LED rules. Every change is written into the JSON, and typing in the JSON updates the tree, so both views always agree and undo covers both.
 
-The code side is a real code editor: JSON highlighting, bracket matching and auto-closing, folding, search and replace (Ctrl+F), undo and redo that work anywhere on the page (Ctrl+Z, Ctrl+Y, also for changes made in the Design panel), a Format button, Ctrl+S to save, and validation errors underlined on the exact element, style or LED rule they refer to. It is CodeMirror, bundled by `tools/editor` and served gzipped from the firmware at `/cm.js`, so it works with no internet. It lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colours as the device, so what you see is what you get. Layouts can also be pushed from a script:
+The code side is a real code editor: JSON highlighting, bracket matching and auto-closing, folding, search and replace (Ctrl+F), undo and redo that work anywhere on the page (Ctrl+Z, Ctrl+Y, also for changes made in the Design panel), a Format button, Ctrl+S to save, and validation errors underlined on the exact element, style or LED rule they refer to. It is CodeMirror, bundled by `tools/editor` and served gzipped from the firmware at `/cm.js`, so it works with no internet. It lists every key with its current value and inserts it at the cursor when tapped. The preview is drawn in the browser with the same font and colors as the device, so what you see is what you get. Layouts can also be pushed from a script:
 
 ```bash
 curl -X PUT "http://<device-ip>/api/layouts?id=clock" \
@@ -588,13 +736,13 @@ src/
   app/                Board pins, Widget interface, ScreenManager, built-in widget registry, log buffer, status LED, system screens
   widgets/            PingWidget, ClockWidget
   layout/             JSON layout widgets: parser/renderer, template keys, expressions, fonts, images, file store + preview, built-in templates
-examples/widgets/     52 example layouts with a README of the data sources they use
+examples/widgets/     56 example layouts with a README of the data sources they use
 docs/images/          photos, enclosure renders and web page screenshots used in this README
 tools/editor/         npm project that builds web/cm.js.gz, the CodeMirror bundle for the editor
 web/                  cm.js.gz, embedded in the firmware
 fonts/                TrueType subsets embedded in the firmware (sans, bold, emoji), built by tools/make_fonts.py
-lib/stb/              stb_truetype (public domain) font rasteriser
-  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task)
+lib/stb/              stb_truetype (public domain) font rasterizer
+  net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task), series (keys sampled over time)
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
 platformio.ini        board, partition table, library deps
 ```

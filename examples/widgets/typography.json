@@ -17,7 +17,7 @@
     },
     {
       "type": "text",
-      "text": "bitmap size 2",
+      "text": "bitmap 2x",
       "size": 2
     },
     {
@@ -57,9 +57,9 @@
     },
     {
       "type": "text",
-      "text": "bold 44",
+      "text": "bold {round(24+wifi.pct/5)}",
       "font": "bold",
-      "size": 44,
+      "size": "{24+wifi.pct/5}",
       "color": "warn"
     },
     {
@@ -69,6 +69,10 @@
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
@@ -80,27 +84,21 @@
           "type": "text",
           "text": "center",
           "font": "sans",
-          "size": 14,
-          "align": "center"
+          "size": 14
         },
         {
           "type": "text",
           "text": "right",
           "font": "sans",
-          "size": 14,
-          "align": "right"
+          "size": 14
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "text",
-      "text": "upload .ttf on the setup page",
-      "color": "dim",
-      "align": "center"
+      "text": "size can follow a value",
+      "align": "center",
+      "color": "#7c8794"
     }
   ]
 }

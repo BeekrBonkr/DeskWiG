@@ -7,6 +7,7 @@
 #include <esp_heap_caps.h>
 
 #include "WifiManager.h"
+#include "FetchLock.h"
 #include "../web/Settings.h"
 #include "../app/Log.h"
 
@@ -442,12 +443,15 @@ static void extract(const FetchJob& job, const uint8_t* body, size_t len, FetchR
 // KEY DISCOVERY
 // =====================
 // Large replies are parsed whole, so the document lives in PSRAM.
-struct PsramAllocator : ArduinoJson::Allocator {
-  void* allocate(size_t n) override { return heap_caps_malloc(n, MALLOC_CAP_SPIRAM); }
-  void deallocate(void* p) override { heap_caps_free(p); }
-  void* reallocate(void* p, size_t n) override { return heap_caps_realloc(p, n, MALLOC_CAP_SPIRAM); }
-};
-static PsramAllocator psramAlloc;
+void* PsramJsonAllocator::allocate(size_t n) {
+  return heap_caps_malloc_prefer(n, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+void PsramJsonAllocator::deallocate(void* p) { heap_caps_free(p); }
+void* PsramJsonAllocator::reallocate(void* p, size_t n) {
+  return heap_caps_realloc_prefer(p, n, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+PsramJsonAllocator psramJsonAlloc;
+static PsramJsonAllocator& psramAlloc = psramJsonAlloc;
 
 static struct {
   bool pending;
@@ -458,7 +462,7 @@ static struct {
   char error[SOURCE_ERROR_LEN + 1];
   bool isJson;
   bool truncated;
-  String keys;            // serialised [{path, value}, ...]
+  String keys;            // serialized [{path, value}, ...]
 } disc;
 static String discScratch;  // built on the fetch task, swapped in under the lock
 
@@ -541,7 +545,7 @@ void sourceDiscoverToJson(JsonObject obj) {
   obj["url"] = disc.url;
   if (disc.state == SourceState::ERROR) obj["error"] = disc.error;
   if (disc.state == SourceState::OK && disc.keys.length()) {
-    // Already serialised; splice it in as raw JSON.
+    // Already serialized; splice it in as raw JSON.
     obj["result"] = serialized(disc.keys);  // String overload copies, so the lock can go
   }
   sourcesUnlock();
@@ -552,6 +556,7 @@ static void doFetch(const FetchJob& job, FetchResult& r) {
   for (uint8_t i = 0; i < MAX_SOURCE_FIELDS; i++) strlcpy(r.values[i], "--", sizeof(r.values[i]));
 
   bool https = strncmp(job.url, "https://", 8) == 0;
+  FetchGuard oneAtATime;   // shared with the image task; released when this returns
   WiFiClientSecure secure;
   WiFiClient plain;
   if (https) secure.setInsecure();
@@ -716,6 +721,14 @@ static void fetchTask(void*) {
     applyResult(job, result);
     vTaskDelay(pdMS_TO_TICKS(50));
   }
+}
+
+void sourcesAlloc() {
+  if (settings.sources) return;
+  settings.sources = (DataSource*)heap_caps_calloc_prefer(MAX_SOURCES, sizeof(DataSource), 2,
+      MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  settings.sourceCap = settings.sources ? MAX_SOURCES : 0;
+  if (!settings.sources) Log.println("[SRC] No memory for data sources");
 }
 
 void sourcesBegin() {

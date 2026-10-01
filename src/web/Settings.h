@@ -3,6 +3,7 @@
 #include "../net/PingTarget.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
+#include "../net/Series.h"
 
 // Short enough to type from the device screen; brute force is blunted by
 // the login lockout in Auth.cpp.
@@ -45,11 +46,20 @@ struct Settings {
   bool ledEnabled = true;
   uint8_t ledBrightness = 5;
 
+  uint8_t displayBrightness = 100;   // backlight, 1-100 percent
+  bool displayFlip = false;          // mounted upside down: rotate 180 degrees
+
   uint8_t targetCount = 0;
   PingTarget targets[MAX_PING_TARGETS];
 
+  // Allocated by sourcesAlloc(); sourceCap is 0 if that failed.
   uint8_t sourceCount = 0;
-  DataSource sources[MAX_SOURCES];
+  uint8_t sourceCap = 0;
+  DataSource* sources = nullptr;
+
+  // Keys sampled over time for charts and {key.min}-style statistics.
+  uint8_t seriesCount = 0;
+  SeriesCfg series[MAX_SERIES];
 };
 
 extern Settings settings;
@@ -67,11 +77,19 @@ void saveCredentials();
 // Replaces the API key with a fresh random one and stores it in NVS.
 void regenerateApiToken();
 
+// Stores a key from a backup. False if it is not 8 characters of the
+// key alphabet.
+bool setApiToken(const char* token);
+
+// Writes a whole config object to /config.json as-is (backup restore).
+// Takes effect at the next boot; call it right before a restart.
+bool saveConfigRaw(JsonVariantConst config);
+
 // Validates and stores a hostname (lowercase letters, digits, dashes).
 // Returns false and leaves the setting untouched if invalid.
 bool setHostname(const char* name);
 
-// Erases the filesystem and NVS. Caller should restart afterwards.
+// Erases the filesystem and NVS. Caller should restart afterward.
 void factoryReset();
 
 void loadDefaultTargets();
@@ -83,3 +101,6 @@ bool setClockTz(const char* tz);
 
 // Validates and stores the custom NTP host (hostname or IP).
 bool setNtpServer(const char* host);
+
+// Clamps the backlight level to 1-100 and stores it. Does not apply it.
+void setDisplayBrightness(int pct);

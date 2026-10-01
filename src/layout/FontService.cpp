@@ -30,7 +30,7 @@ struct Font {
   const uint8_t* data;     // flash (built in) or PSRAM (uploaded, once loaded)
   size_t size;
   bool builtin;
-  bool loaded;             // stbtt_fontinfo initialised
+  bool loaded;             // stbtt_fontinfo initialized
   bool broken;             // failed to load; don't retry every frame
   stbtt_fontinfo info;
   int ascent, descent, lineGap;
@@ -288,7 +288,7 @@ static bool invisible(uint32_t cp) {
   return cp == 0xFE0F || cp == 0xFE0E || cp == 0x200D || cp == 0x200B;
 }
 
-// Finds or rasterises a glyph. Returns nullptr if the font lacks it.
+// Finds or rasterizes a glyph. Returns nullptr if the font lacks it.
 static Glyph* getGlyph(uint8_t fi, uint16_t px, uint32_t cp) {
   Font& f = fontTable[fi];
   if (!ensureLoaded(f)) return nullptr;

@@ -14,159 +14,269 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "{api.gh.name}",
-      "font": "bold",
-      "size": 20,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "@{api.gh.login}",
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
       "type": "box",
-      "children": [
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "{api.gh.repos}",
-              "font": "bold",
-              "size": 28,
-              "align": "center"
-            },
-            {
-              "type": "text",
-              "text": "repos",
-              "color": "dim",
-              "align": "center"
-            }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
-        },
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "{api.gh.followers}",
-              "font": "bold",
-              "size": 28,
-              "align": "center"
-            },
-            {
-              "type": "text",
-              "text": "followers",
-              "color": "dim",
-              "align": "center"
-            }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
-        },
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "{api.gh.following}",
-              "font": "bold",
-              "size": 28,
-              "align": "center"
-            },
-            {
-              "type": "text",
-              "text": "following",
-              "color": "dim",
-              "align": "center"
-            }
-          ],
-          "style": {
-            "direction": "column",
-            "gap": 2
-          }
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "DeskWiG",
-      "color": "dim"
-    },
-    {
-      "type": "box",
+      },
       "children": [
         {
           "type": "text",
-          "text": "stars ⭐",
-          "color": "dim"
+          "text": "GITHUB",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{api.repo.stars}",
-          "align": "right"
+          "text": "{api.gh.age}",
+          "align": "right",
+          "color": "{api.gh.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "padding": 10,
+        "gap": 6,
+        "align": "center",
+        "radius": 12,
+        "background": "#2a2250",
+        "gradient": "#0b0716",
+        "border": "#3b2f75"
+      },
       "children": [
         {
-          "type": "text",
-          "text": "open issues",
-          "color": "dim"
+          "type": "box",
+          "w": 49,
+          "h": 49,
+          "children": [
+            {
+              "type": "circle",
+              "x": 0,
+              "y": 0,
+              "r": 24,
+              "color": "#2b3442",
+              "style": {
+                "border": "#9f8cff",
+                "borderWidth": 2
+              }
+            },
+            {
+              "type": "text",
+              "x": 24,
+              "y": 10,
+              "text": "👤",
+              "font": "emoji",
+              "size": 28,
+              "align": "center",
+              "color": "#c9b8ff"
+            }
+          ]
         },
         {
           "type": "text",
-          "text": "{api.repo.issues}",
-          "align": "right"
+          "text": "{api.gh.name}",
+          "font": "bold",
+          "size": 20,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "text": "@{api.gh.login}",
+          "align": "center",
+          "color": "#c9b8ff"
         }
-      ],
+      ]
+    },
+    {
+      "type": "box",
       "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+        "padding": 6,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "box",
+              "w": 47,
+              "style": {
+                "gap": 3
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{api.gh.repos}",
+                  "font": "bold",
+                  "size": 22,
+                  "align": "center"
+                },
+                {
+                  "type": "text",
+                  "text": "repos",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 47,
+              "style": {
+                "gap": 3
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{api.gh.followers}",
+                  "font": "bold",
+                  "size": 22,
+                  "align": "center"
+                },
+                {
+                  "type": "text",
+                  "text": "fans",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            },
+            {
+              "type": "box",
+              "w": 47,
+              "style": {
+                "gap": 3
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{api.gh.following}",
+                  "font": "bold",
+                  "size": 22,
+                  "align": "center"
+                },
+                {
+                  "type": "text",
+                  "text": "follows",
+                  "align": "center",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 7,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10,
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{api.repo.name}",
+              "font": "bold",
+              "size": 16
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 4,
+                "align": "center"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "⭐",
+                  "font": "emoji",
+                  "size": 14,
+                  "color": "#ffd24a"
+                },
+                {
+                  "type": "text",
+                  "text": "{api.repo.stars}",
+                  "font": "bold",
+                  "size": 16
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "open issues",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.repo.issues}",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "forks",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{api.repo.forks}",
+              "align": "right"
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "GitHub · {api.gh.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

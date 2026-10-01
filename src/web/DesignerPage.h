@@ -10,7 +10,7 @@ static const char DESIGNER_JS[] = R"js(
 (function () {
 'use strict';
 
-const ADD_TYPES = ['text', 'box', 'line', 'rect', 'bar', 'circle', 'ellipse', 'arc', 'triangle', 'polygon', 'image'];
+const ADD_TYPES = ['text', 'box', 'line', 'rect', 'bar', 'chart', 'circle', 'ellipse', 'arc', 'triangle', 'polygon', 'image'];
 const ROLES = ['text', 'dim', 'ok', 'warn', 'bad', 'accent', 'bg'];
 const LED_MODES = ['off', 'solid', 'breathe', 'blink', 'pulse', 'rainbow'];
 
@@ -309,13 +309,19 @@ const DEFAULTS = {
   arc: { type: 'arc', w: 60, value: '{wifi.pct}', color: 'accent' },
   triangle: { type: 'triangle', points: [[0, 20], [12, 0], [24, 20]], color: 'accent' },
   polygon: { type: 'polygon', points: [[12, 0], [24, 8], [20, 24], [4, 24], [0, 8]], color: 'ok' },
-  image: { type: 'image', src: '', w: 48 }
+  image: { type: 'image', src: '', w: 48 },
+  chart: { type: 'chart', series: '', h: 48, style: { kind: 'area' } }
 };
+
+// Keys sampled on the setup page, for a new chart's default series.
+let seriesNames = [];
+fetch('/api/series').then(r => r.json()).then(j => { seriesNames = (j.series || []).map(x => x.key); }).catch(() => {});
 
 function addElement(type) {
   if (!model) return;
   const el = JSON.parse(JSON.stringify(DEFAULTS[type]));
   if (type === 'image') el.src = imageNames[0] || 'https://';
+  if (type === 'chart') el.series = seriesNames[0] || 'wifi.rssi';
   let arr = model.elements;
   const cur = getEl(sel);
   if (sel !== 'root' && cur && cur.type === 'box') { if (!cur.children) cur.children = []; arr = cur.children; }
@@ -371,10 +377,15 @@ const FIELDS = [
   { key: 'text', label: 'Text', kind: 'text', types: ['text'], hint: '{keys} and math work here' },
   { key: 'value', label: 'Value', kind: 'text', types: ['bar', 'arc'], hint: '0-100 after expansion' },
   { key: 'src', label: 'Image', kind: 'image', types: ['image'] },
+  { key: 'series', label: 'Series', kind: 'text', types: ['chart'], hint: 'a key sampled under History on the setup page' },
+  { key: 'window', label: 'Window s', kind: 'num', types: ['chart'], hint: 'seconds shown; empty = everything kept' },
+  { key: 'kind', label: 'Kind', kind: 'sel', opts: ['', 'line', 'area', 'bars', 'dots'], types: ['chart'], style: true },
+  { key: 'min', label: 'Min', kind: 'num', types: ['chart'], style: true, hint: 'empty = fit the data' },
+  { key: 'max', label: 'Max', kind: 'num', types: ['chart'], style: true },
   { key: 'font', label: 'Font', kind: 'font', types: ['text'] },
   { key: 'size', label: 'Size', kind: 'num', types: ['text'], hint: '1-40 bitmap, 6-160 with a font' },
   { key: 'align', label: 'Align', kind: 'sel', opts: ['', 'left', 'center', 'right'], types: ['text'] },
-  { key: 'color', label: 'Color', kind: 'color', types: ['text', 'line', 'rect', 'bar', 'circle', 'ellipse', 'arc', 'triangle', 'polygon'] },
+  { key: 'color', label: 'Color', kind: 'color', types: ['text', 'line', 'rect', 'bar', 'chart', 'circle', 'ellipse', 'arc', 'triangle', 'polygon'] },
   { key: 'fill', label: 'Fill', kind: 'bool', types: ['rect', 'circle', 'ellipse', 'triangle', 'polygon'] },
   { key: 'class', label: 'Class', kind: 'class', types: ['*'] },
   { key: 'position', label: 'Position', kind: 'position', types: ['*'] },
@@ -393,11 +404,13 @@ const FIELDS = [
   { key: 'padding', label: 'Padding', kind: 'num', types: ['root', 'box'], style: true },
   { key: 'align', label: 'Align items', kind: 'sel', opts: ['', 'stretch', 'start', 'center', 'end'], types: ['root', 'box'], style: true },
   { key: 'justify', label: 'Justify', kind: 'sel', opts: ['', 'start', 'center', 'end', 'between'], types: ['root', 'box'], style: true },
-  { key: 'background', label: 'Background', kind: 'color', types: ['root', 'box', 'rect', 'text', 'bar', 'arc', 'circle', 'ellipse', 'triangle', 'polygon', 'image'], style: true },
+  { key: 'background', label: 'Background', kind: 'color', types: ['root', 'box', 'rect', 'text', 'bar', 'chart', 'arc', 'circle', 'ellipse', 'triangle', 'polygon', 'image'], style: true },
+  { key: 'gradient', label: 'Gradient to', kind: 'color', types: ['root', 'box', 'rect', 'bar', 'chart'], style: true, hint: 'fades the fill into this color' },
+  { key: 'gradientDir', label: 'Gradient', kind: 'sel', opts: ['', 'down', 'right'], types: ['root', 'box', 'rect', 'bar', 'chart'], style: true },
   { key: 'border', label: 'Border', kind: 'color', types: ['box', 'rect', 'circle', 'ellipse', 'triangle', 'polygon'], style: true },
   { key: 'borderWidth', label: 'Border width', kind: 'num', types: ['box', 'rect', 'circle', 'ellipse', 'triangle', 'polygon'], style: true },
-  { key: 'radius', label: 'Radius', kind: 'num', types: ['box', 'rect', 'bar'], style: true },
-  { key: 'thickness', label: 'Thickness', kind: 'num', types: ['arc', 'line'], style: true },
+  { key: 'radius', label: 'Radius', kind: 'num', types: ['box', 'rect', 'bar', 'chart'], style: true },
+  { key: 'thickness', label: 'Thickness', kind: 'num', types: ['arc', 'line', 'chart'], style: true },
   { key: 'fit', label: 'Fit', kind: 'sel', opts: ['', 'contain', 'cover', 'stretch'], types: ['image'], style: true },
   { key: 'image', label: 'Background image', kind: 'image', types: ['root', 'box'], style: true }
 ];
@@ -443,11 +456,19 @@ function makeControl(f, el) {
   let c;
   switch (f.kind) {
     case 'text': case 'num': {
+      // Numbers take a plain value or a {template}, so the field is text with a numeric keyboard.
       c = document.createElement('input');
-      c.type = f.kind === 'num' ? 'number' : 'text';
+      c.type = 'text';
+      if (f.kind === 'num') c.inputMode = 'decimal';
       c.value = v === undefined ? '' : v;
-      if (f.kind === 'text') { c.autocapitalize = 'off'; c.autocorrect = 'off'; }
-      c.addEventListener('input', () => { setVal(el, f, f.kind === 'num' ? (c.value === '' ? '' : parseFloat(c.value)) : c.value); f.kind === 'num' ? commit() : debouncedCommit(); });
+      c.autocapitalize = 'off'; c.autocorrect = 'off';
+      c.addEventListener('input', () => {
+        if (f.kind === 'num') {
+          const t = c.value.trim();
+          setVal(el, f, t === '' ? '' : /^-?\d+(\.\d+)?$/.test(t) ? parseFloat(t) : t);
+          t.includes('{') ? debouncedCommit() : commit();
+        } else { setVal(el, f, c.value); debouncedCommit(); }
+      });
       break;
     }
     case 'sel': case 'font': case 'class': {
@@ -610,7 +631,7 @@ function buildLed() {
   inspEl.appendChild(off);
 }
 
-// Datalists for colour roles and image names.
+// Datalists for color roles and image names.
 const dl = document.createElement('datalist'); dl.id = 'roleList';
 for (const r of ROLES) { const o = document.createElement('option'); o.value = r; dl.appendChild(o); }
 document.body.appendChild(dl);

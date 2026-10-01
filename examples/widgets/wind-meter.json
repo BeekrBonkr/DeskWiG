@@ -22,133 +22,342 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "align": "center",
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "WIND",
-      "color": "dim",
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "WIND",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.wind.age}",
+          "align": "right",
+          "color": "{api.wind.color}"
+        }
+      ]
     },
     {
       "type": "box",
+      "w": 154,
+      "h": 140,
+      "children": [
+        {
+          "type": "arc",
+          "x": 7,
+          "y": 0,
+          "w": 140,
+          "value": 0,
+          "style": {
+            "thickness": 3,
+            "background": "#25303d"
+          }
+        },
+        {
+          "type": "arc",
+          "x": 3,
+          "y": -4,
+          "w": 148,
+          "value": 100,
+          "start": "{api.wind.dir-8}",
+          "end": "{api.wind.dir+8}",
+          "color": "text",
+          "style": {
+            "thickness": 11
+          }
+        },
+        {
+          "type": "arc",
+          "x": 23,
+          "y": 16,
+          "w": 108,
+          "value": "{min(api.wind.speed,100)}",
+          "start": 225,
+          "end": 495,
+          "color": "{hsv(clamp(130-api.wind.speed*1.6,0,130),85,100)}",
+          "style": {
+            "thickness": 8,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 6,
+          "text": "N",
+          "align": "center",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 126,
+          "text": "S",
+          "align": "center",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 14,
+          "y": 66,
+          "text": "W",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 140,
+          "y": 66,
+          "text": "E",
+          "align": "right",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 44,
+          "text": "{round(api.wind.speed)}",
+          "font": "bold",
+          "size": 40,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 86,
+          "text": "km/h",
+          "align": "center",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
       "children": [
         {
           "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
           "children": [
             {
-              "type": "arc",
-              "w": 120,
-              "value": "{min(api.wind.speed, 100)}",
-              "color": "ok",
-              "style": {
-                "thickness": 12
-              },
-              "start": 225,
-              "end": 495,
-              "x": 0,
-              "y": 0
+              "type": "text",
+              "text": "GUSTS",
+              "align": "center",
+              "color": "#7c8794"
             },
             {
               "type": "text",
-              "text": "{round(api.wind.speed)}",
-              "x": 60,
-              "y": 42,
-              "align": "center",
+              "text": "{round(api.wind.gust)}",
               "font": "bold",
-              "size": 32
+              "size": 20,
+              "align": "center"
             }
-          ],
-          "w": 120,
-          "h": 120
+          ]
         },
         {
-          "type": "text",
-          "text": "km/h",
-          "color": "dim",
-          "align": "center"
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "FROM",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.wind.dir)}°",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 4,
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "gusts",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round(api.wind.gust)} km/h",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "direction",
-          "color": "dim"
+          "text": "BEAUFORT",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{round(api.wind.dir)}°",
+          "text": "{round((api.wind.speed/3.01)^(2/3))}",
           "align": "right"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "Beaufort",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{round((api.wind.speed / 3.01) ^ (2 / 3))}",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+        "gap": 3,
+        "justify": "center"
+      },
+      "children": [
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>0.5,hsv(120,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>1.5,hsv(110,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>2.5,hsv(100,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>3.5,hsv(90,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>4.5,hsv(80,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>5.5,hsv(70,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>6.5,hsv(60,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>7.5,hsv(50,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>8.5,hsv(40,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>9.5,hsv(30,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>10.5,hsv(20,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        },
+        {
+          "type": "rect",
+          "w": 9,
+          "h": 12,
+          "color": "{if((api.wind.speed/3.01)^(2/3)>11.5,hsv(10,85,95),1712169)}",
+          "fill": true,
+          "style": {
+            "radius": 2
+          }
+        }
+      ]
     },
     {
       "type": "text",
-      "text": "Open-Meteo · {api.wind.age} ago",
-      "color": "dim",
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

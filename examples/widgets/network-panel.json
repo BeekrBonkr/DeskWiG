@@ -22,175 +22,334 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
+    "gap": 6,
     "padding": 8
-  },
-  "styles": {
-    "k": {
-      "color": "dim"
-    },
-    "v": {
-      "align": "right"
-    }
   },
   "elements": [
     {
-      "type": "text",
-      "text": "NETWORK",
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "NETWORK",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{time}",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
     },
     {
       "type": "box",
+      "h": 80,
+      "style": {
+        "padding": 8,
+        "radius": 12,
+        "background": "#10304c",
+        "gradient": "#070b10",
+        "border": "#1c3a5c"
+      },
       "children": [
         {
+          "type": "arc",
+          "x": 0,
+          "y": 0,
+          "w": 64,
+          "value": "{wifi.pct}",
+          "start": 225,
+          "end": 495,
+          "color": "{wifi.color}",
+          "style": {
+            "thickness": 7,
+            "background": "#0e2236"
+          }
+        },
+        {
+          "type": "text",
+          "x": 32,
+          "y": 18,
+          "text": "{wifi.pct}",
+          "font": "bold",
+          "size": 22,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 32,
+          "y": 42,
+          "text": "%",
+          "align": "center",
+          "color": "#c4ccd6"
+        },
+        {
+          "type": "text",
+          "x": 72,
+          "y": 6,
+          "text": "{wifi.ssid}",
+          "font": "bold",
+          "size": 15
+        },
+        {
+          "type": "text",
+          "x": 72,
+          "y": 28,
+          "text": "{wifi.rssi} dBm",
+          "color": "#c4ccd6"
+        },
+        {
           "type": "box",
+          "x": 72,
+          "y": 42,
+          "w": 26,
+          "h": 16,
           "children": [
             {
-              "type": "arc",
+              "type": "rect",
               "x": 0,
-              "y": 0,
-              "w": 70,
-              "value": "{wifi.pct}",
-              "color": "{wifi.color}",
+              "y": 12,
+              "w": 5,
+              "h": 4,
+              "color": "{if(wifi.rssi>-85,rgb(61,220,132),rgb(36,44,56))}",
+              "fill": true,
               "style": {
-                "thickness": 9
+                "radius": 1
               }
             },
             {
-              "type": "text",
-              "text": "{wifi.pct}%",
-              "x": 35,
-              "y": 27,
-              "align": "center",
-              "font": "bold",
-              "size": 16
+              "type": "rect",
+              "x": 7,
+              "y": 8,
+              "w": 5,
+              "h": 8,
+              "color": "{if(wifi.rssi>-75,rgb(61,220,132),rgb(36,44,56))}",
+              "fill": true,
+              "style": {
+                "radius": 1
+              }
+            },
+            {
+              "type": "rect",
+              "x": 14,
+              "y": 4,
+              "w": 5,
+              "h": 12,
+              "color": "{if(wifi.rssi>-65,rgb(61,220,132),rgb(36,44,56))}",
+              "fill": true,
+              "style": {
+                "radius": 1
+              }
+            },
+            {
+              "type": "rect",
+              "x": 21,
+              "y": 0,
+              "w": 5,
+              "h": 16,
+              "color": "{if(wifi.rssi>-55,rgb(61,220,132),rgb(36,44,56))}",
+              "fill": true,
+              "style": {
+                "radius": 1
+              }
             }
-          ],
-          "w": 70,
-          "h": 70
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 26,
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 4,
+          "w": 154,
+          "h": 6,
+          "color": "#c0392b",
+          "fill": true,
+          "style": {
+            "radius": 3,
+            "gradient": "#2fd37a",
+            "gradientDir": "right"
+          }
         },
         {
+          "type": "circle",
+          "x": "{clamp(wifi.pct*1.44,0,144)}",
+          "y": 2,
+          "r": 5,
+          "color": "text",
+          "style": {
+            "border": "bg",
+            "borderWidth": 2
+          }
+        },
+        {
+          "type": "text",
+          "x": 0,
+          "y": 16,
+          "text": "-90",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 16,
+          "text": "signal dBm",
+          "align": "center",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "x": 154,
+          "y": 16,
+          "text": "-40",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 9,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
           "children": [
             {
               "type": "text",
-              "text": "{wifi.ssid}",
-              "font": "bold",
-              "size": 18
+              "text": "IP",
+              "color": "#7c8794"
             },
             {
               "type": "text",
-              "text": "{wifi.rssi} dBm",
-              "font": "sans",
-              "size": 14,
-              "color": "dim"
-            },
-            {
-              "type": "text",
-              "text": "{wifi.bars}",
-              "color": "{wifi.color}"
+              "text": "{wifi.ip}",
+              "align": "right"
             }
-          ],
+          ]
+        },
+        {
+          "type": "box",
           "style": {
-            "direction": "column",
-            "gap": 3
-          }
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "host",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{hostname}.local",
+              "align": "right"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "uptime",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{uptime}",
+              "align": "right"
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "row",
-        "align": "center",
-        "gap": 10
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      ]
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "IP",
-          "class": "k"
-        },
-        {
-          "type": "text",
-          "text": "{wifi.ip}",
-          "class": "v"
-        }
-      ],
       "style": {
-        "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "box",
+        "gap": 6,
+        "radius": 10,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
       "children": [
         {
-          "type": "text",
-          "text": "host",
-          "class": "k"
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "GATEWAY",
+              "color": "#7c8794"
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 3,
+                "align": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{ping.router.ms}",
+                  "font": "bold",
+                  "size": 18,
+                  "color": "{ping.router.color}"
+                },
+                {
+                  "type": "text",
+                  "text": "ms",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "text",
-          "text": "{hostname}.local",
-          "class": "v"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "gateway ping",
-          "class": "k"
-        },
-        {
-          "type": "text",
-          "text": "{ping.router.ms} ms",
-          "class": "v",
+          "text": "{ping.router.bars}",
+          "size": 2,
+          "align": "center",
           "color": "{ping.router.color}"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "uptime",
-          "class": "k"
-        },
-        {
-          "type": "text",
-          "text": "{uptime}",
-          "class": "v"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between"
-      }
+      ]
     },
     {
       "type": "text",
-      "text": "{time}",
-      "font": "bold",
-      "size": 28,
-      "align": "center"
+      "x": 77,
+      "y": 296,
+      "text": "{date.dow} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

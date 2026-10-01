@@ -4,15 +4,17 @@
 
 // Template values available to JSON layouts as {key}.
 //
-//   time, time.sec, time.hour, time.min, time.ampm
-//   date, date.day, date.md, date.dow, date.year
+//   time, time.sec, time.hour, time.min, time.second, time.ampm
+//   date, date.day, date.md, date.dow, date.year, date.month, date.dom
 //   wifi.ssid, wifi.ip, wifi.rssi, wifi.pct, wifi.bars, wifi.color
 //   hostname, uptime, heap
 //   ping.count
 //   ping.<N|name>.name, .host, .ms, .status, .color, .bars, .trend
 //   api.<source>.<field>, .status, .color, .age, .updated, .error
+//   <series key>.min, .max, .avg, .first, .last, .delta, .count, .span
+//     for keys sampled over time (see Series.h)
 //
-// Colour keys resolve to a colour role name (ok, warn, bad, dim, text).
+// Color keys resolve to a color role name (ok, warn, bad, dim, text).
 //
 // A brace body that is not a key is evaluated as arithmetic with keys as
 // variables, e.g. {round(api.weather.temp * 9/5 + 32, 1)}; see LayoutExpr.h.

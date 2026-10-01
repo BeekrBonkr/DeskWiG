@@ -17,150 +17,233 @@
   },
   "style": {
     "direction": "column",
-    "gap": 8,
-    "padding": 8,
-    "align": "center",
-    "justify": "center"
+    "gap": 6,
+    "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "PI-HOLE",
-      "color": "dim",
-      "align": "center"
-    },
-    {
       "type": "box",
-      "children": [
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "arc",
-              "w": 110,
-              "value": "{api.pihole.pct}",
-              "color": "bad",
-              "style": {
-                "thickness": 12
-              },
-              "x": 0,
-              "y": 0
-            },
-            {
-              "type": "text",
-              "text": "{round(api.pihole.pct)}%",
-              "x": 55,
-              "y": 41,
-              "align": "center",
-              "font": "bold",
-              "size": 24
-            }
-          ],
-          "w": 110,
-          "h": 110
-        },
-        {
-          "type": "text",
-          "text": "of queries blocked",
-          "color": "dim",
-          "align": "center"
-        }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 4,
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "queries today",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.pihole.queries}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "blocked today",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.pihole.blocked}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "on blocklist",
-          "color": "dim"
-        },
-        {
-          "type": "text",
-          "text": "{api.pihole.domains}",
-          "align": "right"
-        }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "{api.pihole.status}",
-          "color": "{api.pihole.color}"
-        },
-        {
-          "type": "text",
-          "text": "{api.pihole.age} ago",
-          "color": "dim",
-          "align": "right"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between"
-      }
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "PI-HOLE",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "{api.pihole.age}",
+          "align": "right",
+          "color": "{api.pihole.color}"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 136,
+      "style": {
+        "padding": 8,
+        "radius": 12,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38"
+      },
+      "children": [
+        {
+          "type": "arc",
+          "x": 17,
+          "y": 0,
+          "w": 120,
+          "value": "{api.pihole.pct}",
+          "color": "#ff4d5e",
+          "style": {
+            "thickness": 12,
+            "background": "#14361f"
+          }
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 20,
+          "text": "🛡",
+          "font": "emoji",
+          "size": 20,
+          "align": "center",
+          "color": "#ff8a96"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 44,
+          "text": "{round(api.pihole.pct)}%",
+          "font": "bold",
+          "size": 34,
+          "align": "center"
+        },
+        {
+          "type": "text",
+          "x": 77,
+          "y": 82,
+          "text": "blocked",
+          "align": "center",
+          "color": "#c4ccd6"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "h": 8,
+      "children": [
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": 154,
+          "h": 8,
+          "color": "#1f8f4e",
+          "fill": true,
+          "style": {
+            "radius": 4
+          }
+        },
+        {
+          "type": "rect",
+          "x": 0,
+          "y": 0,
+          "w": "{clamp(api.pihole.pct*1.54,4,154)}",
+          "h": 8,
+          "color": "#ff4d5e",
+          "fill": true,
+          "style": {
+            "radius": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "blocked",
+          "color": "#ff8a96"
+        },
+        {
+          "type": "text",
+          "text": "allowed",
+          "align": "right",
+          "color": "#5fe39a"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "gap": 6
+      },
+      "children": [
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "QUERIES",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.pihole.queries/1000,1)}k",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "w": 74,
+          "style": {
+            "gap": 3,
+            "padding": 6,
+            "radius": 8,
+            "background": "#141a22",
+            "gradient": "#0b0e13",
+            "border": "#252d38"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "BLOCKED",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.pihole.blocked/1000,1)}k",
+              "font": "bold",
+              "size": 20,
+              "align": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "radius": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "padding": 8
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "blocklist",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "text": "{round(api.pihole.domains/1000)}k domains",
+              "align": "right"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "x": 77,
+      "y": 296,
+      "text": "{time}  {date.day} {date.md}",
+      "align": "center",
+      "color": "dim"
     }
   ]
 }

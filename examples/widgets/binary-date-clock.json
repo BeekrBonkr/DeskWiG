@@ -1,0 +1,556 @@
+{
+  "name": "Binary Date Clock",
+  "led": {
+    "color": "accent",
+    "mode": "breathe",
+    "speed": 4000,
+    "rules": [
+      {
+        "when": "time.hour >= 23 || time.hour < 7",
+        "mode": "off"
+      }
+    ]
+  },
+  "style": {
+    "direction": "column",
+    "gap": 6,
+    "padding": 8
+  },
+  "elements": [
+    {
+      "type": "text",
+      "text": "{time.sec} {time.ampm}",
+      "color": "#7c8794",
+      "align": "center",
+      "size": 2
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 4,
+        "padding": 7,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "HOURS",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "#1a2029",
+              "style": {
+                "radius": 6,
+                "background": "#0c0c0d"
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.hour/16)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.hour/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.hour/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.hour/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.hour/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "MINUTES",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.min/32)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.min/16)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.min/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.min/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.min/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.min/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "SECONDS",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.second/32)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.second/16)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.second/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.second/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.second/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(time.second/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "text",
+              "w": 18,
+              "text": "32",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "w": 18,
+              "text": "16",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "w": 18,
+              "text": "8",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "w": 18,
+              "text": "4",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "w": 18,
+              "text": "2",
+              "align": "center",
+              "color": "#7c8794"
+            },
+            {
+              "type": "text",
+              "w": 18,
+              "text": "1",
+              "align": "center",
+              "color": "#7c8794"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": "{date.day} {date.md}",
+      "color": "#7c8794",
+      "align": "center",
+      "size": 2
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 4,
+        "padding": 7,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "DAY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "#1a2029",
+              "style": {
+                "radius": 6,
+                "background": "#0c0c0d"
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.dom/16)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.dom/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.dom/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.dom/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.dom/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "MONTH",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "#1a2029",
+              "style": {
+                "radius": 6,
+                "background": "#0c0c0d"
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "#1a2029",
+              "style": {
+                "radius": 6,
+                "background": "#0c0c0d"
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.month/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.month/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.month/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor(date.month/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "YEAR",
+          "color": "#7c8794"
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 4
+          },
+          "children": [
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor((date.year%100)/32)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor((date.year%100)/16)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor((date.year%100)/8)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor((date.year%100)/4)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor((date.year%100)/2)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            },
+            {
+              "type": "rect",
+              "w": 18,
+              "h": 18,
+              "color": "{if(floor((date.year%100)/1)%2,rgb(0,158,255),rgb(12,12,12))}",
+              "fill": true,
+              "style": {
+                "radius": 6
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

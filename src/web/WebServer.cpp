@@ -19,6 +19,7 @@
 #include "../app/Log.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
+#include "../net/Series.h"
 #include "Settings.h"
 #include "Auth.h"
 #include "Pages.h"
@@ -27,14 +28,18 @@
 #include "DesignerPage.h"
 #include "../app/Log.h"
 
+#include "../app/Display.h"
+
 extern ScreenManager screens;
+extern uint32_t perfFrameUs;
+extern uint32_t perfPushUs;
 
 static AsyncWebServer server(80);
 
 // Routes use exact matching: the library default also matches any
 // sub-path, so "/api/layouts" would swallow "/api/layouts/data".
 
-static const char* FW_VERSION = "0.8.0";
+#include "../app/Version.h"
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
@@ -94,7 +99,7 @@ static bool isAuthed(AsyncWebServerRequest* req) {
   return sessionAuthed(req) || bearerAuthed(req);
 }
 
-// Returns true if the request is authorised. On failure it has already
+// Returns true if the request is authorized. On failure it has already
 // sent a 401, so callers just return.
 static bool requireAuth(AsyncWebServerRequest* req) {
   if (isAuthed(req)) return true;
@@ -155,6 +160,8 @@ static void fillConfig(JsonDocument& doc) {
   JsonObject led = doc["led"].to<JsonObject>();
   led["enabled"]    = settings.ledEnabled;
   led["brightness"] = settings.ledBrightness;
+  doc["display"]["brightness"] = settings.displayBrightness;
+  doc["display"]["flip"]       = settings.displayFlip;
 }
 
 static void fillTimeStatus(JsonObject doc) {
@@ -393,6 +400,18 @@ static void registerStatus() {
     mem["psramFree"]  = ESP.getFreePsram();
     mem["fsTotal"]    = LittleFS.totalBytes();
     mem["fsUsed"]     = LittleFS.usedBytes();
+    // The least stack each long-lived task has ever had left, in bytes:
+    // how much could come off its stack size. Stacks are internal RAM.
+    static const char* const TASKS[] = { "loopTask", "sources", "images", "async_tcp" };
+    static TaskHandle_t handles[4] = {};
+    JsonObject stacks = mem["stackFree"].to<JsonObject>();
+    for (uint8_t i = 0; i < 4; i++) {
+      if (!handles[i]) handles[i] = xTaskGetHandle(TASKS[i]);
+      if (handles[i]) stacks[TASKS[i]] = uxTaskGetStackHighWaterMark(handles[i]);
+    }
+    JsonObject perf = doc["perf"].to<JsonObject>();
+    perf["frameMs"] = perfFrameUs / 1000.0f;
+    perf["pushMs"]  = perfPushUs / 1000.0f;
     doc["activeWidget"] = screens.getActive();
     doc["widgetCount"]  = screens.getCount();
     fillWifiStatus(doc["wifi"].to<JsonObject>());
@@ -552,7 +571,7 @@ static void registerLayouts() {
     sendJson(req, 200, doc);
   });
   put->setMethod(HTTP_PUT);
-  put->setMaxContentLength(16384);
+  put->setMaxContentLength(32768);
   server.addHandler(put);
 
   server.on(AsyncURIMatcher::exact("/api/layouts"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
@@ -587,7 +606,7 @@ static void registerLayouts() {
     sendJson(req, 200, doc);
   });
   preview->setMethod(HTTP_POST);
-  preview->setMaxContentLength(16384);
+  preview->setMaxContentLength(32768);
   server.addHandler(preview);
 
   server.on(AsyncURIMatcher::exact("/api/layouts/preview"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
@@ -597,10 +616,12 @@ static void registerLayouts() {
   });
 
   // Built-in templates for the editor's picker. Assembled by hand so the
-  // stored JSON text is passed through without re-serialising it.
+  // stored JSON text is passed through without re-serializing it.
   server.on(AsyncURIMatcher::exact("/api/layouts/templates"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    size_t need = 2;
+    for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) need += strlen(LAYOUT_TEMPLATES[i].json) + 96;
     String out;
-    out.reserve(12288);
+    out.reserve(need);
     out += "[";
     for (uint8_t i = 0; i < LAYOUT_TEMPLATE_COUNT; i++) {
       const LayoutTemplate& t = LAYOUT_TEMPLATES[i];
@@ -760,6 +781,17 @@ static void registerConfig() {
       if (!led["brightness"].isNull()) settings.ledBrightness = led["brightness"];
       ledApplySettings();
     }
+    JsonVariant display = json["display"];
+    if (!display.isNull()) {
+      if (!display["brightness"].isNull()) {
+        setDisplayBrightness(display["brightness"] | 100);
+        backlightSet(settings.displayBrightness);
+      }
+      if (!display["flip"].isNull()) {
+        settings.displayFlip = display["flip"] | false;
+        displayApplyOrientation();
+      }
+    }
 
     if (!saveSettings()) {
       sendError(req, 500, "failed to save settings");
@@ -774,6 +806,24 @@ static void registerConfig() {
   });
   put->setMethod(HTTP_PUT);
   server.addHandler(put);
+
+  // POST /api/display/preview (brightness=N): set the backlight without
+  // saving, so a slider can be dragged without a flash write per step.
+  // The saved level returns at the next PUT /api/config or reboot.
+  server.on(AsyncURIMatcher::exact("/api/display/preview"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("brightness", true)) {
+      sendError(req, 400, "missing brightness");
+      return;
+    }
+    int pct = req->getParam("brightness", true)->value().toInt();
+    if (pct < 1) pct = 1;
+    if (pct > 100) pct = 100;
+    backlightSet((uint8_t)pct);
+    JsonDocument doc;
+    doc["brightness"] = pct;
+    sendJson(req, 200, doc);
+  });
 }
 
 // =====================
@@ -788,15 +838,15 @@ static void fillSourceList(JsonDocument& doc) {
     sourceStatusToJson(settings.sources[i], o);
   }
   sourcesUnlock();
-  doc["free"] = MAX_SOURCES - settings.sourceCount;
-  doc["max"]  = MAX_SOURCES;
+  doc["free"] = settings.sourceCap - settings.sourceCount;
+  doc["max"]  = settings.sourceCap;
 }
 
 static void registerSources() {
   // GET /api/sources -> every source with its config (header value
   // redacted), fetch state and current values.
   server.on(AsyncURIMatcher::exact("/api/sources"), HTTP_GET, [](AsyncWebServerRequest* req) {
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);
     fillSourceList(doc);
     sendJson(req, 200, doc);
   });
@@ -825,12 +875,12 @@ static void registerSources() {
         }
         *existing = parsed;
         sourceFetchNow(*existing);
-      } else if (settings.sourceCount < MAX_SOURCES) {
+      } else if (settings.sourceCount < settings.sourceCap) {
         settings.sources[settings.sourceCount] = parsed;
         sourceFetchNow(settings.sources[settings.sourceCount]);
         settings.sourceCount++;
       } else {
-        snprintf(err, sizeof(err), "no free slots (max %u sources)", MAX_SOURCES);
+        snprintf(err, sizeof(err), "no free slots (max %u sources)", settings.sourceCap);
         ok = false;
       }
     }
@@ -844,7 +894,7 @@ static void registerSources() {
       sendError(req, 500, "failed to save settings");
       return;
     }
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);
     fillSourceList(doc);
     doc["saved"] = id;
     sendJson(req, 200, doc);
@@ -876,7 +926,7 @@ static void registerSources() {
       sendError(req, 500, "failed to save settings");
       return;
     }
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);
     fillSourceList(doc);
     sendJson(req, 200, doc);
   });
@@ -940,6 +990,74 @@ static void registerSources() {
     doc["ok"] = true;
     doc["queued"] = id;
     sendJson(req, 202, doc);
+  });
+}
+
+// =====================
+// SERIES
+// =====================
+static void fillSeriesList(JsonDocument& doc, const char* samplesFor) {
+  seriesToJson(doc["series"].to<JsonArray>(), samplesFor);
+  doc["free"] = MAX_SERIES - settings.seriesCount;
+  doc["max"]  = MAX_SERIES;
+  doc["maxSamples"] = SERIES_MAX_SAMPLES;
+}
+
+static void registerSeries() {
+  // GET /api/series -> every sampled key with its settings and statistics.
+  // GET /api/series?key=<key> -> the same, plus that key's samples as
+  // [secondsAgo, value] pairs, oldest first.
+  server.on(AsyncURIMatcher::exact("/api/series"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    String key = req->hasParam("key") ? req->getParam("key")->value() : "";
+    fillSeriesList(doc, key.length() ? key.c_str() : nullptr);
+    sendJson(req, 200, doc);
+  });
+
+  // PUT /api/series?key=<key> {"every","keep"} -> start sampling a key, or
+  // change how it is sampled. Samples survive when the size is unchanged.
+  auto* put = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/series"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("key")) { sendError(req, 400, "missing key"); return; }
+    String key = req->getParam("key")->value();
+    json["key"] = key;
+    SeriesCfg parsed;
+    char err[96];
+    if (!seriesFromJson(parsed, json.as<JsonVariantConst>(), err, sizeof(err))) { sendError(req, 400, err); return; }
+    int idx = seriesFind(parsed.key);
+    if (idx >= 0) {
+      settings.series[idx] = parsed;
+    } else if (settings.seriesCount < MAX_SERIES) {
+      settings.series[settings.seriesCount++] = parsed;
+    } else {
+      snprintf(err, sizeof(err), "no free slots (max %u series)", MAX_SERIES);
+      sendError(req, 400, err);
+      return;
+    }
+    seriesApply();
+    if (!saveSettings()) { sendError(req, 500, "failed to save settings"); return; }
+    JsonDocument doc;
+    fillSeriesList(doc, nullptr);
+    doc["saved"] = key;
+    sendJson(req, 200, doc);
+  });
+  put->setMethod(HTTP_PUT);
+  put->setMaxContentLength(1024);
+  server.addHandler(put);
+
+  server.on(AsyncURIMatcher::exact("/api/series"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("key")) { sendError(req, 400, "missing key"); return; }
+    String key = req->getParam("key")->value();
+    int idx = seriesFind(key.c_str());
+    if (idx < 0) { sendError(req, 404, "no such series"); return; }
+    for (uint8_t i = idx; i + 1 < settings.seriesCount; i++) settings.series[i] = settings.series[i + 1];
+    settings.seriesCount--;
+    seriesApply();
+    if (!saveSettings()) { sendError(req, 500, "failed to save settings"); return; }
+    JsonDocument doc;
+    fillSeriesList(doc, nullptr);
+    sendJson(req, 200, doc);
   });
 }
 
@@ -1200,6 +1318,20 @@ static void registerImages() {
     sendJson(req, 200, doc);
   });
 
+  // POST /api/images/rename?name=<old>&to=<new>. Layouts that use the old
+  // name keep it; the setup page finds them and offers to update them.
+  server.on(AsyncURIMatcher::exact("/api/images/rename"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("name") || !req->hasParam("to")) { sendError(req, 400, "missing name or to"); return; }
+    String from = req->getParam("name")->value(), to = req->getParam("to")->value();
+    char err[80];
+    if (!imageRename(from.c_str(), to.c_str(), err, sizeof(err))) { sendError(req, 400, err); return; }
+    JsonDocument doc;
+    fillImageList(doc);
+    doc["renamed"] = to;
+    sendJson(req, 200, doc);
+  });
+
   // GET /img/<name> or /img/<name>.<ext>: the stored file, for the editor's preview.
   server.on(AsyncURIMatcher::prefix("/img/"), HTTP_GET, [](AsyncWebServerRequest* req) {
     String name = req->url().substring(5);
@@ -1373,6 +1505,278 @@ static void registerSystem() {
 // =====================
 // SERVER START
 // =====================
+// =====================
+// BACKUP / RESTORE
+// =====================
+// GET /api/backup: one JSON file with everything that can be put back
+// without a file upload: the config (settings, data sources with their
+// secrets, ping targets, history keys), every widget layout, the WiFi
+// network and password, the account and the API key. Fonts and images
+// are listed by name only.
+//
+// POST /api/restore?parts=config,widgets,wifi,auth: multipart upload of
+// such a file. The chosen parts are written to flash and the device
+// restarts so everything comes up from the restored state.
+constexpr uint8_t BACKUP_FORMAT = 1;
+constexpr size_t RESTORE_MAX = 2 * 1024 * 1024;
+// A layout file can be 10 levels deep (the parser's default limit) and the
+// backup wraps each one two levels further down.
+constexpr uint8_t BACKUP_NESTING = 24;
+
+static uint8_t* backupBuf = nullptr;
+static size_t backupLen = 0;
+
+static bool parseFileInto(const String& path, JsonDocument& doc) {
+  File f = LittleFS.open(path, "r");
+  if (!f) return false;
+  DeserializationError err = deserializeJson(doc, f, DeserializationOption::NestingLimit(BACKUP_NESTING));
+  f.close();
+  return !err;
+}
+
+static bool buildBackup() {
+  JsonDocument doc(&psramJsonAlloc);
+
+  JsonObject head = doc["deskwig"].to<JsonObject>();
+  head["format"]   = BACKUP_FORMAT;
+  head["firmware"] = FW_VERSION;
+  head["hostname"] = settings.hostname;
+  if (timeSynced()) {
+    time_t t = time(nullptr);
+    tm lt;
+    localtime_r(&t, &lt);
+    char buf[32];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &lt);
+    head["exported"] = buf;
+  }
+
+  {
+    JsonDocument cfg(&psramJsonAlloc);
+    if (!saveSettings() || !parseFileInto("/config.json", cfg)) return false;
+    doc["config"] = cfg;
+  }
+
+  JsonObject widgets = doc["widgets"].to<JsonObject>();
+  for (uint8_t i = 0; i < layoutCount(); i++) {
+    LayoutWidget* w = layoutAt(i);
+    if (!w) continue;
+    JsonDocument l(&psramJsonAlloc);
+    if (!parseFileInto(layoutPath(w->id()), l)) continue;
+    widgets[w->id()] = l;
+  }
+
+  JsonObject wifi = doc["wifi"].to<JsonObject>();
+  wifi["ssid"] = settings.wifiSSID;
+  wifi["pass"] = settings.wifiPass;
+
+  JsonObject auth = doc["auth"].to<JsonObject>();
+  auth["apiToken"] = settings.apiToken;
+  char user[AUTH_USER_MAX + 1], saltHex[33], hashHex[65];
+  if (authExport(user, sizeof(user), saltHex, sizeof(saltHex), hashHex, sizeof(hashHex))) {
+    auth["user"] = user;
+    auth["salt"] = saltHex;
+    auth["hash"] = hashHex;
+  }
+
+  // Not in the file, but named so the restore page can say what to upload again.
+  JsonObject skipped = doc["notIncluded"].to<JsonObject>();
+  {
+    JsonArray fonts = skipped["fonts"].to<JsonArray>();
+    JsonDocument tmp;
+    JsonArray all = tmp.to<JsonArray>();
+    fontsToJson(all);
+    for (JsonObject f : all) if (!(f["builtin"] | false)) fonts.add(String((const char*)f["name"]));   // copied: tmp dies here
+  }
+  {
+    JsonArray images = skipped["images"].to<JsonArray>();
+    JsonDocument tmp;
+    JsonArray all = tmp.to<JsonArray>();
+    imagesToJson(all);
+    for (JsonObject f : all) images.add(String((const char*)f["name"]));
+  }
+
+  if (backupBuf) { heap_caps_free(backupBuf); backupBuf = nullptr; }
+  size_t len = measureJsonPretty(doc);
+  backupBuf = (uint8_t*)heap_caps_malloc(len + 1, MALLOC_CAP_SPIRAM);
+  if (!backupBuf) return false;
+  backupLen = serializeJsonPretty(doc, (char*)backupBuf, len + 1);
+  return backupLen > 0;
+}
+
+struct RestoreUpload {
+  bool ok;
+  uint8_t* buf;
+  size_t len;
+  size_t cap;
+  char err[96];
+};
+
+static void restoreFail(RestoreUpload* u, const char* why) {
+  if (!u->ok) return;
+  u->ok = false;
+  strlcpy(u->err, why, sizeof(u->err));
+}
+
+static bool writeJsonFile(const String& path, JsonVariantConst v) {
+  String tmp = path + ".tmp";
+  File f = LittleFS.open(tmp, "w");
+  if (!f) return false;
+  size_t n = serializeJson(v, f);
+  f.close();
+  if (!n) { LittleFS.remove(tmp); return false; }
+  LittleFS.remove(path);
+  return LittleFS.rename(tmp, path);
+}
+
+static bool hasPart(AsyncWebServerRequest* req, const char* name) {
+  if (!req->hasParam("parts")) return true;             // no list = everything
+  String parts = "," + req->getParam("parts")->value() + ",";
+  return parts.indexOf(String(",") + name + ",") >= 0;
+}
+
+// Applies the chosen parts. On success `done` lists what was restored.
+static bool restoreApply(JsonVariantConst b, AsyncWebServerRequest* req, JsonObject done, char* err, size_t errLen) {
+  if (!b.is<JsonObjectConst>() || (b["deskwig"]["format"] | 0) != BACKUP_FORMAT) {
+    snprintf(err, errLen, "not a DeskWiG backup file");
+    return false;
+  }
+
+  if (hasPart(req, "config")) {
+    JsonVariantConst cfg = b["config"];
+    if (!cfg.is<JsonObjectConst>()) { snprintf(err, errLen, "backup has no config"); return false; }
+    if (!saveConfigRaw(cfg)) { snprintf(err, errLen, "failed to write config"); return false; }
+    done["config"] = true;
+  }
+
+  if (hasPart(req, "widgets")) {
+    JsonObjectConst widgets = b["widgets"];
+    if (widgets.isNull()) { snprintf(err, errLen, "backup has no widgets"); return false; }
+    // Replace the set: everything in the backup, nothing else.
+    File dir = LittleFS.open("/widgets");
+    if (dir && dir.isDirectory()) {
+      String victims[MAX_LAYOUTS * 2];
+      uint8_t nv = 0;
+      for (File f = dir.openNextFile(); f && nv < MAX_LAYOUTS * 2; f = dir.openNextFile()) {
+        String p = f.path();
+        f.close();
+        if (p.endsWith(".json")) victims[nv++] = p;
+      }
+      dir.close();
+      for (uint8_t i = 0; i < nv; i++) LittleFS.remove(victims[i]);
+    } else {
+      LittleFS.mkdir("/widgets");
+    }
+    uint8_t n = 0;
+    for (JsonPairConst kv : widgets) {
+      if (n >= MAX_LAYOUTS) break;
+      if (!layoutValidId(kv.key().c_str()) || !kv.value().is<JsonObjectConst>()) continue;
+      if (writeJsonFile(layoutPath(kv.key().c_str()), kv.value())) n++;
+    }
+    done["widgets"] = n;
+  }
+
+  if (hasPart(req, "wifi")) {
+    const char* ssid = b["wifi"]["ssid"] | "";
+    const char* pass = b["wifi"]["pass"] | "";
+    if (!*ssid) { snprintf(err, errLen, "backup has no WiFi network"); return false; }
+    strlcpy(settings.wifiSSID, ssid, sizeof(settings.wifiSSID));
+    strlcpy(settings.wifiPass, pass, sizeof(settings.wifiPass));
+    saveCredentials();
+    done["wifi"] = ssid;
+  }
+
+  if (hasPart(req, "auth")) {
+    JsonVariantConst a = b["auth"];
+    const char* token = a["apiToken"] | "";
+    if (!*token) { snprintf(err, errLen, "backup has no API key"); return false; }
+    if (!setApiToken(token)) { snprintf(err, errLen, "backup has a malformed API key"); return false; }
+    if (!a["user"].isNull()) {
+      if (!authImport(a["user"] | "", a["salt"] | "", a["hash"] | "", err, errLen)) return false;
+      done["account"] = (const char*)a["user"];
+    }
+    done["apiKey"] = true;
+  }
+  return true;
+}
+
+static void registerBackup() {
+  server.on(AsyncURIMatcher::exact("/api/backup"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!buildBackup()) { sendError(req, 500, "could not build the backup"); return; }
+    AsyncWebServerResponse* r = req->beginResponse("application/json", backupLen, [](uint8_t* buf, size_t maxLen, size_t index) -> size_t {
+      if (!backupBuf || index >= backupLen) return 0;
+      size_t n = backupLen - index;
+      if (n > maxLen) n = maxLen;
+      memcpy(buf, backupBuf + index, n);
+      return n;
+    });
+    char name[80];
+    snprintf(name, sizeof(name), "attachment; filename=\"deskwig-%s-backup.json\"", settings.hostname);
+    r->addHeader("Content-Disposition", name);
+    r->addHeader("Cache-Control", "no-store");
+    req->send(r);
+  });
+
+  server.on(AsyncURIMatcher::exact("/api/restore"), HTTP_POST,
+    [](AsyncWebServerRequest* req) {
+      RestoreUpload* u = (RestoreUpload*)req->_tempObject;
+      if (!u) { sendError(req, 400, "no file uploaded"); return; }
+      if (!u->ok) {
+        int code = !strcmp(u->err, "unauthorized") ? 401 : 400;
+        sendError(req, code, u->err);
+        if (u->buf) heap_caps_free(u->buf);
+        free(u);
+        req->_tempObject = nullptr;
+        return;
+      }
+
+      JsonDocument doc(&psramJsonAlloc);
+      DeserializationError perr = deserializeJson(doc, (const char*)u->buf, u->len, DeserializationOption::NestingLimit(BACKUP_NESTING));
+      heap_caps_free(u->buf);
+      free(u);
+      req->_tempObject = nullptr;
+      if (perr) {
+        Log.printf("[CFG] Restore: %s\n", perr.c_str());
+        sendError(req, 400, perr == DeserializationError::TooDeep ? "the file nests too deeply" : "the file is not valid JSON");
+        return;
+      }
+
+      JsonDocument out;
+      JsonObject done = out["restored"].to<JsonObject>();
+      char err[96];
+      if (!restoreApply(doc.as<JsonVariantConst>(), req, done, err, sizeof(err))) {
+        sendError(req, 400, err);
+        return;
+      }
+      Log.println("[CFG] Backup restored, restarting");
+      out["restarting"] = true;
+      sendJson(req, 200, out);
+      schedule(PendingAction::REBOOT, 800);
+    },
+    [](AsyncWebServerRequest* req, const String& filename, size_t index, uint8_t* data, size_t len, bool final) {
+      RestoreUpload* u = (RestoreUpload*)req->_tempObject;
+      if (index == 0) {
+        u = (RestoreUpload*)calloc(1, sizeof(RestoreUpload));
+        if (!u) return;
+        u->ok = true;
+        req->_tempObject = u;
+        if (!uploadAuthed(req)) { restoreFail(u, "unauthorized"); return; }
+        size_t total = req->contentLength();
+        if (total > RESTORE_MAX + 4096) { restoreFail(u, "file larger than 2 MB"); return; }
+        u->cap = total ? total : RESTORE_MAX;
+        u->buf = (uint8_t*)heap_caps_malloc(u->cap + 1, MALLOC_CAP_SPIRAM);
+        if (!u->buf) { restoreFail(u, "not enough memory for the file"); return; }
+      }
+      if (!u || !u->ok) return;
+      if (len) {
+        if (u->len + len > u->cap) { restoreFail(u, "file larger than announced"); return; }
+        memcpy(u->buf + u->len, data, len);
+        u->len += len;
+      }
+      if (final) u->buf[u->len] = '\0';
+    });
+}
+
 void startWebServer() {
   static bool started = false;
   if (started) return;
@@ -1387,11 +1791,13 @@ void startWebServer() {
   registerLog();
   registerConfig();
   registerSources();
+  registerSeries();
   registerFonts();
   registerImages();
   registerScreenshot();
   registerUpdate();
   registerSystem();
+  registerBackup();
 
   // Captive portal: any unknown URL requested over the hotspot lands on /setup.
   // Phones probe URLs like /generate_204 and /hotspot-detect.html; a redirect

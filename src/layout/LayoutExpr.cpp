@@ -10,6 +10,33 @@ struct Value {
   int8_t decimals;   // fixed by round(x, n); -1 = automatic
 };
 
+static double clamp255(double v) { return v < 0 ? 0 : v > 255 ? 255 : v; }
+
+static double packRgb(double r, double g, double b) {
+  return (double)(((uint32_t)lround(clamp255(r)) << 16) | ((uint32_t)lround(clamp255(g)) << 8) | (uint32_t)lround(clamp255(b)));
+}
+
+// h in degrees, s and v 0-100 (or 0-1), to 0-255 channels.
+static void hsvToRgb(double h, double s, double v, double& r, double& g, double& b) {
+  if (s > 1) s /= 100;
+  if (v > 1) v /= 100;
+  s = s < 0 ? 0 : s > 1 ? 1 : s;
+  v = v < 0 ? 0 : v > 1 ? 1 : v;
+  h = fmod(h, 360.0);
+  if (h < 0) h += 360;
+  double c = v * s, x = c * (1 - fabs(fmod(h / 60.0, 2) - 1)), m = v - c;
+  double rr = 0, gg = 0, bb = 0;
+  if (h < 60)       { rr = c; gg = x; }
+  else if (h < 120) { rr = x; gg = c; }
+  else if (h < 180) { gg = c; bb = x; }
+  else if (h < 240) { gg = x; bb = c; }
+  else if (h < 300) { rr = x; bb = c; }
+  else              { rr = c; bb = x; }
+  r = (rr + m) * 255;
+  g = (gg + m) * 255;
+  b = (bb + m) * 255;
+}
+
 struct Parser {
   const char* p;
   bool err;
@@ -97,6 +124,29 @@ struct Parser {
     } else if (is("if")) {
       if (n != 3) { err = true; return r; }
       r = a[0].v != 0 ? a[1] : a[2];
+    } else if (is("lerp")) {
+      if (n != 3) { err = true; return r; }
+      r.v = a[0].v + (a[1].v - a[0].v) * a[2].v;
+    } else if (is("rgb")) {
+      // Colors are numbers 0xRRGGBB, so an expression can produce one.
+      if (n != 3) { err = true; return r; }
+      r.v = packRgb(a[0].v, a[1].v, a[2].v);
+      r.decimals = 0;
+    } else if (is("hsv")) {
+      if (n != 3) { err = true; return r; }
+      double rr, gg, bb;
+      hsvToRgb(a[0].v, a[1].v, a[2].v, rr, gg, bb);
+      r.v = packRgb(rr, gg, bb);
+      r.decimals = 0;
+    } else if (is("mix")) {
+      if (n != 3) { err = true; return r; }
+      double t = a[2].v < 0 ? 0 : a[2].v > 1 ? 1 : a[2].v;
+      uint32_t c0 = (uint32_t)a[0].v, c1 = (uint32_t)a[1].v;
+      double rr = ((c0 >> 16) & 0xFF) + (((c1 >> 16) & 0xFF) - (double)((c0 >> 16) & 0xFF)) * t;
+      double gg = ((c0 >> 8) & 0xFF)  + (((c1 >> 8) & 0xFF)  - (double)((c0 >> 8) & 0xFF))  * t;
+      double bb = (c0 & 0xFF)         + ((c1 & 0xFF)         - (double)(c0 & 0xFF))         * t;
+      r.v = packRgb(rr, gg, bb);
+      r.decimals = 0;
     } else {
       err = true;
     }

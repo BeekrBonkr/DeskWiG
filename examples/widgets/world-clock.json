@@ -16,129 +16,228 @@
     "gap": 6,
     "padding": 8
   },
-  "styles": {
-    "city": {
-      "color": "dim",
-      "font": "sans",
-      "size": 14
-    },
-    "t": {
-      "font": "bold",
-      "size": 26,
-      "align": "right"
-    }
-  },
   "elements": [
     {
-      "type": "text",
-      "text": "WORLD CLOCK",
-      "color": "dim"
-    },
-    {
-      "type": "text",
-      "text": "{time}",
-      "font": "bold",
-      "size": 40,
-      "align": "center"
-    },
-    {
-      "type": "text",
-      "text": "local",
-      "font": "sans",
-      "size": 12,
-      "color": "dim",
-      "align": "center"
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
-    },
-    {
       "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
       "children": [
         {
           "type": "text",
-          "text": "London",
-          "class": "city"
+          "text": "WORLD CLOCK",
+          "color": "#7c8794"
         },
         {
           "type": "text",
-          "text": "{(time.hour + 5) % 24}:{time.min}",
-          "class": "t"
+          "text": "{date.day} {date.md}",
+          "align": "right",
+          "color": "#7c8794"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "padding": 8,
+        "gap": 2,
+        "radius": 12,
+        "background": "{hsv(215,70,8+26*clamp(1-abs(time.hour-13)/7,0,1))}",
+        "gradient": "#05070a",
+        "border": "#1c2535"
+      },
       "children": [
         {
           "type": "text",
-          "text": "Berlin",
-          "class": "city"
+          "text": "{time}",
+          "font": "bold",
+          "size": 48,
+          "align": "center"
         },
         {
           "type": "text",
-          "text": "{(time.hour + 6) % 24}:{time.min}",
-          "class": "t"
+          "text": "local",
+          "align": "center",
+          "color": "#c4ccd6"
         }
-      ],
-      "style": {
-        "direction": "row",
-        "justify": "between",
-        "align": "center"
-      }
+      ]
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "Tokyo",
-          "class": "city"
-        },
-        {
-          "type": "text",
-          "text": "{(time.hour + 13) % 24}:{time.min}",
-          "class": "t"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between",
-        "align": "center"
-      }
+        "align": "center",
+        "padding": 8,
+        "radius": 10,
+        "border": "#252d38",
+        "background": "{hsv(220,60,max(34-3*abs((time.hour+5)%24-13),8))}",
+        "gradient": "#07090d"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 5,
+              "color": "{hsv(225-185*(abs((time.hour+5)%24-13)<6),70,100)}"
+            },
+            {
+              "type": "text",
+              "text": "London",
+              "font": "sans",
+              "size": 16,
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour+5)%24}:{time.min}",
+          "font": "bold",
+          "size": 24,
+          "align": "right"
+        }
+      ]
     },
     {
       "type": "box",
-      "children": [
-        {
-          "type": "text",
-          "text": "Sydney",
-          "class": "city"
-        },
-        {
-          "type": "text",
-          "text": "{(time.hour + 14) % 24}:{time.min}",
-          "class": "t"
-        }
-      ],
       "style": {
         "direction": "row",
         "justify": "between",
-        "align": "center"
-      }
+        "align": "center",
+        "padding": 8,
+        "radius": 10,
+        "border": "#252d38",
+        "background": "{hsv(220,60,max(34-3*abs((time.hour+6)%24-13),8))}",
+        "gradient": "#07090d"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 5,
+              "color": "{hsv(225-185*(abs((time.hour+6)%24-13)<6),70,100)}"
+            },
+            {
+              "type": "text",
+              "text": "Berlin",
+              "font": "sans",
+              "size": 16,
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour+6)%24}:{time.min}",
+          "font": "bold",
+          "size": 24,
+          "align": "right"
+        }
+      ]
     },
     {
-      "type": "text",
-      "text": "offsets from US Eastern",
-      "color": "dim",
-      "align": "center"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center",
+        "padding": 8,
+        "radius": 10,
+        "border": "#252d38",
+        "background": "{hsv(220,60,max(34-3*abs((time.hour+13)%24-13),8))}",
+        "gradient": "#07090d"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 5,
+              "color": "{hsv(225-185*(abs((time.hour+13)%24-13)<6),70,100)}"
+            },
+            {
+              "type": "text",
+              "text": "Tokyo",
+              "font": "sans",
+              "size": 16,
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour+13)%24}:{time.min}",
+          "font": "bold",
+          "size": 24,
+          "align": "right"
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between",
+        "align": "center",
+        "padding": 8,
+        "radius": 10,
+        "border": "#252d38",
+        "background": "{hsv(220,60,max(34-3*abs((time.hour+14)%24-13),8))}",
+        "gradient": "#07090d"
+      },
+      "children": [
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "gap": 8,
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "circle",
+              "r": 5,
+              "color": "{hsv(225-185*(abs((time.hour+14)%24-13)<6),70,100)}"
+            },
+            {
+              "type": "text",
+              "text": "Sydney",
+              "font": "sans",
+              "size": 16,
+              "color": "#c4ccd6"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "{(time.hour+14)%24}:{time.min}",
+          "font": "bold",
+          "size": 24,
+          "align": "right"
+        }
+      ]
     }
   ]
 }

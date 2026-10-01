@@ -35,143 +35,286 @@
   },
   "style": {
     "direction": "column",
-    "gap": 10,
+    "gap": 6,
     "padding": 8
   },
   "elements": [
     {
-      "type": "text",
-      "text": "LATENCY  (bar = 0-100 ms)",
-      "color": "dim"
+      "type": "box",
+      "style": {
+        "direction": "row",
+        "justify": "between"
+      },
+      "children": [
+        {
+          "type": "text",
+          "text": "LATENCY",
+          "color": "#7c8794"
+        },
+        {
+          "type": "text",
+          "text": "bar = 0-100 ms",
+          "align": "right",
+          "color": "#7c8794"
+        }
+      ]
     },
     {
       "type": "box",
+      "style": {
+        "gap": 7,
+        "padding": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
       "children": [
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between",
+            "align": "center"
+          },
           "children": [
             {
               "type": "text",
-              "text": "{ping.0.name}"
+              "text": "{ping.0.name}",
+              "font": "sans",
+              "size": 16
             },
             {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 3,
+                "align": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{ping.0.ms}",
+                  "font": "bold",
+                  "size": 22,
+                  "color": "{hsv(clamp(130-ping.0.ms*1.3,0,130),85,95)}"
+                },
+                {
+                  "type": "text",
+                  "text": "ms",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "bar",
+          "h": 10,
+          "value": "{min(ping.0.ms,100)}",
+          "color": "#14804a",
+          "style": {
+            "gradient": "{hsv(clamp(130-ping.0.ms*1.3,0,130),85,95)}",
+            "gradientDir": "right",
+            "radius": 5,
+            "background": "#1a2029"
+          }
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
               "type": "text",
-              "text": "{ping.0.ms} ms {ping.0.trend}",
-              "align": "right",
+              "text": "{ping.0.bars}",
               "color": "{ping.0.color}"
+            },
+            {
+              "type": "text",
+              "text": "trend {ping.0.trend}",
+              "align": "right",
+              "color": "#7c8794"
             }
-          ],
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 7,
+        "padding": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
+      "children": [
+        {
+          "type": "box",
           "style": {
             "direction": "row",
-            "justify": "between"
-          }
+            "justify": "between",
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.1.name}",
+              "font": "sans",
+              "size": 16
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 3,
+                "align": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{ping.1.ms}",
+                  "font": "bold",
+                  "size": 22,
+                  "color": "{hsv(clamp(130-ping.1.ms*1.3,0,130),85,95)}"
+                },
+                {
+                  "type": "text",
+                  "text": "ms",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "bar",
           "h": 10,
-          "value": "{min(ping.0.ms, 100)}",
-          "color": "{ping.0.color}",
+          "value": "{min(ping.1.ms,100)}",
+          "color": "#14804a",
           "style": {
-            "radius": 3
+            "gradient": "{hsv(clamp(130-ping.1.ms*1.3,0,130),85,95)}",
+            "gradientDir": "right",
+            "radius": 5,
+            "background": "#1a2029"
           }
-        }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 3
-      }
-    },
-    {
-      "type": "box",
-      "children": [
+        },
         {
           "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
           "children": [
             {
               "type": "text",
-              "text": "{ping.1.name}"
-            },
-            {
-              "type": "text",
-              "text": "{ping.1.ms} ms {ping.1.trend}",
-              "align": "right",
+              "text": "{ping.1.bars}",
               "color": "{ping.1.color}"
-            }
-          ],
-          "style": {
-            "direction": "row",
-            "justify": "between"
-          }
-        },
-        {
-          "type": "bar",
-          "h": 10,
-          "value": "{min(ping.1.ms, 100)}",
-          "color": "{ping.1.color}",
-          "style": {
-            "radius": 3
-          }
-        }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 3
-      }
-    },
-    {
-      "type": "box",
-      "children": [
-        {
-          "type": "box",
-          "children": [
-            {
-              "type": "text",
-              "text": "{ping.2.name}"
             },
             {
               "type": "text",
-              "text": "{ping.2.ms} ms {ping.2.trend}",
+              "text": "trend {ping.1.trend}",
               "align": "right",
-              "color": "{ping.2.color}"
+              "color": "#7c8794"
             }
-          ],
+          ]
+        }
+      ]
+    },
+    {
+      "type": "box",
+      "style": {
+        "gap": 7,
+        "padding": 8,
+        "background": "#141a22",
+        "gradient": "#0b0e13",
+        "border": "#252d38",
+        "radius": 10
+      },
+      "children": [
+        {
+          "type": "box",
           "style": {
             "direction": "row",
-            "justify": "between"
-          }
+            "justify": "between",
+            "align": "center"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.2.name}",
+              "font": "sans",
+              "size": 16
+            },
+            {
+              "type": "box",
+              "style": {
+                "direction": "row",
+                "gap": 3,
+                "align": "end"
+              },
+              "children": [
+                {
+                  "type": "text",
+                  "text": "{ping.2.ms}",
+                  "font": "bold",
+                  "size": 22,
+                  "color": "{hsv(clamp(130-ping.2.ms*1.3,0,130),85,95)}"
+                },
+                {
+                  "type": "text",
+                  "text": "ms",
+                  "color": "#7c8794"
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "bar",
           "h": 10,
-          "value": "{min(ping.2.ms, 100)}",
-          "color": "{ping.2.color}",
+          "value": "{min(ping.2.ms,100)}",
+          "color": "#14804a",
           "style": {
-            "radius": 3
+            "gradient": "{hsv(clamp(130-ping.2.ms*1.3,0,130),85,95)}",
+            "gradientDir": "right",
+            "radius": 5,
+            "background": "#1a2029"
           }
+        },
+        {
+          "type": "box",
+          "style": {
+            "direction": "row",
+            "justify": "between"
+          },
+          "children": [
+            {
+              "type": "text",
+              "text": "{ping.2.bars}",
+              "color": "{ping.2.color}"
+            },
+            {
+              "type": "text",
+              "text": "trend {ping.2.trend}",
+              "align": "right",
+              "color": "#7c8794"
+            }
+          ]
         }
-      ],
-      "style": {
-        "direction": "column",
-        "gap": 3
-      }
-    },
-    {
-      "type": "line",
-      "h": 1,
-      "color": "dim"
+      ]
     },
     {
       "type": "text",
-      "text": "history {ping.0.bars}",
-      "color": "dim"
-    },
-    {
-      "type": "text",
+      "x": 77,
+      "y": 296,
       "text": "{time.sec}",
-      "font": "sans",
-      "size": 16,
-      "color": "dim",
-      "align": "center"
+      "align": "center",
+      "color": "dim"
     }
   ]
 }
