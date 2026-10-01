@@ -805,15 +805,15 @@ static void fillSourceList(JsonDocument& doc) {
     sourceStatusToJson(settings.sources[i], o);
   }
   sourcesUnlock();
-  doc["free"] = MAX_SOURCES - settings.sourceCount;
-  doc["max"]  = MAX_SOURCES;
+  doc["free"] = settings.sourceCap - settings.sourceCount;
+  doc["max"]  = settings.sourceCap;
 }
 
 static void registerSources() {
   // GET /api/sources -> every source with its config (header value
   // redacted), fetch state and current values.
   server.on(AsyncURIMatcher::exact("/api/sources"), HTTP_GET, [](AsyncWebServerRequest* req) {
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);
     fillSourceList(doc);
     sendJson(req, 200, doc);
   });
@@ -842,12 +842,12 @@ static void registerSources() {
         }
         *existing = parsed;
         sourceFetchNow(*existing);
-      } else if (settings.sourceCount < MAX_SOURCES) {
+      } else if (settings.sourceCount < settings.sourceCap) {
         settings.sources[settings.sourceCount] = parsed;
         sourceFetchNow(settings.sources[settings.sourceCount]);
         settings.sourceCount++;
       } else {
-        snprintf(err, sizeof(err), "no free slots (max %u sources)", MAX_SOURCES);
+        snprintf(err, sizeof(err), "no free slots (max %u sources)", settings.sourceCap);
         ok = false;
       }
     }
@@ -861,7 +861,7 @@ static void registerSources() {
       sendError(req, 500, "failed to save settings");
       return;
     }
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);
     fillSourceList(doc);
     doc["saved"] = id;
     sendJson(req, 200, doc);
@@ -893,7 +893,7 @@ static void registerSources() {
       sendError(req, 500, "failed to save settings");
       return;
     }
-    JsonDocument doc;
+    JsonDocument doc(&psramJsonAlloc);
     fillSourceList(doc);
     sendJson(req, 200, doc);
   });

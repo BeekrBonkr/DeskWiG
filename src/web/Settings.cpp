@@ -160,7 +160,7 @@ static bool loadConfigFile() {
   File f = LittleFS.open(CONFIG_PATH, "r");
   if (!f) return false;
 
-  JsonDocument doc;
+  JsonDocument doc(&psramJsonAlloc);
   DeserializationError err = deserializeJson(doc, f);
   f.close();
 
@@ -221,7 +221,10 @@ static bool loadConfigFile() {
 
   settings.sourceCount = 0;
   for (JsonVariantConst v : doc["sources"].as<JsonArrayConst>()) {
-    if (settings.sourceCount >= MAX_SOURCES) break;
+    if (settings.sourceCount >= settings.sourceCap) {
+      Log.println("[CFG] Too many data sources in config, extra ones skipped");
+      break;
+    }
     char err[96];
     if (sourceFromJson(settings.sources[settings.sourceCount], v, err, sizeof(err))) {
       settings.sourceCount++;
@@ -245,7 +248,7 @@ static bool loadConfigFile() {
 }
 
 bool saveSettings() {
-  JsonDocument doc;
+  JsonDocument doc(&psramJsonAlloc);
   doc["version"]        = CONFIG_VERSION;
   doc["hostname"]       = settings.hostname;
   doc["pingIntervalMs"] = settings.pingIntervalMs;
@@ -394,6 +397,7 @@ void factoryReset() {
 // =====================
 void loadSettings() {
   loadNvs();
+  sourcesAlloc();
 
   if (!LittleFS.begin(true)) {
     Log.println("[CFG] LittleFS mount failed, running on defaults");

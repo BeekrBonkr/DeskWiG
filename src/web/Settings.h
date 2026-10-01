@@ -49,8 +49,10 @@ struct Settings {
   uint8_t targetCount = 0;
   PingTarget targets[MAX_PING_TARGETS];
 
+  // Allocated by sourcesAlloc(); sourceCap is 0 if that failed.
   uint8_t sourceCount = 0;
-  DataSource sources[MAX_SOURCES];
+  uint8_t sourceCap = 0;
+  DataSource* sources = nullptr;
 
   // Keys sampled over time for charts and {key.min}-style statistics.
   uint8_t seriesCount = 0;
