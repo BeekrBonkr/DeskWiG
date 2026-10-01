@@ -941,18 +941,18 @@ $('srcFieldAdd').onclick = () => $('srcFields').appendChild(fieldRow(null));
 //   fields:   temp = current.temperature_2m (decimals 0)
 //             humidity = current.relative_humidity_2m
 // A **bold** id line from the README also names the source(s) that follow.
-function parseField(s) {
-  const eq = s.indexOf('=');
-  if (eq < 0) return null;
-  const f = { name: s.slice(0, eq).trim(), path: s.slice(eq + 1).trim() };
-  const m = f.path.match(/\(([^)]*)\)\s*$/);
-  if (m) {
-    const d = m[1].match(/\d+/);
-    if (/dec/i.test(m[1]) && d) f.decimals = parseInt(d[0], 10);
-    f.path = f.path.slice(0, m.index).trim();
+// "name = path (decimals N)", with several pairs per line allowed.
+function parseFields(s) {
+  const out = [];
+  for (const m of s.matchAll(/([^\s=()]+)\s*=\s*([^\s=()]*)(?:\s*\(([^)]*)\))?/g)) {
+    const f = { name: m[1], path: m[2] };
+    const d = m[3] && /dec/i.test(m[3]) ? m[3].match(/\d+/) : null;
+    if (d) f.decimals = parseInt(d[0], 10);
+    out.push(f);
   }
-  return f;
+  return out;
 }
+function parseField(s) { return parseFields(s)[0] || null; }
 function normalizeJsonSources(j) {
   let list;
   if (Array.isArray(j)) list = j;
@@ -985,7 +985,7 @@ function parseSourceText(text) {
     if (!line) continue;
     if (line.startsWith('```')) { inFields = false; continue; }
     let m;
-    if (inFields && line.indexOf('=') >= 0 && !/^(id|source|url|interval|intervals|refresh|every|header|fields?)\s*:/i.test(line)) { cur.fields.push(parseField(line)); continue; }
+    if (inFields && line.indexOf('=') >= 0 && !/^(id|source|url|interval|intervals|refresh|every|header|fields?)\s*:/i.test(line)) { cur.fields.push(...parseFields(line)); continue; }
     inFields = false;
     const bold = [...line.matchAll(/\*\*([a-z0-9-]{1,16})\*\*/g)].map(x => x[1]);
     if (bold.length) { pending = bold; cur = null; continue; }
@@ -1012,8 +1012,7 @@ function parseSourceText(text) {
     }
     if ((m = line.match(/^fields?\s*[:=]\s*(.*)$/i))) {
       inFields = true;
-      const f = m[1].trim() ? parseField(m[1]) : null;
-      if (f) cur.fields.push(f);
+      cur.fields.push(...parseFields(m[1]));
       continue;
     }
     if (/^[a-z][a-z0-9_-]{0,15}\s*[:=]\s*\S/i.test(line) && !/\s/.test(line.split(/[:=]/)[0].trim())) throw new Error('"' + line.slice(0, 30) + '": unknown setting. Use id, url, interval, header or fields.');
@@ -1030,6 +1029,23 @@ function sourcesToText(list) {
     return lines.join('\n');
   }).join('\n\n') + '\n';
 }
+// The same rules the device applies, checked here so the message can name the field.
+function checkSource(x) {
+  const id = (x.id || '').trim().toLowerCase();
+  if (!/^[a-z0-9-]{1,16}$/.test(id)) return 'id "' + id + '" must be 1-16 lowercase letters, digits or dashes';
+  if (!/^https?:\/\/\S+$/.test(x.url || '') || x.url.length > 511) return id + ': the url must start with http:// or https://';
+  if (!x.fields.length) return id + ': add at least one field';
+  if (x.fields.length > 24) return id + ': too many fields (max 24)';
+  const seen = {};
+  for (const f of x.fields) {
+    if (!/^[A-Za-z0-9_]{1,16}$/.test(f.name) || ['status', 'color', 'age', 'updated', 'error'].includes(f.name)) return id + ': field name "' + f.name + '" must be 1-16 letters, digits or _ and not a status key';
+    if (!/^[A-Za-z0-9_.\-\[\]]{0,63}$/.test(f.path)) return id + ': field ' + f.name + ' has an invalid path "' + f.path.slice(0, 40) + '"' + (f.path.indexOf(' ') >= 0 ? ' (one field per line)' : '');
+    if (seen[f.name]) return id + ': field name "' + f.name + '" is used twice';
+    seen[f.name] = true;
+  }
+  if (x.header && (!/^[A-Za-z0-9_-]{1,31}$/.test(x.header.name) || !/^[ -~]{0,127}$/.test(x.header.value))) return id + ': invalid header';
+  return '';
+}
 function closeImport() { $('srcImport').style.display = 'none'; $('srcPaste').style.display = ''; }
 async function importSources() {
   let list;
@@ -1039,6 +1055,8 @@ async function importSources() {
   for (const x of list) {
     const id = x.id.trim().toLowerCase();
     if (!id) { failed.push((x.url || '(no url)').slice(0, 40) + ': no id'); continue; }
+    const bad = checkSource(x);
+    if (bad) { failed.push(bad); continue; }
     const body = { url: x.url, fields: x.fields };
     if (x.intervalS !== undefined && !isNaN(x.intervalS)) body.intervalS = x.intervalS;
     if (x.header) body.header = x.header;
