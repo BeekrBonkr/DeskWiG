@@ -75,7 +75,24 @@ All pins are defined in `src/app/Board.h`.
 A KY-040 style encoder (or a bare encoder plus a button) turns the knob into a widget selector, no phone needed. The knob steps through widgets in the order shown on `/widgets`, where rows can be dragged to rearrange them:
 
 - **Turn** goes to the next or previous widget, in the order the Widgets page lists them, wrapping at the ends. A banner with the widget's name and position appears for a moment, and the choice is saved so it survives a reboot. Turning also ends an editor preview.
-- **Click** shows the connection screen (address and API key) for 15 seconds; click again to dismiss it.
+- **Click** shows the name banner for the widget on screen.
+- **Hold** the button for about a second and a half to open the settings menu.
+
+### Settings menu
+
+Holding the knob opens a text menu on the device, so the everyday settings can be changed without a phone. Turn to move the highlight, click to open an item or set a value, and hold to go back a level or leave the menu. It closes by itself after 45 seconds without input. Changes take effect at once and are saved, the same as from the setup page.
+
+| Item | What it does |
+| --- | --- |
+| **Brightness** | Backlight, 1 to 100 percent, live as the knob turns |
+| **Clock** | Current time, 12 or 24-hour, timezone from the same list as the setup page, time source (internet, router or a custom NTP server) and the server name |
+| **Status LED** | On or off, and brightness |
+| **WiFi** | Network, address and signal; **Join network** scans and joins (a password is typed with the knob); **Forget** returns to the setup hotspot |
+| **Device** | **Connection** shows the address and API key; the device name; ping interval; firmware, uptime and memory; **Restart**; **Factory reset** |
+
+Joining a network from the knob: pick it from the scan list, then type the password one character at a time. Turning selects a character, clicking adds it. Turning back past the first letter reaches **Delete**, **Cancel** and **OK**. The menu works in setup hotspot mode too, so a device that has never been on a network can be joined to one from the knob alone.
+
+Fonts, images, data sources, history, the account and firmware updates stay on the setup page; they need files or a keyboard.
 
 Wire CLK, DT and SW to GPIO 5, 6 and 7, the module's `+` to 3V3 and `GND` to ground. The firmware enables the internal pull-ups, so a bare encoder works with its common pins to ground and no resistors; the KY-040's own pull-ups are fine alongside. Nothing needs configuring: with no encoder connected the pins simply stay high.
 
@@ -131,7 +148,7 @@ WiFi credentials, the API key and the login account are stored in the ESP32's NV
 1. Join the hotspot from a phone or laptop. A setup page should open automatically (captive portal). If it doesn't, browse to the URL above.
 2. Tap **Scan for networks**, pick yours, enter the password, and tap **Join**.
 3. The page reports when the device has connected and shows its new address. The hotspot stays up for 20 seconds after connecting so you can read it, then turns off.
-4. The device screen shows the address and an 8-character API key for 30 seconds, then switches to the active widget.
+4. The device screen shows the address and an 8-character API key for 30 seconds, then switches to the active widget. This screen only appears while no account exists; afterwards the same details are under **Device > Connection** in the [knob menu](#settings-menu).
 5. Open the address in a browser. The login page asks for that key once, then for a username and password of your choice. Nothing on the device can be changed until the account exists.
 
 The device is reachable at `http://deskwig.local` (mDNS) or its IP. The name is changeable on the setup page.

@@ -9,6 +9,7 @@
 #include "app/StatusLed.h"
 #include "app/SystemScreens.h"
 #include "app/Encoder.h"
+#include "app/Menu.h"
 
 #include "app/Builtins.h"
 #include "layout/LayoutStore.h"
@@ -24,7 +25,9 @@
 #include "layout/ImageService.h"
 #include "app/Log.h"
 
-// How long the connection-info screen (IP + API key) stays up after WiFi connects.
+// Until an account exists the login page needs the API key, so the
+// connection screen (address + key) is shown this long after WiFi connects.
+// After that it lives under Device > Connection in the knob menu.
 constexpr uint32_t INFO_SCREEN_MS = 30000;
 
 static uint32_t infoScreenUntil = 0;
@@ -33,7 +36,6 @@ static uint32_t infoScreenUntil = 0;
 // saved a moment after the knob stops so a fast spin is one flash write.
 constexpr uint32_t TOAST_MS = 1500;
 constexpr uint32_t SAVE_DELAY_MS = 2000;
-constexpr uint32_t INFO_BY_BUTTON_MS = 15000;
 static uint32_t toastUntil = 0;
 static uint32_t saveAt = 0;
 static bool savePending = false;
@@ -180,11 +182,20 @@ static void drawToast() {
 
 static void encoderStep(uint32_t now) {
   EncoderEvent ev = encoderLoop(now);
-  if (ev.steps) switchWidget(ev.steps, now);
-  if (ev.button == EncoderButton::CLICK) {
-    // Toggle the connection-info screen (address and API key).
-    bool showing = (int32_t)(infoScreenUntil - now) > 0;
-    infoScreenUntil = showing ? now : now + INFO_BY_BUTTON_MS;
+  if (menuActive()) {
+    menuInput(ev, now);
+  } else {
+    if (ev.steps) switchWidget(ev.steps, now);
+    if (ev.button == EncoderButton::CLICK) {
+      // Show which widget this is; also dismisses the first-boot connection screen.
+      infoScreenUntil = now;
+      toastUntil = now + TOAST_MS;
+    } else if (ev.button == EncoderButton::LONG_PRESS) {
+      layoutPreviewStop();
+      infoScreenUntil = now;
+      toastUntil = now;
+      menuOpen(now);
+    }
   }
   if (savePending && (int32_t)(now - saveAt) >= 0) {
     savePending = false;
@@ -276,9 +287,10 @@ void loop() {
   encoderStep(now);
   if (wifiState == WifiState::CONNECTED) seriesLoop(now);
 
-  // Show the info screen each time we (re)connect.
+  // First-time setup: show the address and API key on connect until an
+  // account exists. Afterwards the menu has them.
   static WifiState lastState = WifiState::AP_MODE;
-  if (wifiState == WifiState::CONNECTED && lastState != WifiState::CONNECTED) {
+  if (wifiState == WifiState::CONNECTED && lastState != WifiState::CONNECTED && !authConfigured()) {
     infoScreenUntil = now + INFO_SCREEN_MS;
   }
   lastState = wifiState;
@@ -299,6 +311,8 @@ void loop() {
   // Screen
   if (authKeyScreenActive()) {
     drawKeyScreen(ui, authKeyScreenSecondsLeft());
+  } else if (menuActive()) {
+    menuRender(ui, now);              // also in hotspot mode, so WiFi can be joined from the knob
   } else if (wifiState == WifiState::CONNECTED && (int32_t)(infoScreenUntil - now) > 0) {
     drawInfoScreen(ui, (infoScreenUntil - now) / 1000);
   } else if (wifiApActive()) {
