@@ -44,6 +44,7 @@ static bool savePending = false;
 class LGFX_Display : public lgfx::LGFX_Device {
   lgfx::Panel_ST7789 _panel;
   lgfx::Bus_SPI _bus;
+  lgfx::Light_PWM _light;
 public:
   LGFX_Display() {
     auto b = _bus.config();
@@ -62,6 +63,15 @@ public:
     p.offset_x = 35;
     p.rgb_order = false;
     _panel.config(p);
+
+    // Backlight PWM. 20 kHz keeps the switching above hearing range and
+    // out of a camera's frame rate.
+    auto l = _light.config();
+    l.pin_bl = Board::TFT_BL;
+    l.freq = 20000;
+    l.pwm_channel = 7;
+    _light.config(l);
+    _panel.setLight(&_light);
 
     setPanel(&_panel);
   }
@@ -188,6 +198,15 @@ static void encoderStep(uint32_t now) {
 // The composed screen, for the screenshot endpoint.
 lgfx::LGFX_Sprite* uiSprite() { return &ui; }
 
+// Backlight from a percentage. A square curve so the slider feels even:
+// LED brightness is perceived roughly as the square root of duty.
+void backlightSet(uint8_t pct) {
+  if (pct > 100) pct = 100;
+  uint32_t duty = (255u * pct * pct + 5000) / 10000;
+  if (pct > 0 && duty == 0) duty = 1;
+  tft.setBrightness(duty);
+}
+
 void setup() {
   Log.begin(115200);
 
@@ -198,6 +217,7 @@ void setup() {
   tft.setColorDepth(16);
   tft.setRotation(0);
   tft.invertDisplay(true);
+  tft.setBrightness(255);           // full until the saved level is loaded
 
   // The frame buffer is 109 KB. Left to the library it comes out of the
   // 300 KB of internal RAM, which WiFi, TLS and the web server also need;
@@ -213,6 +233,7 @@ void setup() {
   bool forceAp = checkRecoveryJumper();
 
   loadSettings();
+  backlightSet(settings.displayBrightness);
   authBegin();
   fontsBegin();
   imagesBegin();
