@@ -321,10 +321,30 @@ The tiles light from the amounts: sun or moon (by `is_day`) when nothing is fall
 id:       w6
 url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&hourly=temperature_2m,precipitation_probability,weather_code,is_day&forecast_hours=6&timezone=auto&temperature_unit=fahrenheit
 interval: 600
-fields:   t0 = hourly.temperature_2m.0             ... t5 = hourly.temperature_2m.5
-          r0 = hourly.precipitation_probability.0  ... r5 = hourly.precipitation_probability.5
-          c0 = hourly.weather_code.0               ... c5 = hourly.weather_code.5
-          d0 = hourly.is_day.0                     ... d5 = hourly.is_day.5
+fields:   t0 = hourly.temperature_2m.0
+          t1 = hourly.temperature_2m.1
+          t2 = hourly.temperature_2m.2
+          t3 = hourly.temperature_2m.3
+          t4 = hourly.temperature_2m.4
+          t5 = hourly.temperature_2m.5
+          r0 = hourly.precipitation_probability.0
+          r1 = hourly.precipitation_probability.1
+          r2 = hourly.precipitation_probability.2
+          r3 = hourly.precipitation_probability.3
+          r4 = hourly.precipitation_probability.4
+          r5 = hourly.precipitation_probability.5
+          c0 = hourly.weather_code.0
+          c1 = hourly.weather_code.1
+          c2 = hourly.weather_code.2
+          c3 = hourly.weather_code.3
+          c4 = hourly.weather_code.4
+          c5 = hourly.weather_code.5
+          d0 = hourly.is_day.0
+          d1 = hourly.is_day.1
+          d2 = hourly.is_day.2
+          d3 = hourly.is_day.3
+          d4 = hourly.is_day.4
+          d5 = hourly.is_day.5
 ```
 
 Weather codes: 0-2 clear or partly cloudy (sun by day, moon at night), 3-48 overcast and fog, 51-67 and 80-99 rain, drizzle, showers and storms, 71-77 snow. Put your own coordinates in the URL.
@@ -337,7 +357,10 @@ url:      https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&h
 interval: 900
 fields:   p0 = hourly.precipitation_probability.0
           p1 = hourly.precipitation_probability.1
-          ... up to p5 = hourly.precipitation_probability.5
+          p2 = hourly.precipitation_probability.2
+          p3 = hourly.precipitation_probability.3
+          p4 = hourly.precipitation_probability.4
+          p5 = hourly.precipitation_probability.5
 ```
 
 **fc** (Open-Meteo daily, no key)
