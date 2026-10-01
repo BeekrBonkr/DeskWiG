@@ -47,6 +47,7 @@ struct Settings {
   uint8_t ledBrightness = 5;
 
   uint8_t displayBrightness = 100;   // backlight, 1-100 percent
+  bool displayFlip = false;          // mounted upside down: rotate 180 degrees
 
   uint8_t targetCount = 0;
   PingTarget targets[MAX_PING_TARGETS];
