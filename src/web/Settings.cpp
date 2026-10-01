@@ -87,6 +87,19 @@ void regenerateApiToken() {
   Log.println("[CFG] Generated new API key");
 }
 
+bool setApiToken(const char* token) {
+  if (!token || strlen(token) != API_TOKEN_LEN) return false;
+  for (const char* p = token; *p; p++) {
+    if (!((*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9'))) return false;
+  }
+  strlcpy(settings.apiToken, token, sizeof(settings.apiToken));
+  Preferences prefs;
+  prefs.begin(NVS_NS, false);
+  prefs.putString("token", settings.apiToken);
+  prefs.end();
+  return true;
+}
+
 static void loadNvs() {
   Preferences prefs;
   prefs.begin(NVS_NS, true);
@@ -250,6 +263,8 @@ static bool loadConfigFile() {
   return true;
 }
 
+static bool writeConfig(JsonVariantConst doc);
+
 bool saveSettings() {
   JsonDocument doc(&psramJsonAlloc);
   doc["version"]        = CONFIG_VERSION;
@@ -300,8 +315,17 @@ bool saveSettings() {
     o["keep"]  = settings.series[i].keepS;
   }
 
-  // Write to a temp file, then rename over the real one so a power loss
-  // mid-write can't leave a half-written config.
+  return writeConfig(doc);
+}
+
+bool saveConfigRaw(JsonVariantConst config) {
+  if (!config.is<JsonObjectConst>()) return false;
+  return writeConfig(config);
+}
+
+// Write to a temp file, then rename over the real one so a power loss
+// mid-write can't leave a half-written config.
+static bool writeConfig(JsonVariantConst doc) {
   File f = LittleFS.open(CONFIG_TMP, "w");
   if (!f) {
     Log.println("[CFG] Failed to open temp config for writing");
