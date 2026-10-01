@@ -77,6 +77,14 @@ void saveCredentials();
 // Replaces the API key with a fresh random one and stores it in NVS.
 void regenerateApiToken();
 
+// Stores a key from a backup. False if it is not 8 characters of the
+// key alphabet.
+bool setApiToken(const char* token);
+
+// Writes a whole config object to /config.json as-is (backup restore).
+// Takes effect at the next boot; call it right before a restart.
+bool saveConfigRaw(JsonVariantConst config);
+
 // Validates and stores a hostname (lowercase letters, digits, dashes).
 // Returns false and leaves the setting untouched if invalid.
 bool setHostname(const char* name);

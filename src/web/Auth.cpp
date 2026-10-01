@@ -111,6 +111,35 @@ void authBegin() {
   Log.printf("[AUTH] %s\n", configured ? "Account loaded" : "No account yet");
 }
 
+bool authExport(char* user, size_t userLen, char* saltHex, size_t saltLen, char* hashHex, size_t hashLen) {
+  if (!configured) return false;
+  if (userLen < strlen(account) + 1 || saltLen < SALT_LEN * 2 + 1 || hashLen < 65) return false;
+  strlcpy(user, account, userLen);
+  toHex(salt, SALT_LEN, saltHex);
+  toHex(hash, 32, hashHex);
+  return true;
+}
+
+bool authImport(const char* user, const char* saltHex, const char* hashHex, char* err, size_t errLen) {
+  uint8_t newSalt[SALT_LEN], newHash[32];
+  if (!user || !validUser(user)) { snprintf(err, errLen, "account: bad username"); return false; }
+  if (!saltHex || strlen(saltHex) != SALT_LEN * 2 || !fromHex(saltHex, newSalt, SALT_LEN)) { snprintf(err, errLen, "account: bad salt"); return false; }
+  if (!hashHex || strlen(hashHex) != 64 || !fromHex(hashHex, newHash, 32)) { snprintf(err, errLen, "account: bad hash"); return false; }
+
+  Preferences prefs;
+  if (!prefs.begin(NVS_NS, false)) { snprintf(err, errLen, "storage error"); return false; }
+  bool ok = prefs.putString("user", user) && prefs.putString("salt", saltHex) && prefs.putString("hash", hashHex);
+  prefs.end();
+  if (!ok) { snprintf(err, errLen, "failed to save account"); return false; }
+
+  strlcpy(account, user, sizeof(account));
+  memcpy(salt, newSalt, SALT_LEN);
+  memcpy(hash, newHash, 32);
+  configured = true;
+  authSessionsClear();
+  return true;
+}
+
 bool authConfigured() { return configured; }
 const char* authUsername() { return account; }
 
