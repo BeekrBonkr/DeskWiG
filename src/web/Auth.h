@@ -23,6 +23,14 @@ const char* authUsername();
 // lengths or characters. Existing sessions are dropped.
 bool authSetAccount(const char* user, const char* pass, char* err, size_t errLen);
 
+// The stored account as hex strings, for a backup file. False if there
+// is no account. Buffers: user AUTH_USER_MAX+1, salt 33, hash 65.
+bool authExport(char* user, size_t userLen, char* saltHex, size_t saltLen, char* hashHex, size_t hashLen);
+
+// Stores an account from a backup without knowing the password. Fails on
+// a malformed username, salt or hash. Existing sessions are dropped.
+bool authImport(const char* user, const char* saltHex, const char* hashHex, char* err, size_t errLen);
+
 // Constant-time check of a login attempt. Does not touch the lockout.
 bool authCheckPassword(const char* user, const char* pass);
 

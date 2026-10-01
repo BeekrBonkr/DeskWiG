@@ -261,6 +261,8 @@ The routes:
 | `GET /api/layouts/templates`    | no   | Built-in templates with their layout JSON                      |
 | `GET /api/log?since=N`          | yes  | Serial output after byte N as text; `X-Log-Seq` header gives the next N |
 | `POST /api/system/update`       | yes  | Multipart upload of `firmware.bin` (field `file`); writes the spare OTA slot and reboots |
+| `GET /api/backup`               | yes  | One JSON file with the config, widgets, WiFi, account and API key (see [Backup and restore](#backup-and-restore)) |
+| `POST /api/restore?parts=<list>`| yes  | Multipart upload of a backup (field `file`); writes the listed parts and restarts |
 | `POST /api/system/reboot`       | yes  | Restart                                                        |
 | `POST /api/system/reset`        | yes  | Factory reset and restart                                      |
 
@@ -273,6 +275,20 @@ curl -X POST http://<device-ip>/api/widgets \
   -H "Authorization: Bearer <key>" \
   -d index=1
 ```
+
+### Backup and restore
+
+**Backup** on the setup page downloads one JSON file holding everything that can be put back without a file upload: the config (settings, data sources with their secret headers, ping targets, history keys, widget order), every widget layout, the WiFi network and password, the login account and the API key. It is a sensitive file, so keep it private. Fonts and images are not in it, only their names, so they have to be uploaded again on a new device.
+
+To restore, choose the file under **Backup**, untick anything you do not want, and tap **Restore** twice. The device writes the chosen parts and restarts. Restoring the widgets replaces the ones on the device; restoring the account logs every browser out, so sign in again with the backup's username and password. The same works from a script:
+
+```bash
+curl -H "Authorization: Bearer <key>" http://deskwig.local/api/backup -o deskwig-backup.json
+curl -X POST -H "Authorization: Bearer <key>" -F file=@deskwig-backup.json \
+  "http://deskwig.local/api/restore?parts=config,widgets,wifi,auth"
+```
+
+`parts` is any of `config`, `widgets`, `wifi` and `auth`; without it everything is restored. The file is plain JSON, so a text editor can trim it, say to move only the widgets to a second device.
 
 ## Configuring ping targets
 
