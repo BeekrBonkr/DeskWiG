@@ -39,7 +39,7 @@ static AsyncWebServer server(80);
 // Routes use exact matching: the library default also matches any
 // sub-path, so "/api/layouts" would swallow "/api/layouts/data".
 
-static const char* FW_VERSION = "0.9.0";
+#include "../app/Version.h"
 
 // Deferred actions. Restarting from inside an async handler is unsafe,
 // so handlers set these and webLoop() acts on them.
