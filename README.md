@@ -584,7 +584,7 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | Key                                            | Value                                                       |
 | ---------------------------------------------- | ----------------------------------------------------------- |
 | `time`, `time.sec`, `time.ampm`                | `09:41`, `09:41:07`, `AM` (empty in 24-hour mode)           |
-| `time.hour`, `time.min`                        | `09`, `41`, for stacked clocks                              |
+| `time.hour`, `time.min`, `time.second`         | `09`, `41`, `07`, for stacked and binary clocks             |
 | `date`, `date.day`, `date.md`, `date.dow`      | `2026-09-26`, `Sat`, `Sep 26`, `Saturday`                   |
 | `date.year`                                    | `2026`                                                      |
 | `wifi.ssid`, `wifi.ip`, `wifi.rssi`            | Network name, IP address, signal in dBm                     |
