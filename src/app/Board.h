@@ -10,8 +10,10 @@ namespace Board {
   constexpr int TFT_DC   = 9;
   constexpr int TFT_RST  = 8;
   // Backlight, PWM dimmed. Most 1.9" modules switch BL through a
-  // transistor, so the pin drives it directly.
-  constexpr int TFT_BL   = 13;
+  // transistor, so the pin drives it directly. Not 13: with no MISO pin
+  // given, the Arduino SPI layer claims the S3's default MISO (GPIO 13)
+  // as an input when the bus starts, which undoes the PWM attach.
+  constexpr int TFT_BL   = 14;
 
   // Onboard WS2812 status LED
   constexpr int STATUS_LED = 48;

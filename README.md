@@ -43,7 +43,7 @@ Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://maker
   <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
 </p>
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 13 dims the backlight (see [Display brightness](#display-brightness)).
+The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 14 dims the backlight (see [Display brightness](#display-brightness)).
 
 ### Wiring
 
@@ -54,7 +54,7 @@ The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4
 | CS          | 10            |
 | DC          | 9             |
 | RST         | 8             |
-| BL          | 13            |
+| BL          | 14            |
 | VCC         | 3V3           |
 | GND         | GND           |
 
@@ -152,7 +152,7 @@ Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
 
 ### Display brightness
 
-With BL on GPIO 13, the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
+With BL on GPIO 14, the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
 
 ```bash
 curl -X PUT http://<device-ip>/api/config \
