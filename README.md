@@ -413,7 +413,7 @@ Eight layouts are preloaded on first boot so the device is useful out of the box
 }
 ```
 
-The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 63 elements per layout, nested up to 6 deep.
+The screen is 170 × 320 with a black background. Text uses the 6 × 8 pixel built-in font scaled by `size`, so size 1 fits 28 columns, size 2 fits 14 and size 4 fits 7. Up to 127 elements per layout, nested up to 6 deep, and up to 96 templated numbers; a saved layout can be up to 32 KB of JSON.
 
 ### Elements
 

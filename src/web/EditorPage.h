@@ -546,7 +546,7 @@ function num(v, path, what) {
     if (!v.includes('{')) throw new Error(at(path) + ': ' + what + ' must be a number or a {template}');
     if (/^style "/.test(path)) throw new Error(at(path) + ': ' + what + ' cannot be a template in a named style');
     if (v.length > 55) throw new Error(at(path) + ': ' + what + ' template longer than 55 characters');
-    if (++bindCount > 40) throw new Error('too many templated numbers (max 40)');
+    if (++bindCount > 96) throw new Error('too many templated numbers (max 96)');
     const d = parseFloat(expand(v));
     return isFinite(d) ? d : 0;
   }
@@ -598,7 +598,7 @@ let nodeCount = 0;
 
 function buildNode(e, path, styles, depth) {
   if (!e || typeof e !== 'object' || Array.isArray(e)) throw new Error(at(path) + ': must be an object');
-  if (++nodeCount > 63) throw new Error('too many elements (max 63 including nested)');
+  if (++nodeCount > 127) throw new Error('too many elements (max 127 including nested)');
   if (depth > 6) throw new Error(at(path) + ': nested too deep');
   if (!TYPES.includes(e.type)) throw new Error(at(path) + ': unknown type (' + TYPES.join(', ') + ')');
   const n = { type: e.type, x: AUTO, y: AUTO, w: AUTO, h: AUTO, x2: AUTO, y2: AUTO, a0: 0, a1: 360, pts: [], text: '', children: [], hasXY: false, el: e, path: path };
