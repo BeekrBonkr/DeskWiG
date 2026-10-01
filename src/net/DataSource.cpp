@@ -443,12 +443,15 @@ static void extract(const FetchJob& job, const uint8_t* body, size_t len, FetchR
 // KEY DISCOVERY
 // =====================
 // Large replies are parsed whole, so the document lives in PSRAM.
-struct PsramAllocator : ArduinoJson::Allocator {
-  void* allocate(size_t n) override { return heap_caps_malloc(n, MALLOC_CAP_SPIRAM); }
-  void deallocate(void* p) override { heap_caps_free(p); }
-  void* reallocate(void* p, size_t n) override { return heap_caps_realloc(p, n, MALLOC_CAP_SPIRAM); }
-};
-static PsramAllocator psramAlloc;
+void* PsramJsonAllocator::allocate(size_t n) {
+  return heap_caps_malloc_prefer(n, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+void PsramJsonAllocator::deallocate(void* p) { heap_caps_free(p); }
+void* PsramJsonAllocator::reallocate(void* p, size_t n) {
+  return heap_caps_realloc_prefer(p, n, 2, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+}
+PsramJsonAllocator psramJsonAlloc;
+static PsramJsonAllocator& psramAlloc = psramJsonAlloc;
 
 static struct {
   bool pending;
@@ -718,6 +721,14 @@ static void fetchTask(void*) {
     applyResult(job, result);
     vTaskDelay(pdMS_TO_TICKS(50));
   }
+}
+
+void sourcesAlloc() {
+  if (settings.sources) return;
+  settings.sources = (DataSource*)heap_caps_calloc_prefer(MAX_SOURCES, sizeof(DataSource), 2,
+      MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  settings.sourceCap = settings.sources ? MAX_SOURCES : 0;
+  if (!settings.sources) Log.println("[SRC] No memory for data sources");
 }
 
 void sourcesBegin() {

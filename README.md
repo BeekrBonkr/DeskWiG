@@ -342,7 +342,7 @@ fields:   temp = current.temperature_2m (decimals 0)
 
 | Field            | Meaning                                                                                              |
 | ---------------- | ---------------------------------------------------------------------------------------------------- |
-| `id`             | Name used in layouts: 1–16 lowercase letters, digits or dashes. Up to 6 sources                      |
+| `id`             | Name used in layouts: 1–16 lowercase letters, digits or dashes. Up to 32 sources                     |
 | `url`            | `http://` or `https://`, up to 511 characters. Put API keys that go in the query string here          |
 | `intervalS`      | Seconds between fetches, minimum 10, default 300                                                     |
 | `header`         | Optional `{ "name": "Authorization", "value": "Bearer ..." }` for APIs that want a key in a header    |
