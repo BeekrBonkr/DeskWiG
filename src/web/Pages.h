@@ -249,6 +249,25 @@ fields:   temp = current.temperature_2m (decimals 0)
 </div>
 </details>
 
+<details class="sec" id="sec-backup">
+<summary><span>Backup</span><span class="sub" id="sub-backup"></span></summary>
+<div class="body">
+<button id="bakDownload" type="button">Download backup</button>
+<p class="hint">One JSON file with the settings, data sources (including their secret headers), ping targets, history keys, every widget, the WiFi network and password, the account and the API key. Keep it private. Fonts and images are not included and need uploading again on a new device.</p>
+<div class="row">
+  <input type="file" id="bakFile" accept=".json,application/json" class="p">
+  <button id="bakRestore" type="button" class="danger" disabled>Restore</button>
+</div>
+<div class="card" id="bakInfo" style="display:none"></div>
+<label class="inline"><input type="checkbox" id="bakConfig" checked> Settings, data sources, ping targets and history</label>
+<label class="inline"><input type="checkbox" id="bakWidgets" checked> Widgets (replaces the ones on the device)</label>
+<label class="inline"><input type="checkbox" id="bakWifi" checked> WiFi network and password</label>
+<label class="inline"><input type="checkbox" id="bakAuth" checked> Account and API key</label>
+<p class="msg" id="msg-backup"></p>
+<p class="hint">Restoring writes the ticked parts and restarts the device. If the account is restored, log in again with the backup's username and password; if the name or network changed, the address changes with it.</p>
+</div>
+</details>
+
 <script>
 const $ = id => document.getElementById(id);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -257,7 +276,7 @@ const bars = r => r > -55 ? '||||' : r > -65 ? '|||.' : r > -75 ? '||..' : '|...
 // Status text goes next to the buttons of the open section (msg-<name>),
 // so it is beside whatever was just pressed; with no section open it
 // falls back to the line under the status card.
-const SECTIONS = ['wifi', 'name', 'display', 'clock', 'fonts', 'images', 'sources', 'history', 'account', 'firmware'];
+const SECTIONS = ['wifi', 'name', 'display', 'clock', 'fonts', 'images', 'sources', 'history', 'account', 'firmware', 'backup'];
 function msg(t, sec) {
   const target = sec || SECTIONS.find(n => $('sec-' + n).open);
   SECTIONS.forEach(n => { if (n !== target) $('msg-' + n).textContent = ''; });
@@ -609,6 +628,59 @@ function uploadFw() {
   xhr.send(fd);
 }
 $('fwUpload').onclick = uploadFw;
+
+// ---------- backup ----------
+let bakData = null, bakArmed = false;
+$('bakDownload').onclick = () => { location.href = '/api/backup'; };
+$('bakFile').onchange = async () => {
+  bakData = null; bakArmed = false;
+  $('bakRestore').textContent = 'Restore';
+  $('bakRestore').disabled = true;
+  const f = $('bakFile').files[0];
+  const box = $('bakInfo');
+  if (!f) { box.style.display = 'none'; return; }
+  try {
+    const j = JSON.parse(await f.text());
+    if (!j.deskwig || j.deskwig.format !== 1) throw new Error('Not a DeskWiG backup file.');
+    bakData = j;
+    const widgets = Object.keys(j.widgets || {});
+    const skipped = [].concat((j.notIncluded || {}).fonts || [], (j.notIncluded || {}).images || []);
+    box.innerHTML = 'Backup of <b>' + esc(j.deskwig.hostname || '?') + '</b>' + (j.deskwig.exported ? ' from ' + esc(j.deskwig.exported) : '') + ', firmware ' + esc(j.deskwig.firmware || '?') +
+      '<br><span class="dim">' + widgets.length + ' widget' + (widgets.length === 1 ? '' : 's') +
+      (j.wifi && j.wifi.ssid ? ' &middot; WiFi ' + esc(j.wifi.ssid) : '') +
+      (j.auth && j.auth.user ? ' &middot; account ' + esc(j.auth.user) : '') + '</span>' +
+      (skipped.length ? '<br><span class="dim">Not in the file, upload again: ' + esc(skipped.join(', ')) + '</span>' : '');
+    box.style.display = '';
+    $('bakRestore').disabled = false;
+    msg('', 'backup');
+  } catch (e) { box.style.display = 'none'; msg(e.message, 'backup'); }
+};
+$('bakRestore').onclick = () => {
+  if (!bakData) return;
+  const parts = [['bakConfig', 'config'], ['bakWidgets', 'widgets'], ['bakWifi', 'wifi'], ['bakAuth', 'auth']].filter(p => $(p[0]).checked).map(p => p[1]);
+  if (!parts.length) { msg('Tick at least one part to restore.', 'backup'); return; }
+  if (!bakArmed) { bakArmed = true; $('bakRestore').textContent = 'Tap again to restore and restart'; return; }
+  bakArmed = false;
+  $('bakRestore').textContent = 'Restore';
+  const fd = new FormData();
+  fd.append('file', $('bakFile').files[0], 'backup.json');
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/restore?parts=' + parts.join(','));
+  $('bakRestore').disabled = true;
+  xhr.upload.onprogress = e => { if (e.lengthComputable) msg('Uploading\u2026 ' + Math.round(100 * e.loaded / e.total) + '%', 'backup'); };
+  xhr.onerror = () => { msg('Upload failed (connection lost).', 'backup'); $('bakRestore').disabled = false; };
+  xhr.onload = async () => {
+    let j = {}; try { j = JSON.parse(xhr.responseText); } catch (e) {}
+    if (xhr.status !== 200) { msg(j.error || ('HTTP ' + xhr.status), 'backup'); $('bakRestore').disabled = false; return; }
+    msg('Restored. The device is restarting\u2026', 'backup');
+    for (let i = 0; i < 30; i++) {
+      await sleep(2000);
+      try { const r = await fetch('/api/status'); if (r.ok) { const st = await r.json(); if (st.uptimeMs < 60000) { location.reload(); return; } } } catch (e) {}
+    }
+    msg('The device has not come back yet. Reload this page in a moment.', 'backup');
+  };
+  xhr.send(fd);
+};
 
 // ---------- fonts ----------
 let fontDelPending = null;
