@@ -207,6 +207,7 @@ static bool loadConfigFile() {
   settings.ledBrightness = led["brightness"] | 5;
 
   setDisplayBrightness(doc["display"]["brightness"] | 100);
+  settings.displayFlip = doc["display"]["flip"] | false;
 
   settings.targetCount = 0;
   for (JsonVariantConst t : doc["targets"].as<JsonArrayConst>()) {
@@ -274,6 +275,7 @@ bool saveSettings() {
   led["brightness"] = settings.ledBrightness;
 
   doc["display"]["brightness"] = settings.displayBrightness;
+  doc["display"]["flip"]       = settings.displayFlip;
 
   JsonArray targets = doc["targets"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.targetCount; i++) {

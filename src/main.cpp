@@ -10,6 +10,7 @@
 #include "app/SystemScreens.h"
 #include "app/Encoder.h"
 #include "app/Menu.h"
+#include "app/Display.h"
 
 #include "app/Builtins.h"
 #include "layout/LayoutStore.h"
@@ -218,6 +219,12 @@ void backlightSet(uint8_t pct) {
   tft.setBrightness(duty);
 }
 
+// 0 is the normal portrait mounting, 2 the same turned 180 degrees. Both
+// are 170 x 320, so the sprite and every layout stay as they are.
+void displayApplyOrientation() {
+  tft.setRotation(settings.displayFlip ? 2 : 0);
+}
+
 void setup() {
   Log.begin(115200);
 
@@ -245,6 +252,7 @@ void setup() {
 
   loadSettings();
   backlightSet(settings.displayBrightness);
+  displayApplyOrientation();
   authBegin();
   fontsBegin();
   imagesBegin();
