@@ -327,6 +327,19 @@ curl -X PUT "http://<device-ip>/api/sources?id=weather" \
   }'
 ```
 
+Or paste them: **Paste data sources as text** on the same page takes one or more sources at once, either as that JSON (a single object, an array, or the `{"sources":[...]}` that `GET /api/sources` returns) or as plain text in this form:
+
+```
+id:       weather
+url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m
+interval: 600
+header:   Authorization = Bearer abc123
+fields:   temp = current.temperature_2m (decimals 0)
+          humidity = current.relative_humidity_2m
+```
+
+`header` is optional, and `fields` continues on the following lines, one `name = path` each. Every block in [examples/widgets/README.md](examples/widgets/README.md#data-sources-used) is in this form, so a widget's sources can be copied straight from there. Pasting an `id` that already exists replaces that source; a blank header value keeps the stored one. **Fill with the current sources** puts the device's sources into the box in the same form, for editing or for moving them to another device (header values are not included).
+
 | Field            | Meaning                                                                                              |
 | ---------------- | ---------------------------------------------------------------------------------------------------- |
 | `id`             | Name used in layouts: 1–16 lowercase letters, digits or dashes. Up to 6 sources                      |

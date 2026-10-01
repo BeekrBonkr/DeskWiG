@@ -78,11 +78,12 @@ Every layout renders on its own, but the ones marked with a data source show `--
 
 ## Data sources used
 
-Replace the coordinates, symbols and tokens with your own. Field names must match exactly.
+Each block below can be pasted as is: open **Data sources** on the setup page, press **Paste data sources as text**, paste one or more blocks and press **Import**. Replace the coordinates, symbols and tokens with your own. Field names must match exactly.
 
 **weather** (Open-Meteo, no key)
 
 ```
+id:       weather
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=temperature_2m,relative_humidity_2m,wind_speed_10m,apparent_temperature
 interval: 600
 fields:   temp = current.temperature_2m (decimals 0)
@@ -94,6 +95,7 @@ fields:   temp = current.temperature_2m (decimals 0)
 **aqi** (Open-Meteo air quality, no key)
 
 ```
+id:       aqi
 url:      https://air-quality-api.open-meteo.com/v1/air-quality?latitude=42.36&longitude=-71.06&current=european_aqi,pm2_5,pm10
 interval: 900
 fields:   aqi = current.european_aqi
@@ -104,6 +106,7 @@ fields:   aqi = current.european_aqi
 **sun** (Open-Meteo daily, no key)
 
 ```
+id:       sun
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&daily=sunrise,sunset,uv_index_max&timezone=auto&forecast_days=1
 interval: 3600
 fields:   sunrise = daily.sunrise.0
@@ -116,6 +119,7 @@ The sunrise strings look like `2026-09-26T06:45`; the layout shows them as is.
 **btc** (CoinGecko, no key)
 
 ```
+id:       btc
 url:      https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true&include_market_cap=true
 interval: 120
 fields:   usd = bitcoin.usd (decimals 0)
@@ -127,6 +131,7 @@ fields:   usd = bitcoin.usd (decimals 0)
 **repo** (GitHub, no key for public repos)
 
 ```
+id:       repo
 url:      https://api.github.com/repos/BeekrBonkr/DeskWiG
 interval: 600
 fields:   name = name
@@ -139,6 +144,7 @@ fields:   name = name
 **iss** (Open Notify, plain http)
 
 ```
+id:       iss
 url:      http://api.open-notify.org/iss-now.json
 interval: 30
 fields:   lat = iss_position.latitude
@@ -148,6 +154,7 @@ fields:   lat = iss_position.latitude
 **stock** (Finnhub, free API key from finnhub.io)
 
 ```
+id:       stock
 url:      https://finnhub.io/api/v1/quote?symbol=AAPL&token=<your key>
 interval: 120
 fields:   last = c
@@ -164,6 +171,7 @@ Quotes update during market hours; outside them the values are the last close. `
 **coins** (CoinGecko, no key)
 
 ```
+id:       coins
 url:      https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin&vs_currencies=usd&include_24hr_change=true
 interval: 120
 fields:   btc = bitcoin.usd            btcc = bitcoin.usd_24h_change
@@ -175,6 +183,7 @@ fields:   btc = bitcoin.usd            btcc = bitcoin.usd_24h_change
 **fng** (alternative.me crypto Fear & Greed index, no key)
 
 ```
+id:       fng
 url:      https://api.alternative.me/fng/
 interval: 1800
 fields:   value = data.0.value
@@ -184,6 +193,7 @@ fields:   value = data.0.value
 **fees** and **tip** (mempool.space, no key)
 
 ```
+id:       fees
 url:      https://mempool.space/api/v1/fees/recommended
 interval: 120
 fields:   fast = fastestFee
@@ -191,6 +201,7 @@ fields:   fast = fastestFee
           hour = hourFee
           eco = economyFee
 
+id:       tip
 url:      https://mempool.space/api/blocks/tip/height
 interval: 120
 fields:   height = (path left empty)
@@ -201,6 +212,7 @@ The `tip` reply is a bare number, so the field's path is left empty and the whol
 **fx** (Frankfurter, ECB reference rates, no key)
 
 ```
+id:       fx
 url:      https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,CHF
 interval: 3600
 fields:   eur = rates.EUR
@@ -213,6 +225,7 @@ fields:   eur = rates.EUR
 **power** (aWATTar day-ahead spot price, Germany; use awattar.at for Austria, no key)
 
 ```
+id:       power
 url:      https://api.awattar.de/v1/marketdata
 interval: 900
 fields:   price = data.0.marketprice
@@ -224,6 +237,7 @@ Prices are EUR/MWh; the layout divides by 10 for ct/kWh. Any hourly price API wi
 **astros** (Open Notify, plain http, no key)
 
 ```
+id:       astros
 url:      http://api.open-notify.org/astros.json
 interval: 3600
 fields:   count = number
@@ -237,6 +251,7 @@ fields:   count = number
 **launch** (Launch Library 2, no key, 15 requests per hour)
 
 ```
+id:       launch
 url:      https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1&mode=list
 interval: 900
 fields:   name = results.0.name
@@ -251,6 +266,7 @@ The launch status goes in a field called `state`, not `status`: `api.<id>.status
 **quakes** (USGS, magnitude 4.5+ in the last day, no key)
 
 ```
+id:       quakes
 url:      https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_day.geojson
 interval: 600
 fields:   count = metadata.count
@@ -261,6 +277,7 @@ fields:   count = metadata.count
 **swpc** (NOAA Space Weather Prediction Center, no key)
 
 ```
+id:       swpc
 url:      https://services.swpc.noaa.gov/products/noaa-scales.json
 interval: 900
 fields:   g = 0.G.Scale         gtext = 0.G.Text
@@ -273,6 +290,7 @@ The object's keys are `"-1"`, `"0"`, `"1"`... for yesterday, now and the forecas
 **neo** (NASA near-Earth objects for today; `DEMO_KEY` works, a free key at api.nasa.gov lifts the rate limit)
 
 ```
+id:       neo
 url:      https://api.nasa.gov/neo/rest/v1/feed/today?detailed=false&api_key=DEMO_KEY
 interval: 3600
 fields:   count = element_count
@@ -281,6 +299,7 @@ fields:   count = element_count
 **wx** (Open-Meteo hourly in imperial units, no key). `forecast_hours` makes every hourly array start at the current hour, so index `.0` is now. The field names below are exactly what **Discover keys** produces when you tap the `hourly_units` entries first and then the `hourly` values: the second tap of a name gets a `2`, and names are cut to 16 characters. Tap only the value paths and rename them to these, or tap both sets and use them as they come.
 
 ```
+id:       wx
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,precipitation_probability,rain,showers,snowfall,snow_depth,is_day,weather_code&timezone=auto&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&forecast_hours=6
 interval: 600
 fields:   temperature_2m2 = hourly.temperature_2m.0
@@ -299,6 +318,7 @@ The tiles light from the amounts: sun or moon (by `is_day`) when nothing is fall
 **w6** (Open-Meteo hourly forecast for the next six hours, no key). `forecast_hours=6` makes every hourly array hold the current hour and the five after it. The layout expects short names, so type them in place of the ones Discover suggests: `t` temperature, `r` chance of rain, `c` WMO weather code, `d` is_day, each with the hour index.
 
 ```
+id:       w6
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=temperature_2m,precipitation_probability,weather_code,is_day&forecast_hours=6&timezone=auto&temperature_unit=fahrenheit
 interval: 600
 fields:   t0 = hourly.temperature_2m.0             ... t5 = hourly.temperature_2m.5
@@ -312,6 +332,7 @@ Weather codes: 0-2 clear or partly cloudy (sun by day, moon at night), 3-48 over
 **rain** (Open-Meteo hourly, no key)
 
 ```
+id:       rain
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&hourly=precipitation_probability&forecast_hours=6&timezone=auto
 interval: 900
 fields:   p0 = hourly.precipitation_probability.0
@@ -322,6 +343,7 @@ fields:   p0 = hourly.precipitation_probability.0
 **fc** (Open-Meteo daily, no key)
 
 ```
+id:       fc
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3
 interval: 1800
 fields:   hi0 = daily.temperature_2m_max.0 (decimals 0)    lo0 = daily.temperature_2m_min.0 (decimals 0)    rain0 = daily.precipitation_probability_max.0
@@ -331,6 +353,7 @@ fields:   hi0 = daily.temperature_2m_max.0 (decimals 0)    lo0 = daily.temperatu
 **baro** (Open-Meteo, no key)
 
 ```
+id:       baro
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=pressure_msl,cloud_cover,uv_index
 interval: 600
 fields:   pressure = current.pressure_msl
@@ -341,6 +364,7 @@ fields:   pressure = current.pressure_msl
 **surf** (Open-Meteo marine, no key; pick a coastal point)
 
 ```
+id:       surf
 url:      https://marine-api.open-meteo.com/v1/marine?latitude=33.66&longitude=-118.0&current=wave_height,wave_period,wave_direction,swell_wave_height
 interval: 900
 fields:   wave = current.wave_height
@@ -352,6 +376,7 @@ fields:   wave = current.wave_height
 **wind** (Open-Meteo, no key)
 
 ```
+id:       wind
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&current=wind_speed_10m,wind_gusts_10m,wind_direction_10m
 interval: 300
 fields:   speed = current.wind_speed_10m
@@ -362,6 +387,7 @@ fields:   speed = current.wind_speed_10m
 **sun2** (Open-Meteo with unix timestamps, no key)
 
 ```
+id:       sun2
 url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&longitude=-71.06&daily=sunrise,sunset&current=is_day&timeformat=unixtime&timezone=auto&forecast_days=1
 interval: 300
 fields:   t = current.time
@@ -375,6 +401,7 @@ Name this source `sun` on the device (the layout reads `api.sun.*`); it is liste
 **pihole** (Pi-hole v5 web API, no key for the summary)
 
 ```
+id:       pihole
 url:      http://pi.hole/admin/api.php?summaryRaw
 interval: 60
 fields:   pct = ads_percentage_today
@@ -388,6 +415,7 @@ Pi-hole v6 moved to `/api/stats/summary` behind a session; use v5 or a password-
 **printer** (OctoPrint, API key from its settings page)
 
 ```
+id:       printer
 url:      http://octopi.local/api/job
 interval: 30
 header:   X-Api-Key = <your OctoPrint key>
@@ -403,6 +431,7 @@ The nozzle and bed temperatures come from `/api/printer` (`temperature.tool0.act
 **steam** (Steam Web API, no key for player counts; 730 is Counter-Strike 2)
 
 ```
+id:       steam
 url:      https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=730
 interval: 300
 fields:   players = response.player_count
@@ -411,11 +440,13 @@ fields:   players = response.player_count
 **npm** and **pypi** (no key)
 
 ```
+id:       npm
 url:      https://api.npmjs.org/downloads/point/last-week/esbuild
 interval: 3600
 fields:   downloads = downloads
           pkg = package
 
+id:       pypi
 url:      https://pypistats.org/api/packages/platformio/recent
 interval: 3600
 fields:   day = data.last_day
@@ -426,6 +457,7 @@ fields:   day = data.last_day
 **gh** (GitHub user profile, no key; pairs with **repo** above)
 
 ```
+id:       gh
 url:      https://api.github.com/users/BeekrBonkr
 interval: 900
 fields:   name = name
@@ -438,6 +470,7 @@ fields:   name = name
 **f1** (Ergast-compatible Jolpica API, no key)
 
 ```
+id:       f1
 url:      https://api.jolpi.ca/ergast/f1/current/next.json
 interval: 3600
 fields:   round = MRData.RaceTable.round
@@ -450,6 +483,7 @@ fields:   round = MRData.RaceTable.round
 **holiday** (Nager.Date public holidays, no key; change `US` to your country code)
 
 ```
+id:       holiday
 url:      https://date.nager.at/api/v3/NextPublicHolidays/US
 interval: 21600
 fields:   name0 = 0.name    date0 = 0.date
@@ -460,6 +494,7 @@ fields:   name0 = 0.name    date0 = 0.date
 **ha** (Home Assistant, long-lived access token in a header)
 
 ```
+id:       ha
 url:      http://homeassistant.local:8123/api/states/sensor.living_room_temperature
 interval: 60
 header:   Authorization = Bearer <long-lived token>

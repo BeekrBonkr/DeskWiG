@@ -15,6 +15,7 @@ button.active{border-color:#3c3}
 button:disabled{opacity:.5;cursor:default}
 button.net{display:flex;justify-content:space-between}
 input{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box}
+textarea{display:block;width:100%;margin:8px 0;padding:10px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box;min-height:180px;resize:vertical;white-space:pre;overflow-wrap:normal;overflow-x:auto}
 .card{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px}
 .dim{color:#999}
 .hint{color:#999;font-size:13px}
@@ -157,6 +158,19 @@ static const char SETUP_HTML[] = R"html(
 <div class="body">
 <div id="srcList" class="dim">Loading&hellip;</div>
 <button id="srcAdd">Add data source</button>
+<button id="srcPaste">Paste data sources as text</button>
+<div class="card" id="srcImport" style="display:none">
+  <p class="hint">One or more sources, in the text form below or as the JSON the API takes. A source that already exists is replaced; an empty header value keeps the stored one. The example widgets' README lists ready-made blocks to paste.</p>
+  <textarea id="srcText" spellcheck="false" placeholder="id:       weather
+url:      https://api.open-meteo.com/v1/forecast?latitude=42.36&amp;longitude=-71.06&amp;current=temperature_2m,relative_humidity_2m
+interval: 600
+header:   Authorization = Bearer abc123   (optional)
+fields:   temp = current.temperature_2m (decimals 0)
+          humidity = current.relative_humidity_2m"></textarea>
+  <button id="srcImportGo" class="primary">Import</button>
+  <button id="srcFill" type="button">Fill with the current sources</button>
+  <button id="srcImportCancel">Cancel</button>
+</div>
 <div class="card" id="srcForm" style="display:none">
   <input id="srcId" placeholder="Name used in layouts, e.g. weather" autocapitalize="off" autocorrect="off" maxlength="16">
   <input id="srcUrl" placeholder="https://api.example.com/data?key=..." autocapitalize="off" autocorrect="off" maxlength="511">
@@ -798,6 +812,7 @@ function openForm(src) {
   $('srcKeys').className = '';
   $('srcForm').style.display = '';
   $('srcAdd').style.display = 'none';
+  $('srcPaste').style.display = 'none';
   $('srcForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -807,6 +822,7 @@ function closeForm() {
   $('srcKeys').className = '';
   $('srcForm').style.display = 'none';
   $('srcAdd').style.display = '';
+  $('srcPaste').style.display = '';
   editingId = null;
 }
 
@@ -914,6 +930,134 @@ $('srcAdd').onclick = () => openForm(null);
 $('srcCancel').onclick = closeForm;
 $('srcSave').onclick = saveSource;
 $('srcFieldAdd').onclick = () => $('srcFields').appendChild(fieldRow(null));
+
+// ---------- paste import ----------
+// Takes the JSON the API accepts (one source, an array, {"sources":[...]} or
+// {"<id>":{...}}) or the text form used in examples/widgets/README.md:
+//   id:       weather
+//   url:      https://...
+//   interval: 600
+//   header:   Authorization = Bearer abc
+//   fields:   temp = current.temperature_2m (decimals 0)
+//             humidity = current.relative_humidity_2m
+// A **bold** id line from the README also names the source(s) that follow.
+function parseField(s) {
+  const eq = s.indexOf('=');
+  if (eq < 0) return null;
+  const f = { name: s.slice(0, eq).trim(), path: s.slice(eq + 1).trim() };
+  const m = f.path.match(/\(([^)]*)\)\s*$/);
+  if (m) {
+    const d = m[1].match(/\d+/);
+    if (/dec/i.test(m[1]) && d) f.decimals = parseInt(d[0], 10);
+    f.path = f.path.slice(0, m.index).trim();
+  }
+  return f;
+}
+function normalizeJsonSources(j) {
+  let list;
+  if (Array.isArray(j)) list = j;
+  else if (j && Array.isArray(j.sources)) list = j.sources;
+  else if (j && typeof j === 'object' && !j.url) list = Object.keys(j).map(k => Object.assign({ id: k }, j[k]));
+  else list = [j];
+  return list.map(x => {
+    const o = { id: String(x.id || x.name || ''), url: String(x.url || ''), fields: [] };
+    const iv = x.intervalS !== undefined ? x.intervalS : x.interval;
+    if (iv !== undefined) o.intervalS = parseInt(iv, 10);
+    if (x.header && x.header.name) o.header = { name: x.header.name, value: x.header.value || '' };
+    const fs = x.fields || [];
+    if (Array.isArray(fs)) fs.forEach(f => o.fields.push(typeof f === 'string' ? parseField(f) : { name: f.name, path: f.path || '', decimals: f.decimals }));
+    else Object.keys(fs).forEach(k => o.fields.push(typeof fs[k] === 'object' ? Object.assign({ name: k }, fs[k]) : { name: k, path: String(fs[k]) }));
+    o.fields = o.fields.filter(Boolean);
+    return o;
+  });
+}
+function parseSourceText(text) {
+  const t = text.trim();
+  if (!t) throw new Error('Paste one or more sources first.');
+  if (t[0] === '{' || t[0] === '[') {
+    try { return normalizeJsonSources(JSON.parse(t)); } catch (e) { throw new Error('Not valid JSON: ' + e.message); }
+  }
+  const out = [];
+  let cur = null, inFields = false, pending = [];
+  const start = id => { cur = { id: id || pending.shift() || '', fields: [] }; out.push(cur); inFields = false; };
+  for (const raw of t.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) continue;
+    if (line.startsWith('```')) { inFields = false; continue; }
+    let m;
+    if (inFields && line.indexOf('=') >= 0 && !/^(id|source|url|interval|intervals|refresh|every|header|fields?)\s*:/i.test(line)) { cur.fields.push(parseField(line)); continue; }
+    inFields = false;
+    const bold = [...line.matchAll(/\*\*([a-z0-9-]{1,16})\*\*/g)].map(x => x[1]);
+    if (bold.length) { pending = bold; cur = null; continue; }
+    if ((m = line.match(/^(?:id|source)\s*[:=]\s*(\S+)/i))) {
+      if (!cur || cur.id || cur.url) start(m[1]); else cur.id = m[1];
+      continue;
+    }
+    if ((m = line.match(/^url\s*[:=]\s*(\S+)/i))) {
+      if (!cur || cur.url) start();
+      cur.url = m[1];
+      continue;
+    }
+    if ((m = line.match(/^([a-z0-9-]{1,16})(?:\s*\(.*\))?$/)) && (!cur || cur.url)) { start(m[1]); continue; }
+    const setting = /^(?:interval|intervals|refresh|every|header|fields?)\s*[:=]/i.test(line);
+    if (setting && !cur) throw new Error('"' + line.slice(0, 40) + '": an id: or url: line must come first.');
+    if ((m = line.match(/^(?:interval|intervals|refresh|every)\s*[:=]\s*(\d+)/i))) { cur.intervalS = parseInt(m[1], 10); continue; }
+    if ((m = line.match(/^header\s*[:=]\s*(.*)$/i))) {
+      let h = m[1].replace(/\s*\((?:optional|[^)]*)\)\s*$/i, '').trim();
+      if (!h) continue;
+      let sep = h.indexOf('=');
+      if (sep < 0) sep = h.indexOf(':');
+      cur.header = sep < 0 ? { name: h, value: '' } : { name: h.slice(0, sep).trim(), value: h.slice(sep + 1).trim() };
+      continue;
+    }
+    if ((m = line.match(/^fields?\s*[:=]\s*(.*)$/i))) {
+      inFields = true;
+      const f = m[1].trim() ? parseField(m[1]) : null;
+      if (f) cur.fields.push(f);
+      continue;
+    }
+    if (/^[a-z][a-z0-9_-]{0,15}\s*[:=]\s*\S/i.test(line) && !/\s/.test(line.split(/[:=]/)[0].trim())) throw new Error('"' + line.slice(0, 30) + '": unknown setting. Use id, url, interval, header or fields.');
+    // anything else is prose between blocks
+  }
+  return out;
+}
+function sourcesToText(list) {
+  const pad = k => (k + ':').padEnd(10);
+  return list.map(x => {
+    const lines = [pad('id') + x.id, pad('url') + x.url, pad('interval') + x.intervalS];
+    if (x.header && x.header.name) lines.push(pad('header') + x.header.name + ' = ');
+    (x.fields || []).forEach((f, i) => lines.push((i ? ' '.repeat(10) : pad('fields')) + f.name + ' = ' + f.path + (f.decimals !== undefined ? ' (decimals ' + f.decimals + ')' : '')));
+    return lines.join('\n');
+  }).join('\n\n') + '\n';
+}
+function closeImport() { $('srcImport').style.display = 'none'; $('srcPaste').style.display = ''; }
+async function importSources() {
+  let list;
+  try { list = parseSourceText($('srcText').value); } catch (e) { msg(e.message); return; }
+  if (!list.length) { msg('No sources found in the text.'); return; }
+  const done = [], failed = [];
+  for (const x of list) {
+    const id = x.id.trim().toLowerCase();
+    if (!id) { failed.push((x.url || '(no url)').slice(0, 40) + ': no id'); continue; }
+    const body = { url: x.url, fields: x.fields };
+    if (x.intervalS !== undefined && !isNaN(x.intervalS)) body.intervalS = x.intervalS;
+    if (x.header) body.header = x.header;
+    try {
+      const r = await api('/api/sources?id=' + encodeURIComponent(id), 'PUT', body);
+      sources = r.sources || [];
+      done.push(id);
+    } catch (e) { failed.push(id + ': ' + e.message); }
+  }
+  renderSources();
+  if (!failed.length) { closeImport(); $('srcText').value = ''; }
+  msg((done.length ? 'Imported ' + done.join(', ') + '. ' : '') + (failed.length ? 'Not imported: ' + failed.join('; ') : 'Fetching now…'));
+  setTimeout(loadSources, 2500);
+  setTimeout(loadSources, 8000);
+}
+$('srcPaste').onclick = () => { $('srcImport').style.display = ''; $('srcPaste').style.display = 'none'; $('srcText').focus(); };
+$('srcImportCancel').onclick = closeImport;
+$('srcImportGo').onclick = importSources;
+$('srcFill').onclick = () => { $('srcText').value = sourcesToText(sources); };
 
 // ---------- history (series) ----------
 let series = [];
