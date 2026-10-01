@@ -160,10 +160,10 @@ struct LayoutBinding {
 
 class LayoutWidget : public Widget {
 public:
-  static constexpr uint8_t MAX_NODES = 64;     // including the implicit root
+  static constexpr uint8_t MAX_NODES = 128;    // including the implicit root; nodes live in PSRAM
   static constexpr uint8_t MAX_DEPTH = 6;
   static constexpr uint8_t MAX_STYLES = 8;
-  static constexpr uint8_t MAX_BINDINGS = 40;
+  static constexpr uint8_t MAX_BINDINGS = 96;
   static constexpr uint8_t ID_LEN = 24;
   static constexpr uint8_t NAME_LEN = 32;
   static constexpr uint8_t NONE = 0xFF;

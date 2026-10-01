@@ -567,7 +567,7 @@ static void registerLayouts() {
     sendJson(req, 200, doc);
   });
   put->setMethod(HTTP_PUT);
-  put->setMaxContentLength(16384);
+  put->setMaxContentLength(32768);
   server.addHandler(put);
 
   server.on(AsyncURIMatcher::exact("/api/layouts"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
@@ -602,7 +602,7 @@ static void registerLayouts() {
     sendJson(req, 200, doc);
   });
   preview->setMethod(HTTP_POST);
-  preview->setMaxContentLength(16384);
+  preview->setMaxContentLength(32768);
   server.addHandler(preview);
 
   server.on(AsyncURIMatcher::exact("/api/layouts/preview"), HTTP_DELETE, [](AsyncWebServerRequest* req) {
