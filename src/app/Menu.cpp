@@ -10,7 +10,7 @@
 #include "../net/WifiManager.h"
 #include "../net/TimeService.h"
 
-void backlightSet(uint8_t pct);   // main.cpp, owns the display
+#include "Display.h"
 
 // =====================
 // LOOK
@@ -164,6 +164,13 @@ static int  getBacklight() { return settings.displayBrightness; }
 static void setBacklight(int v, bool commit) {
   setDisplayBrightness(v);
   backlightSet(settings.displayBrightness);
+  if (commit) saveSettings();
+}
+
+static int  getFlip() { return settings.displayFlip; }
+static void setFlip(int v, bool commit) {
+  settings.displayFlip = v;
+  displayApplyOrientation();
   if (commit) saveSettings();
 }
 
@@ -321,6 +328,13 @@ static Item clockItems[] = {
 };
 static const Page clockPage = { "Clock", clockItems, sizeof(clockItems) / sizeof(clockItems[0]) };
 
+static Item displayItems[] = {
+  itemBack(),
+  itemNumber("Brightness", getBacklight, setBacklight, 1, 100, 1, "%"),
+  itemToggle("Upside down", getFlip, setFlip),
+};
+static const Page displayPage = { "Display", displayItems, sizeof(displayItems) / sizeof(displayItems[0]) };
+
 static Item ledItems[] = {
   itemBack(),
   itemToggle("Enabled", getLedOn, setLedOn),
@@ -352,7 +366,7 @@ static Item deviceItems[] = {
 static const Page devicePage = { "Device", deviceItems, sizeof(deviceItems) / sizeof(deviceItems[0]) };
 
 static Item mainItems[] = {
-  itemNumber("Brightness", getBacklight, setBacklight, 1, 100, 1, "%"),
+  itemSub("Display", &displayPage),
   itemSub("Clock", &clockPage),
   itemSub("Status LED", &ledPage),
   itemSub("WiFi", &wifiPage),

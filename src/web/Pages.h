@@ -114,8 +114,9 @@ static const char SETUP_HTML[] = R"html(
 <div class="body">
 <label class="inline" for="bright">Brightness <b id="brightVal"></b></label>
 <input type="range" id="bright" min="1" max="100" value="100">
+<label class="inline"><input type="checkbox" id="flip"> Upside down</label>
 <p class="msg" id="msg-display"></p>
-<p class="hint">Changes as you drag and is saved when you let go.</p>
+<p class="hint">Brightness changes as you drag and is saved when you let go. Upside down turns the picture 180 degrees for a display mounted the other way round.</p>
 </div>
 </details>
 
@@ -462,10 +463,11 @@ async function saveHost() {
 // Dragging previews the level without saving, one request in flight at a
 // time with only the latest value queued; letting go saves it.
 let brightBusy = false, brightNext = -1;
-function showBright(pct) {
-  $('bright').value = pct;
-  $('brightVal').textContent = pct + '%';
-  sub('display', pct + '%');
+function showDisplay(d) {
+  $('bright').value = d.brightness;
+  $('brightVal').textContent = d.brightness + '%';
+  $('flip').checked = !!d.flip;
+  sub('display', d.brightness + '%' + (d.flip ? ', upside down' : ''));
 }
 async function previewBright(pct) {
   if (brightBusy) { brightNext = pct; return; }
@@ -479,14 +481,21 @@ async function previewBright(pct) {
 async function saveBright(pct) {
   try {
     const c = await api('/api/config', 'PUT', { display: { brightness: pct } });
-    showBright(c.display.brightness);
+    showDisplay(c.display);
     msg('Brightness saved.', 'display');
   } catch (e) { msg(e.message, 'display'); }
 }
+$('flip').onchange = async () => {
+  try {
+    const c = await api('/api/config', 'PUT', { display: { flip: $('flip').checked } });
+    showDisplay(c.display);
+    msg(c.display.flip ? 'Display turned upside down.' : 'Display the normal way up.', 'display');
+  } catch (e) { msg(e.message, 'display'); }
+};
 $('bright').oninput = () => { const v = +$('bright').value; $('brightVal').textContent = v + '%'; previewBright(v); };
 $('bright').onchange = () => saveBright(+$('bright').value);
 async function loadDisplay() {
-  try { const c = await api('/api/config'); showBright(c.display.brightness); }
+  try { const c = await api('/api/config'); showDisplay(c.display); }
   catch (e) { msg(e.message, 'display'); }
 }
 
@@ -544,7 +553,7 @@ function showClock(c, t) {
 async function loadClock() {
   try {
     const c = await api('/api/config');
-    if (c.display) showBright(c.display.brightness);
+    if (c.display) showDisplay(c.display);
     const s = await api('/api/status');
     showClock(c.clock, s.time);
   } catch (e) { $('clockStatus').textContent = e.message; }
