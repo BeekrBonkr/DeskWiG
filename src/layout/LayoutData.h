@@ -5,7 +5,7 @@
 // Template values available to JSON layouts as {key}.
 //
 //   time, time.sec, time.hour, time.min, time.second, time.ampm
-//   date, date.day, date.md, date.dow, date.year
+//   date, date.day, date.md, date.dow, date.year, date.month, date.dom
 //   wifi.ssid, wifi.ip, wifi.rssi, wifi.pct, wifi.bars, wifi.color
 //   hostname, uptime, heap
 //   ping.count
