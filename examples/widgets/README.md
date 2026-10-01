@@ -74,6 +74,7 @@ Every layout renders on its own, but the ones marked with a data source show `--
 | `next-holiday.json` | Top-level array (`0.name`, `1.name`), MM-DD cut out of ISO dates at three sizes | `holiday` |
 | **No API** | | |
 | `binary-clock.json` | Hour, minute and second bits as rounded cells: `floor(time.second / 16) % 2` inside `if()` picks the lit or unlit color | |
+| `binary-date-clock.json` | The binary clock plus a second grid for day, month and two-digit year (`date.year % 100`) | |
 
 ## Data sources used
 

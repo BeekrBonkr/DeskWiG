@@ -102,6 +102,16 @@ static bool resolveDate(const char* field, char* out, size_t n) {
     snprintf(out, n, "%04d", t.tm_year + 1900);
     return true;
   }
+  if (!strcmp(field, "month")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_mon + 1);
+    return true;
+  }
+  if (!strcmp(field, "dom")) {
+    if (!ok) { strlcpy(out, "--", n); return true; }
+    snprintf(out, n, "%02d", t.tm_mday);
+    return true;
+  }
   if (!strcmp(field, "md")) {
     if (!ok) { strlcpy(out, "--- --", n); return true; }
     snprintf(out, n, "%s %d", MONTH_SHORT[t.tm_mon], t.tm_mday);
@@ -336,7 +346,7 @@ void layoutExpand(const char* tpl, char* out, size_t outLen) {
 
 void layoutFillData(JsonObject obj) {
   static const char* STATIC_KEYS[] = {
-    "time", "time.sec", "time.hour", "time.min", "time.second", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year",
+    "time", "time.sec", "time.hour", "time.min", "time.second", "time.ampm", "date", "date.day", "date.md", "date.dow", "date.year", "date.month", "date.dom",
     "wifi.ssid", "wifi.ip", "wifi.rssi", "wifi.pct", "wifi.bars", "wifi.color",
     "hostname", "uptime", "heap", "ping.count"
   };
