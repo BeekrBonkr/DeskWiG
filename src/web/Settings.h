@@ -46,6 +46,8 @@ struct Settings {
   bool ledEnabled = true;
   uint8_t ledBrightness = 5;
 
+  uint8_t displayBrightness = 100;   // backlight, 1-100 percent
+
   uint8_t targetCount = 0;
   PingTarget targets[MAX_PING_TARGETS];
 
@@ -90,3 +92,6 @@ bool setClockTz(const char* tz);
 
 // Validates and stores the custom NTP host (hostname or IP).
 bool setNtpServer(const char* host);
+
+// Clamps the backlight level to 1-100 and stores it. Does not apply it.
+void setDisplayBrightness(int pct);

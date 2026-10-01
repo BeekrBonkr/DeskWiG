@@ -206,6 +206,8 @@ static bool loadConfigFile() {
   settings.ledEnabled    = led["enabled"]    | true;
   settings.ledBrightness = led["brightness"] | 5;
 
+  setDisplayBrightness(doc["display"]["brightness"] | 100);
+
   settings.targetCount = 0;
   for (JsonVariantConst t : doc["targets"].as<JsonArrayConst>()) {
     if (settings.targetCount >= MAX_PING_TARGETS) break;
@@ -270,6 +272,8 @@ bool saveSettings() {
   JsonObject led = doc["led"].to<JsonObject>();
   led["enabled"]    = settings.ledEnabled;
   led["brightness"] = settings.ledBrightness;
+
+  doc["display"]["brightness"] = settings.displayBrightness;
 
   JsonArray targets = doc["targets"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.targetCount; i++) {
@@ -373,6 +377,12 @@ bool setNtpServer(const char* host) {
   }
   strlcpy(settings.ntpServer, host, sizeof(settings.ntpServer));
   return true;
+}
+
+void setDisplayBrightness(int pct) {
+  if (pct < 1) pct = 1;
+  if (pct > 100) pct = 100;
+  settings.displayBrightness = (uint8_t)pct;
 }
 
 // =====================
