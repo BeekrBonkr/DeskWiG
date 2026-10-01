@@ -84,7 +84,7 @@ Holding the knob opens a text menu on the device, so the everyday settings can b
 
 | Item | What it does |
 | --- | --- |
-| **Brightness** | Backlight, 1 to 100 percent, live as the knob turns |
+| **Display** | Backlight brightness, 1 to 100 percent, live as the knob turns; **Upside down** for a display mounted the other way round |
 | **Clock** | Current time, 12 or 24-hour, timezone from the same list as the setup page, time source (internet, router or a custom NTP server) and the server name |
 | **Status LED** | On or off, and brightness |
 | **WiFi** | Network, address and signal; **Join network** scans and joins (a password is typed with the knob); **Forget** returns to the setup hotspot |
@@ -167,7 +167,9 @@ If the saved network can't be reached within 15 seconds the hotspot comes back, 
 
 Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
 
-### Display brightness
+### Display brightness and orientation
+
+`display.flip` turns the picture 180 degrees for a display that has to be mounted upside down. Tick **Upside down** under **Display** on the setup page, or use the same setting in the knob menu; it applies at once.
 
 With BL on GPIO 14, the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
 
@@ -294,7 +296,7 @@ Everything except WiFi credentials, the key and the account lives in `/config.js
   "activeWidget": 0,
   "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
-  "display": { "brightness": 100 },
+  "display": { "brightness": 100, "flip": false },
   "sources": [
     { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
       "intervalS": 600,

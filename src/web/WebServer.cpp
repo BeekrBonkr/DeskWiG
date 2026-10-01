@@ -28,7 +28,7 @@
 #include "DesignerPage.h"
 #include "../app/Log.h"
 
-void backlightSet(uint8_t pct);   // main.cpp, owns the display
+#include "../app/Display.h"
 
 extern ScreenManager screens;
 extern uint32_t perfFrameUs;
@@ -161,6 +161,7 @@ static void fillConfig(JsonDocument& doc) {
   led["enabled"]    = settings.ledEnabled;
   led["brightness"] = settings.ledBrightness;
   doc["display"]["brightness"] = settings.displayBrightness;
+  doc["display"]["flip"]       = settings.displayFlip;
 }
 
 static void fillTimeStatus(JsonObject doc) {
@@ -781,9 +782,15 @@ static void registerConfig() {
       ledApplySettings();
     }
     JsonVariant display = json["display"];
-    if (!display.isNull() && !display["brightness"].isNull()) {
-      setDisplayBrightness(display["brightness"] | 100);
-      backlightSet(settings.displayBrightness);
+    if (!display.isNull()) {
+      if (!display["brightness"].isNull()) {
+        setDisplayBrightness(display["brightness"] | 100);
+        backlightSet(settings.displayBrightness);
+      }
+      if (!display["flip"].isNull()) {
+        settings.displayFlip = display["flip"] | false;
+        displayApplyOrientation();
+      }
     }
 
     if (!saveSettings()) {
