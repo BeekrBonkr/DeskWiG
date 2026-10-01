@@ -15,6 +15,7 @@ button.active{border-color:#3c3}
 button:disabled{opacity:.5;cursor:default}
 button.net{display:flex;justify-content:space-between}
 input{display:block;width:100%;margin:8px 0;padding:10px;font-size:16px;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box}
+input[type=range]{padding:0;background:none;border:0;accent-color:#3c3}
 textarea{display:block;width:100%;margin:8px 0;padding:10px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#222;color:#eee;border:1px solid #444;border-radius:6px;box-sizing:border-box;min-height:180px;resize:vertical;white-space:pre;overflow-wrap:normal;overflow-x:auto}
 .card{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px}
 .dim{color:#999}
@@ -105,6 +106,16 @@ static const char SETUP_HTML[] = R"html(
 <button id="saveHost">Save name</button>
 <p class="msg" id="msg-name"></p>
 <p class="hint">Reachable at http://<span id="hostPreview">deskwig</span>.local once connected. Letters, digits and dashes only.</p>
+</div>
+</details>
+
+<details class="sec" id="sec-display">
+<summary><span>Display</span><span class="sub" id="sub-display"></span></summary>
+<div class="body">
+<label class="inline" for="bright">Brightness <b id="brightVal"></b></label>
+<input type="range" id="bright" min="1" max="100" value="100">
+<p class="msg" id="msg-display"></p>
+<p class="hint">Changes as you drag and is saved when you let go.</p>
 </div>
 </details>
 
@@ -245,7 +256,7 @@ const bars = r => r > -55 ? '||||' : r > -65 ? '|||.' : r > -75 ? '||..' : '|...
 // Status text goes next to the buttons of the open section (msg-<name>),
 // so it is beside whatever was just pressed; with no section open it
 // falls back to the line under the status card.
-const SECTIONS = ['wifi', 'name', 'clock', 'fonts', 'images', 'sources', 'history', 'account', 'firmware'];
+const SECTIONS = ['wifi', 'name', 'display', 'clock', 'fonts', 'images', 'sources', 'history', 'account', 'firmware'];
 function msg(t, sec) {
   const target = sec || SECTIONS.find(n => $('sec-' + n).open);
   SECTIONS.forEach(n => { if (n !== target) $('msg-' + n).textContent = ''; });
@@ -294,7 +305,7 @@ function sub(name, text) { $('sub-' + name).textContent = text || ''; }
 // and it is refreshed once when it opens.
 let started = false;
 const live = n => $('sec-' + n).open && !document.hidden;
-const onOpen = { clock: () => loadClock(), sources: () => { if (sourcesIdle()) loadSources(); }, history: () => loadSeries() };
+const onOpen = { display: () => loadDisplay(), clock: () => loadClock(), sources: () => { if (sourcesIdle()) loadSources(); }, history: () => loadSeries() };
 SECTIONS.forEach(n => {
   $('sec-' + n).addEventListener('toggle', e => {
     if (e.target.open) { openSection(n, false); if (started && onOpen[n]) onOpen[n](); }
@@ -447,6 +458,38 @@ async function saveHost() {
   } catch (e) { msg(e.message); }
 }
 
+// ---------- display ----------
+// Dragging previews the level without saving, one request in flight at a
+// time with only the latest value queued; letting go saves it.
+let brightBusy = false, brightNext = -1;
+function showBright(pct) {
+  $('bright').value = pct;
+  $('brightVal').textContent = pct + '%';
+  sub('display', pct + '%');
+}
+async function previewBright(pct) {
+  if (brightBusy) { brightNext = pct; return; }
+  brightBusy = true;
+  try {
+    await fetch('/api/display/preview', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'brightness=' + pct });
+  } catch (e) {}
+  brightBusy = false;
+  if (brightNext >= 0) { const n = brightNext; brightNext = -1; if (n !== pct) previewBright(n); }
+}
+async function saveBright(pct) {
+  try {
+    const c = await api('/api/config', 'PUT', { display: { brightness: pct } });
+    showBright(c.display.brightness);
+    msg('Brightness saved.', 'display');
+  } catch (e) { msg(e.message, 'display'); }
+}
+$('bright').oninput = () => { const v = +$('bright').value; $('brightVal').textContent = v + '%'; previewBright(v); };
+$('bright').onchange = () => saveBright(+$('bright').value);
+async function loadDisplay() {
+  try { const c = await api('/api/config'); showBright(c.display.brightness); }
+  catch (e) { msg(e.message, 'display'); }
+}
+
 // ---------- clock ----------
 const ZONES = [
   ['UTC', 'UTC0'],
@@ -501,6 +544,7 @@ function showClock(c, t) {
 async function loadClock() {
   try {
     const c = await api('/api/config');
+    if (c.display) showBright(c.display.brightness);
     const s = await api('/api/status');
     showClock(c.clock, s.time);
   } catch (e) { $('clockStatus').textContent = e.message; }

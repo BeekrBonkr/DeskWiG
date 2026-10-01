@@ -43,20 +43,22 @@ Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://maker
   <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
 </p>
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)).
+The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 13 dims the backlight (see [Display brightness](#display-brightness)).
 
 ### Wiring
 
-| Display pin | ESP32-S3 GPIO                                       |
-| ----------- | --------------------------------------------------- |
-| SCLK        | 12                                                  |
-| MOSI        | 11                                                  |
-| CS          | 10                                                  |
-| DC          | 9                                                   |
-| RST         | 8                                                   |
-| VCC         | 3V3                                                 |
-| GND         | GND                                                 |
-| BL          | 3V3 (or a spare GPIO if you want backlight control) |
+| Display pin | ESP32-S3 GPIO |
+| ----------- | ------------- |
+| SCLK (SLK)  | 12            |
+| MOSI (DIN)  | 11            |
+| CS          | 10            |
+| DC          | 9             |
+| RST         | 8             |
+| BL          | 13            |
+| VCC         | 3V3           |
+| GND         | GND           |
+
+BL can go to 3V3 instead if you don't want brightness control; the display then stays at full brightness and the setting has no effect.
 
 | Encoder pin | ESP32-S3 GPIO |
 | ----------- | ------------- |
@@ -148,6 +150,19 @@ If the saved network can't be reached within 15 seconds the hotspot comes back, 
 
 Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
 
+### Display brightness
+
+With BL on GPIO 13, the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
+
+```bash
+curl -X PUT http://<device-ip>/api/config \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '{"display":{"brightness":40}}'
+```
+
+`display.brightness` is 1 to 100 percent (default 100). The level is saved and restored at boot; the screen runs at full brightness for the moment between power-on and the config loading. `POST /api/display/preview` with a form field `brightness=N` sets the level without saving it, which is what the slider uses while it is being dragged.
+
 ### Recovery jumper
 
 Bridge GPIO 4 to GND and press reset:
@@ -191,7 +206,7 @@ The routes:
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
 | `POST /api/wifi/join`           | yes  | JSON `{"ssid","pass"}`. Saves and connects, hotspot stays up   |
 | `POST /api/wifi/forget`         | yes  | Clears credentials, returns to hotspot                         |
-| `GET /api/config`               | no   | Hostname, ping interval, clock, LED settings                   |
+| `GET /api/config`               | no   | Hostname, ping interval, clock, LED and display settings       |
 | `PUT /api/config`               | yes  | JSON with any subset of the above; saved immediately           |
 | `GET /api/fonts`                | no   | Fonts on the device with size and whether built in             |
 | `POST /api/fonts?name=<name>`   | yes  | Multipart upload of a `.ttf` (field `file`), up to 2 MB       |
@@ -213,6 +228,7 @@ The routes:
 | `DELETE /api/series?key=<key>`  | yes  | Stop sampling a key and drop its samples                       |
 | `GET /api/widgets`              | no   | JSON list of widgets (`name`, `key`, `builtin`), the active index and deleted built-ins |
 | `POST /api/widgets` (`index=N`) | yes  | Switch the active widget; choice is persisted                  |
+| `POST /api/display/preview` (`brightness=N`) | yes | Set the backlight to N percent without saving it (see [Display brightness](#display-brightness)) |
 | `DELETE /api/widgets?key=<key>` | yes  | Remove a widget: a built-in is hidden, a layout is deleted     |
 | `PUT /api/widgets/order`        | yes  | JSON `{"order":["key",...]}`. Order for the list and the encoder knob; persisted |
 | `POST /api/widgets/restore` (`key=K`) | yes | Bring back a deleted built-in widget                       |
@@ -261,6 +277,7 @@ Everything except WiFi credentials, the key and the account lives in `/config.js
   "activeWidget": 0,
   "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
+  "display": { "brightness": 100 },
   "sources": [
     { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
       "intervalS": 600,

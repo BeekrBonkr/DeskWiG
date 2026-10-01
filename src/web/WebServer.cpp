@@ -28,6 +28,8 @@
 #include "DesignerPage.h"
 #include "../app/Log.h"
 
+void backlightSet(uint8_t pct);   // main.cpp, owns the display
+
 extern ScreenManager screens;
 extern uint32_t perfFrameUs;
 extern uint32_t perfPushUs;
@@ -158,6 +160,7 @@ static void fillConfig(JsonDocument& doc) {
   JsonObject led = doc["led"].to<JsonObject>();
   led["enabled"]    = settings.ledEnabled;
   led["brightness"] = settings.ledBrightness;
+  doc["display"]["brightness"] = settings.displayBrightness;
 }
 
 static void fillTimeStatus(JsonObject doc) {
@@ -777,6 +780,11 @@ static void registerConfig() {
       if (!led["brightness"].isNull()) settings.ledBrightness = led["brightness"];
       ledApplySettings();
     }
+    JsonVariant display = json["display"];
+    if (!display.isNull() && !display["brightness"].isNull()) {
+      setDisplayBrightness(display["brightness"] | 100);
+      backlightSet(settings.displayBrightness);
+    }
 
     if (!saveSettings()) {
       sendError(req, 500, "failed to save settings");
@@ -791,6 +799,24 @@ static void registerConfig() {
   });
   put->setMethod(HTTP_PUT);
   server.addHandler(put);
+
+  // POST /api/display/preview (brightness=N): set the backlight without
+  // saving, so a slider can be dragged without a flash write per step.
+  // The saved level returns at the next PUT /api/config or reboot.
+  server.on(AsyncURIMatcher::exact("/api/display/preview"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (!req->hasParam("brightness", true)) {
+      sendError(req, 400, "missing brightness");
+      return;
+    }
+    int pct = req->getParam("brightness", true)->value().toInt();
+    if (pct < 1) pct = 1;
+    if (pct > 100) pct = 100;
+    backlightSet((uint8_t)pct);
+    JsonDocument doc;
+    doc["brightness"] = pct;
+    sendJson(req, 200, doc);
+  });
 }
 
 // =====================
