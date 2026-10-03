@@ -9,3 +9,6 @@ PLANNING.md
 tools/editor/node_modules
 tools/editor/package-lock.json
 web/cm.js
+
+# release output (binaries and notes assembled per version)
+release/
