@@ -37,7 +37,7 @@ Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://maker
   <img src="docs/images/enclosure-side.png" alt="Enclosure from the encoder side, showing the knob and the angled display" width="49%">
 </p>
 <p align="center">
-  <img src="docs/images/enclosure-top.png" alt="Enclosure from above, showing the board cutout and mounting slots" width="60%">
+  <img src="docs/images/enclosure-bottom.png" alt="Enclosure from below, showing the board cutout and mounting slots" width="60%">
 </p>
 <p align="center">
   <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
