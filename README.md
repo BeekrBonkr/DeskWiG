@@ -18,7 +18,7 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 | Part                                                | Link                                                                             |
 | --------------------------------------------------- | -------------------------------------------------------------------------------- |
 | ESP32-S3-DevKitC-1 (N16R8: 16 MB flash, 8 MB PSRAM) | https://a.co/d/0ay0gra1                                                          |
-| or Seeed XIAO ESP32S3 (8 MB flash, 8 MB PSRAM), see [XIAO ESP32S3](#xiao-esp32s3) | https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html               |
+| or Seeed XIAO ESP32S3 (8 MB flash, 8 MB PSRAM), see [Wiring](#wiring) | https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html                         |
 | 1.9" 170×320 IPS LCD, ST7789V2, SPI                 | https://a.co/d/0bqQSNMt                                                          |
 | 2× M2×6 screws (hold the display to the enclosure)  | any                                                                              |
 | Rotary encoder with push button (KY-040 module), optional | any                                                                        |
@@ -44,57 +44,45 @@ Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://maker
   <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
 </p>
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 14 dims the backlight (see [Display brightness](#display-brightness)). The pins for the smaller XIAO ESP32S3 are under [XIAO ESP32S3](#xiao-esp32s3).
+The firmware runs on two boards: the ESP32-S3-DevKitC-1 the enclosure is designed around, and the thumb-sized Seeed XIAO ESP32S3. Pick one, wire the display and the optional encoder to the pins in the tables below, and build the matching PlatformIO environment (see [From source](#from-source)); the images are not interchangeable. The DevKitC's onboard WS2812 RGB LED is the status light, and the backlight pin dims the display with PWM (see [Status LED](#status-led) and [Display brightness](#display-brightness)). The recovery jumper is explained under [Recovery](#recovery-jumper).
 
 ### Wiring
 
-| Display pin | ESP32-S3 GPIO |
-| ----------- | ------------- |
-| SCLK (SLK)  | 12            |
-| MOSI (DIN)  | 11            |
-| CS          | 10            |
-| DC          | 9             |
-| RST         | 8             |
-| BL          | 14            |
-| VCC         | 3V3           |
-| GND         | GND           |
+The XIAO exposes eleven GPIOs, D0 to D10, and this build uses every one of them, so its column lists the pad label as printed on the board with the GPIO number in brackets.
+
+| Display pin | DevKitC GPIO | XIAO pin (GPIO) |
+| ----------- | ------------ | --------------- |
+| SCLK (SLK)  | 12           | D8 (7)          |
+| MOSI (DIN)  | 11           | D10 (9)         |
+| CS          | 10           | D9 (8)          |
+| DC          | 9            | D7 (44)         |
+| RST         | 8            | D6 (43)         |
+| BL          | 14           | D5 (6)          |
+| VCC         | 3V3          | 3V3             |
+| GND         | GND          | GND             |
 
 BL can go to 3V3 instead if you don't want brightness control; the display then stays at full brightness and the setting has no effect.
 
-| Encoder pin | ESP32-S3 GPIO |
-| ----------- | ------------- |
-| CLK (A)     | 5             |
-| DT (B)      | 6             |
-| SW          | 7             |
-| +           | 3V3           |
-| GND         | GND           |
+| Encoder pin | DevKitC GPIO | XIAO pin (GPIO) |
+| ----------- | ------------ | --------------- |
+| CLK (A)     | 5            | D0 (1)          |
+| DT (B)      | 6            | D1 (2)          |
+| SW          | 7            | D3 (4)          |
+| +           | 3V3          | 3V3             |
+| GND         | GND          | GND             |
 
-All pins are defined in `src/app/Board.h`.
+| Other              | DevKitC GPIO     | XIAO pin (GPIO)      |
+| ------------------ | ---------------- | -------------------- |
+| Recovery jumper    | 4                | D4 (5)               |
+| Status LED, WS2812 | 48 (on the board) | D2 (3), optional    |
+
+All pins are defined in `src/app/Board.h`, one block per board.
 
 ### XIAO ESP32S3
 
-The firmware also runs on the Seeed XIAO ESP32S3, a thumb-sized board with the same chip, 8 MB of PSRAM and 8 MB of flash, plus a battery charger on the back. Build it with the `seeed_xiao_esp32s3` environment (see [From source](#from-source)); a DevKitC image will not drive its pins. The XIAO exposes eleven GPIOs, D0 to D10, and this build uses every one:
+The XIAO ESP32S3 has the same chip as the DevKitC with 8 MB of PSRAM and 8 MB of flash, a single USB-C port and a battery charger on the back. Build it with `pio run -e seeed_xiao_esp32s3`.
 
-| Display pin | XIAO pin | GPIO |
-| ----------- | -------- | ---- |
-| SCLK (SLK)  | D8       | 7    |
-| MOSI (DIN)  | D10      | 9    |
-| CS          | D9       | 8    |
-| DC          | D7       | 44   |
-| RST         | D6       | 43   |
-| BL          | D5       | 6    |
-| VCC         | 3V3      |      |
-| GND         | GND      |      |
-
-| Other       | XIAO pin | GPIO |
-| ----------- | -------- | ---- |
-| Encoder CLK (A) | D0   | 1    |
-| Encoder DT (B)  | D1   | 2    |
-| Encoder SW      | D3   | 4    |
-| Recovery jumper | D4   | 5    |
-| WS2812 data, optional | D2 | 3 |
-
-The XIAO has no RGB LED on board. Wire a WS2812 (one pixel of a strip, or a module) to D2 for the colored status light described under [Status LED](#status-led), or do without: the board's own yellow LED next to the USB connector shows the same patterns in one color, blinking and breathing with them and dimmed by the same brightness setting. Pins D6 and D7 are the UART0 pins, so the boot ROM prints its log on D6 at power-on; the display is reset right after, so nothing shows. Serial output and flashing go over USB.
+It has no RGB LED on board. Wire a WS2812 (one pixel of a strip, or a module) to D2 for the colored status light described under [Status LED](#status-led), or do without: the board's own yellow LED next to the USB connector shows the same patterns in one color, blinking and breathing with them and dimmed by the same brightness setting. Pins D6 and D7 are the UART0 pins, so the boot ROM prints its log on D6 at power-on; the display is reset right after, so nothing shows. Serial output and flashing go over USB.
 
 The battery connector charges a single lithium cell at 100 mA while USB is plugged in and runs the board from it otherwise. The firmware does not measure the battery; a desk widget on USB power never needs to.
 
