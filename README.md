@@ -18,6 +18,7 @@ You can also build your own screens without a toolchain: [JSON layout widgets](#
 | Part                                                | Link                                                                             |
 | --------------------------------------------------- | -------------------------------------------------------------------------------- |
 | ESP32-S3-DevKitC-1 (N16R8: 16 MB flash, 8 MB PSRAM) | https://a.co/d/0ay0gra1                                                          |
+| or Seeed XIAO ESP32S3 (8 MB flash, 8 MB PSRAM), see [XIAO ESP32S3](#xiao-esp32s3) | https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html               |
 | 1.9" 170×320 IPS LCD, ST7789V2, SPI                 | https://a.co/d/0bqQSNMt                                                          |
 | 2× M2×6 screws (hold the display to the enclosure)  | any                                                                              |
 | Rotary encoder with push button (KY-040 module), optional | any                                                                        |
@@ -43,7 +44,7 @@ Don't want the knob? The [original ESP32 Desktop Widget enclosure](https://maker
   <img src="docs/images/deskwig-back.jpg" alt="Assembled DeskWiG from behind, showing the DevKitC in the base, the display wiring and the encoder module" width="45%">
 </p>
 
-The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 14 dims the backlight (see [Display brightness](#display-brightness)).
+The DevKitC's onboard WS2812 RGB LED (GPIO 48) is used as a status light. GPIO 4 is the recovery jumper (see [Recovery](#recovery-jumper)). GPIO 5, 6 and 7 take an optional rotary encoder (see [Rotary encoder](#rotary-encoder)). GPIO 14 dims the backlight (see [Display brightness](#display-brightness)). The pins for the smaller XIAO ESP32S3 are under [XIAO ESP32S3](#xiao-esp32s3).
 
 ### Wiring
 
@@ -70,6 +71,35 @@ BL can go to 3V3 instead if you don't want brightness control; the display then 
 
 All pins are defined in `src/app/Board.h`.
 
+### XIAO ESP32S3
+
+The firmware also runs on the Seeed XIAO ESP32S3, a thumb-sized board with the same chip, 8 MB of PSRAM and 8 MB of flash, plus a battery charger on the back. Build it with the `seeed_xiao_esp32s3` environment (see [From source](#from-source)); a DevKitC image will not drive its pins. The XIAO exposes eleven GPIOs, D0 to D10, and this build uses every one:
+
+| Display pin | XIAO pin | GPIO |
+| ----------- | -------- | ---- |
+| SCLK (SLK)  | D8       | 7    |
+| MOSI (DIN)  | D10      | 9    |
+| CS          | D9       | 8    |
+| DC          | D7       | 44   |
+| RST         | D6       | 43   |
+| BL          | D5       | 6    |
+| VCC         | 3V3      |      |
+| GND         | GND      |      |
+
+| Other       | XIAO pin | GPIO |
+| ----------- | -------- | ---- |
+| Encoder CLK (A) | D0   | 1    |
+| Encoder DT (B)  | D1   | 2    |
+| Encoder SW      | D3   | 4    |
+| Recovery jumper | D4   | 5    |
+| WS2812 data, optional | D2 | 3 |
+
+The XIAO has no RGB LED on board. Wire a WS2812 (one pixel of a strip, or a module) to D2 for the colored status light described under [Status LED](#status-led), or do without: the board's own yellow LED next to the USB connector shows the same patterns in one color, blinking and breathing with them and dimmed by the same brightness setting. Pins D6 and D7 are the UART0 pins, so the boot ROM prints its log on D6 at power-on; the display is reset right after, so nothing shows. Serial output and flashing go over USB.
+
+The battery connector charges a single lithium cell at 100 mA while USB is plugged in and runs the board from it otherwise. The firmware does not measure the battery; a desk widget on USB power never needs to.
+
+With 8 MB of flash the two app slots are 3.3 MB each and the file system for layouts, fonts and images is 1.5 MB instead of 3.4 MB, so there is room for a couple of uploaded fonts rather than several.
+
 ### Rotary encoder
 
 A KY-040 style encoder (or a bare encoder plus a button) turns the knob into a widget selector, no phone needed. The knob steps through widgets in the order shown on `/widgets`, where rows can be dragged to rearrange them:
@@ -94,7 +124,7 @@ Joining a network from the knob: pick it from the scan list, then type the passw
 
 Fonts, images, data sources, history, the account and firmware updates stay on the setup page; they need files or a keyboard.
 
-Wire CLK, DT and SW to GPIO 5, 6 and 7, the module's `+` to 3V3 and `GND` to ground. The firmware enables the internal pull-ups, so a bare encoder works with its common pins to ground and no resistors; the KY-040's own pull-ups are fine alongside. Nothing needs configuring: with no encoder connected the pins simply stay high.
+Wire CLK, DT and SW to GPIO 5, 6 and 7 (D0, D1 and D3 on a XIAO), the module's `+` to 3V3 and `GND` to ground. The firmware enables the internal pull-ups, so a bare encoder works with its common pins to ground and no resistors; the KY-040's own pull-ups are fine alongside. Nothing needs configuring: with no encoder connected the pins simply stay high.
 
 If clockwise goes the wrong way, swap CLK and DT or set `ENC_REVERSE` in `src/app/Board.h`. If one click of the knob skips a widget or needs two clicks, set `ENC_STEPS_PER_DETENT` to 2 or 4 to match your encoder. Rotation is decoded in interrupts with a state table, so bounce doesn't register as extra steps.
 
@@ -110,20 +140,23 @@ Every [release](https://github.com/BeekrBonkr/DeskWiG/releases/latest) includes 
 4. Set **Flash Address** to `0x0`, choose the downloaded file and click **Program**. It takes about a minute at the default speed.
 5. Click **Disconnect** and press **RESET**. The screen lights up in setup mode; continue at [First boot and WiFi setup](#first-boot-and-wifi-setup).
 
-Flashing the factory image erases every setting on the device. To update a running device instead, use `firmware.bin` from the release with the over-the-air update below; that keeps settings, layouts, fonts and images.
+Flashing the factory image erases every setting on the device. To update a running device instead, use `firmware.bin` from the release with the over-the-air update below; that keeps settings, layouts, fonts and images. Images are built per board: a release asset without a board name is for the DevKitC, and a XIAO ESP32S3 needs one built with its own environment (see below). The XIAO has a single USB-C port; if the browser does not see it, hold its **B** button while plugging it in.
 
 ### From source
 
 This is a [PlatformIO](https://platformio.org/) project. Open the folder in VS Code with the PlatformIO extension, or from the command line:
 
 ```bash
-pio run -t upload
+pio run -t upload                              # ESP32-S3-DevKitC-1
+pio run -e seeed_xiao_esp32s3 -t upload        # Seeed XIAO ESP32S3
 pio device monitor
 ```
 
+The two environments differ only in flash layout and pins; the board a device was built for is shown under **Firmware** on the setup page and in `GET /api/status`.
+
 ### Over the air
 
-Once the device is on your network you can update it without a cable: take `firmware.bin` from a release, or build one with `pio run` (it lands in `.pio/build/esp32-s3-devkitc-1/`), and upload it under **Firmware** on `http://deskwig.local/setup`, or from a shell:
+Once the device is on your network you can update it without a cable: take `firmware.bin` from a release, or build one with `pio run` (it lands in `.pio/build/<environment>/`), and upload it under **Firmware** on `http://deskwig.local/setup`, or from a shell:
 
 ```bash
 curl -X POST http://deskwig.local/api/system/update \
@@ -133,7 +166,7 @@ curl -X POST http://deskwig.local/api/system/update \
 
 The image goes into the spare OTA app slot and the device reboots into it; settings, layouts, fonts and images are kept.
 
-Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32Async/AsyncTCP, ArduinoJson, AnimatedGIF) are pulled in automatically from `platformio.ini`. The partition table (`default_16MB.csv`) gives two OTA app slots and a 3.4 MB LittleFS partition.
+Dependencies (LovyanGFX, Adafruit NeoPixel, ESP32Async/ESPAsyncWebServer, ESP32Async/AsyncTCP, ArduinoJson, AnimatedGIF) are pulled in automatically from `platformio.ini`. The partition table gives two OTA app slots and a LittleFS partition: `default_16MB.csv` on the DevKitC (6.5 MB slots, 3.4 MB file system), `default_8MB.csv` on the XIAO (3.3 MB slots, 1.5 MB file system).
 
 ## First boot and WiFi setup
 
@@ -165,13 +198,13 @@ If the saved network can't be reached within 15 seconds the hotspot comes back, 
 | White, fast blink | Factory reset in progress                |
 | Off               | Disabled in config (`led.enabled=false`) |
 
-Brightness defaults to 5 out of 255 and is adjustable via `/api/config`.
+Brightness defaults to 5 out of 255 and is adjustable via `/api/config`. On a XIAO ESP32S3 without a WS2812 wired up, the board's yellow LED shows the same patterns in one color.
 
 ### Display brightness and orientation
 
 `display.flip` turns the picture 180 degrees for a display that has to be mounted upside down. Tick **Upside down** under **Display** on the setup page, or use the same setting in the knob menu; it applies at once.
 
-With BL on GPIO 14, the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
+With BL on GPIO 14 (D5 on a XIAO), the backlight is dimmed with PWM. Set it with the slider under **Display** on the setup page, which applies as you drag, or with the API:
 
 ```bash
 curl -X PUT http://<device-ip>/api/config \
@@ -184,7 +217,7 @@ curl -X PUT http://<device-ip>/api/config \
 
 ### Recovery jumper
 
-Bridge GPIO 4 to GND and press reset:
+Bridge GPIO 4 (D4 on a XIAO) to GND and press reset:
 
 - **Release within 8 seconds:** the device skips the saved network and starts the setup hotspot. Use this if you moved it to a new network or mistyped a password.
 - **Keep it bridged for 8 seconds:** the screen counts down, then the device erases all settings (LittleFS and NVS) and restarts into setup mode. A new API key is generated and the login account is gone.
@@ -220,7 +253,7 @@ The routes:
 | `POST /api/auth/reveal`         | no   | Shows the API key on the device screen for 60 s                |
 | `GET /api/auth/key`             | yes  | The API key, for scripts                                       |
 | `PUT /api/auth/password`        | yes  | JSON `{"current","pass"}`. Changes the password               |
-| `GET /api/status`               | no   | Firmware, uptime, memory and storage usage, WiFi state, active widget, clock sync |
+| `GET /api/status`               | no   | Firmware, board, uptime, memory and storage usage, WiFi state, active widget, clock sync |
 | `GET /api/wifi`                 | no   | Connection state, SSID, IP, hostname, hotspot state            |
 | `GET /api/wifi/scan`            | no   | Starts a scan; poll until `status` is `done`                   |
 | `POST /api/wifi/join`           | yes  | JSON `{"ssid","pass"}`. Saves and connects, hotspot stays up   |
@@ -744,7 +777,7 @@ fonts/                TrueType subsets embedded in the firmware (sans, bold, emo
 lib/stb/              stb_truetype (public domain) font rasterizer
   net/                WiFi manager (STA/hotspot/captive portal/mDNS), TCP ping, NTP/timezone, data sources (HTTP fetch task), series (keys sampled over time)
   web/                Settings (NVS + LittleFS JSON), async web server, API, HTML pages, editor
-platformio.ini        board, partition table, library deps
+platformio.ini        boards (DevKitC, XIAO ESP32S3), partition tables, library deps
 ```
 
 ## License

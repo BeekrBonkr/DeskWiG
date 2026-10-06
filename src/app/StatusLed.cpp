@@ -101,11 +101,28 @@ static PatternSpec specFor(LedPattern p) {
   }
 }
 
+// Boards without a WS2812 have a plain LED that shows the same pattern
+// in one color: the brightest channel of the strip color, dimmed by the
+// LED brightness setting. Active low, so the duty is inverted.
+static void onboardShow(uint32_t color) {
+  if (Board::ONBOARD_LED < 0) return;
+  uint8_t r = color >> 16, g = color >> 8, b = color;
+  uint8_t v = r > g ? (r > b ? r : b) : (g > b ? g : b);
+  uint32_t duty = (uint32_t)v * led.getBrightness() / 255;
+  if (v && !duty) duty = 1;
+  ledcWrite(Board::ONBOARD_LED_PWM_CHANNEL, 255 - duty);
+}
+
 void ledBegin() {
   led.begin();
   led.setBrightness(5);
   led.clear();
   led.show();
+  if (Board::ONBOARD_LED >= 0) {
+    ledcSetup(Board::ONBOARD_LED_PWM_CHANNEL, 5000, 8);
+    ledcAttachPin(Board::ONBOARD_LED, Board::ONBOARD_LED_PWM_CHANNEL);
+    onboardShow(0);
+  }
 }
 
 void ledApplySettings() {
@@ -143,4 +160,5 @@ void ledLoop() {
   lastColor = color;
   led.setPixelColor(0, color);
   led.show();
+  onboardShow(color);
 }

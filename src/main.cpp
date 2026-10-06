@@ -5,6 +5,7 @@
 #include <mbedtls/platform.h>
 
 #include "app/Board.h"
+#include "app/Version.h"
 #include "app/ScreenManager.h"
 #include "app/StatusLed.h"
 #include "app/SystemScreens.h"
@@ -51,7 +52,7 @@ class LGFX_Display : public lgfx::LGFX_Device {
 public:
   LGFX_Display() {
     auto b = _bus.config();
-    b.spi_host = SPI2_HOST;
+    b.spi_host = Board::TFT_SPI_HOST;
     b.pin_sclk = Board::TFT_SCLK;
     b.pin_mosi = Board::TFT_MOSI;
     b.pin_dc   = Board::TFT_DC;
@@ -227,6 +228,7 @@ void displayApplyOrientation() {
 
 void setup() {
   Log.begin(115200);
+  Log.printf("[SYS] DeskWiG %s on %s\n", FW_VERSION, Board::NAME);
 
   // Before anything opens a TLS session or joins a network.
   mbedtls_platform_set_calloc_free(tlsCalloc, tlsFree);
