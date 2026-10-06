@@ -198,11 +198,6 @@ static PingTarget* findTarget(const char* sel, size_t len) {
   return nullptr;
 }
 
-static const char* pingColor(const PingTarget& t) {
-  if (t.latency < 0) return t.failCount >= PING_MAX_FAILS ? "bad" : "dim";
-  return t.latency < 50 ? "ok" : "warn";
-}
-
 static bool resolvePing(const char* rest, char* out, size_t n) {
   if (!strcmp(rest, "count")) {
     snprintf(out, n, "%u", settings.targetCount);
@@ -222,31 +217,10 @@ static bool resolvePing(const char* rest, char* out, size_t n) {
     else snprintf(out, n, "%d", t->latency);
     return true;
   }
-  if (!strcmp(field, "status")) {
-    const char* s = "ok";
-    if (t->latency < 0) s = t->failCount >= PING_MAX_FAILS ? "down" : "wait";
-    strlcpy(out, s, n);
-    return true;
-  }
-  if (!strcmp(field, "color")) { strlcpy(out, pingColor(*t), n); return true; }
-  if (!strcmp(field, "bars")) {
-    char buf[9];
-    for (uint8_t i = 0; i < 8; i++) {
-      uint8_t idx = (t->historyPos + i) % 8;
-      buf[i] = t->history[idx] ? '|' : '.';
-    }
-    buf[8] = '\0';
-    strlcpy(out, buf, n);
-    return true;
-  }
-  if (!strcmp(field, "trend")) {
-    const char* a = " ";
-    if (t->lastLatency >= 0 && t->latency >= 0) {
-      a = t->latency < t->lastLatency ? "^" : (t->latency > t->lastLatency ? "v" : ">");
-    }
-    strlcpy(out, a, n);
-    return true;
-  }
+  if (!strcmp(field, "status")) { strlcpy(out, pingStatus(*t), n); return true; }
+  if (!strcmp(field, "color"))  { strlcpy(out, pingColor(*t), n); return true; }
+  if (!strcmp(field, "bars"))   { pingBars(*t, out, n); return true; }
+  if (!strcmp(field, "trend"))  { strlcpy(out, pingTrend(*t), n); return true; }
   return false;
 }
 

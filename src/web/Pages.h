@@ -32,6 +32,7 @@ label.inline input{width:auto;display:inline;margin:0}
 .row input{margin:0;min-width:0}
 .row input.n{flex:2}.row input.p{flex:4}.row input.d{flex:1}
 .row button{width:auto;margin:0;padding:10px}
+.row select{margin:0;width:auto;flex:2;min-width:0}
 .src{margin:8px 0}
 .src .vals{font:13px ui-monospace,monospace;color:#ccc;margin:6px 0;word-break:break-all}
 .src .btns{display:flex;gap:6px}
@@ -168,6 +169,15 @@ static const char SETUP_HTML[] = R"html(
 <details class="sec" id="sec-sources">
 <summary><span>Data sources</span><span class="sub" id="sub-sources"></span></summary>
 <div class="body">
+<div id="pingList" class="dim">Loading&hellip;</div>
+<div class="card" id="pingForm" style="display:none">
+  <p class="hint">Hosts the device connects to on an interval. A target is a display name, a host or IP, a port (0 tries 22, SSH) and a group for the Ping widget. Layouts read a target by number or name: <code>{ping.0.ms}</code>, <code>{ping.router.status}</code>.</p>
+  <input id="pingInterval" type="number" min="1" placeholder="Ping every N seconds (default 10)">
+  <div id="pingTargets"></div>
+  <button id="pingTargetAdd">Add target</button>
+  <button id="pingSave" class="primary">Save ping targets</button>
+  <button id="pingCancel">Cancel</button>
+</div>
 <div id="srcList" class="dim">Loading&hellip;</div>
 <button id="srcAdd">Add data source</button>
 <button id="srcPaste">Paste data sources as text</button>
@@ -200,7 +210,7 @@ fields:   temp = current.temperature_2m (decimals 0)
   <button id="srcCancel">Cancel</button>
 </div>
 <p class="msg" id="msg-sources"></p>
-<p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified.</p>
+<p class="hint">A source is polled only while a widget that uses it is on screen, so quotas are not spent on screens nobody is looking at. In a layout, use <code>{api.weather.temp}</code> for a field, plus <code>{api.weather.status}</code>, <code>.color</code>, <code>.age</code> and <code>.updated</code>. HTTPS is encrypted but the server certificate is not verified. Ping is built in: its targets give <code>{ping.0.ms}</code>, <code>.status</code>, <code>.color</code>, <code>.bars</code> and <code>.trend</code>, and <code>{ping.count}</code>.</p>
 </div>
 </details>
 
@@ -921,6 +931,7 @@ function fieldRow(f) {
 }
 
 function openForm(src) {
+  closePingForm();
   editingId = src ? src.id : null;
   $('srcId').value = src ? src.id : '';
   $('srcId').disabled = !!src;
@@ -958,10 +969,117 @@ function ageText(s) {
   return Math.floor(s / 3600) + 'h ago';
 }
 
+// ---------- ping (built in) ----------
+let ping = null;
+
+function targetRow(t) {
+  const d = document.createElement('div');
+  d.className = 'row';
+  d.innerHTML = '<input class="n" placeholder="name" maxlength="15" autocapitalize="off" autocorrect="off">' +
+                '<input class="p" placeholder="host or IP" maxlength="63" autocapitalize="off" autocorrect="off">' +
+                '<input class="d" type="number" min="0" max="65535" placeholder="port">' +
+                '<select><option value="service">service</option><option value="server">server</option></select>' +
+                '<button type="button" title="Remove">&times;</button>';
+  d.children[0].value = t ? t.name : '';
+  d.children[1].value = t ? t.host : '';
+  d.children[2].value = t ? t.port : '';
+  d.children[3].value = t ? t.type : 'service';
+  d.children[4].onclick = () => d.remove();
+  return d;
+}
+
+function pingFormOpen() { return $('pingForm').style.display !== 'none'; }
+
+function openPingForm() {
+  if (!ping) return;
+  closeForm();
+  closeImport();
+  $('pingInterval').value = Math.round(ping.intervalMs / 1000);
+  const box = $('pingTargets');
+  box.innerHTML = '';
+  (ping.targets.length ? ping.targets : [null]).forEach(t => box.appendChild(targetRow(t)));
+  $('pingForm').style.display = '';
+  $('srcAdd').style.display = 'none';
+  $('srcPaste').style.display = 'none';
+  $('pingForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closePingForm() {
+  $('pingForm').style.display = 'none';
+  $('srcAdd').style.display = '';
+  $('srcPaste').style.display = '';
+}
+
+function renderPing() {
+  const box = $('pingList');
+  box.className = '';
+  if (!ping) { box.innerHTML = ''; return; }
+  const d = document.createElement('div');
+  d.className = 'card src';
+  const rows = ping.targets.map((t, i) => {
+    const st = t.status === 'ok' ? '<span class="ok">' + t.ms + ' ms</span>'
+             : t.status === 'down' ? '<span class="bad">down</span>'
+             : '<span class="dim">waiting</span>';
+    return '{ping.' + i + '.ms} ' + st + ' &middot; ' + esc(t.name) + ' <span class="dim">' + esc(t.host) + ':' + (t.port || 22) +
+           ' ' + esc(t.type) + '</span> ' + esc(t.bars || '');
+  }).join('<br>');
+  d.innerHTML = '<b>ping</b> <span class="dim">&middot; built in &middot; ' + ping.targets.length + ' of ' + ping.max +
+    ' targets, every ' + Math.round(ping.intervalMs / 1000) + ' s</span>' +
+    '<div class="vals">' + (rows || '<span class="dim">No targets. Add some to use the Ping widget and the ping keys.</span>') + '</div>' +
+    '<div class="btns"><button class="edit">Edit</button><button class="test">Ping now</button></div>';
+  d.querySelector('.edit').onclick = openPingForm;
+  d.querySelector('.test').onclick = testPing;
+  box.innerHTML = '';
+  box.appendChild(d);
+}
+
+async function loadPing() {
+  try {
+    ping = await api('/api/ping');
+    renderPing();
+  } catch (e) { $('pingList').textContent = e.message; }
+}
+
+async function savePing() {
+  const body = { targets: [] };
+  const iv = parseInt($('pingInterval').value, 10);
+  if (!isNaN(iv)) body.intervalMs = iv * 1000;
+  for (const row of $('pingTargets').children) {
+    const name = row.children[0].value.trim();
+    const host = row.children[1].value.trim();
+    if (!name && !host) continue;
+    if (!name) { msg('Give every target a name.'); return; }
+    if (!host) { msg('Give ' + name + ' a host or IP.'); return; }
+    const port = parseInt(row.children[2].value, 10);
+    body.targets.push({ name: name, host: host, port: isNaN(port) ? 0 : port, type: row.children[3].value });
+  }
+  try {
+    ping = await api('/api/ping', 'PUT', body);
+    closePingForm();
+    renderPing();
+    msg('Saved. Pinging now…');
+    setTimeout(loadPing, 3000);
+    setTimeout(loadPing, 8000);
+  } catch (e) { msg(e.message); }
+}
+
+async function testPing() {
+  try {
+    await api('/api/ping/test', 'POST');
+    msg('Pinging…');
+    setTimeout(loadPing, 3000);
+    setTimeout(loadPing, 8000);
+  } catch (e) { msg(e.message); }
+}
+
+$('pingTargetAdd').onclick = () => $('pingTargets').appendChild(targetRow(null));
+$('pingSave').onclick = savePing;
+$('pingCancel').onclick = closePingForm;
+
 function renderSources() {
   const box = $('srcList');
   box.className = '';
-  if (!sources.length) { box.innerHTML = '<div class="dim">No data sources yet.</div>'; return; }
+  if (!sources.length) { box.innerHTML = '<div class="dim">No URL sources yet.</div>'; return; }
   box.innerHTML = '';
   sources.forEach(src => {
     const d = document.createElement('div');
@@ -985,11 +1103,12 @@ function renderSources() {
 }
 
 async function loadSources() {
+  await loadPing();
   try {
     const r = await api('/api/sources');
     sources = r.sources || [];
     renderSources();
-    sub('sources', sources.length ? sources.map(x => x.id).join(', ') : 'none yet');
+    sub('sources', ['ping'].concat(sources.map(x => x.id)).join(', '));
     $('srcAdd').disabled = r.free === 0;
     $('srcAdd').textContent = r.free === 0 ? 'All ' + r.max + ' source slots used' : 'Add data source';
   } catch (e) { $('srcList').textContent = e.message; }
@@ -1349,7 +1468,7 @@ $('srcDiscover').onclick = async () => {
     discTimer = setTimeout(() => pollDiscovery(30), 800);
   } catch (e) { msg(e.message); }
 };
-function sourcesIdle() { return !editingId && $('srcForm').style.display === 'none'; }
+function sourcesIdle() { return !editingId && $('srcForm').style.display === 'none' && !pingFormOpen(); }
 setInterval(() => { if (live('sources') && sourcesIdle()) loadSources(); }, 10000);
 
 $('host').addEventListener('input', () => { $('hostPreview').textContent = $('host').value || 'deskwig'; });

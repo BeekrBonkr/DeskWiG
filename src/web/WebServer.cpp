@@ -20,6 +20,7 @@
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
 #include "../net/Series.h"
+#include "../net/PingService.h"
 #include "Settings.h"
 #include "Auth.h"
 #include "Pages.h"
@@ -750,7 +751,7 @@ static void registerConfig() {
     }
     if (!json["pingIntervalMs"].isNull()) {
       uint32_t v = json["pingIntervalMs"];
-      settings.pingIntervalMs = v < 1000 ? 1000 : v;
+      settings.pingIntervalMs = v < PING_MIN_INTERVAL_MS ? PING_MIN_INTERVAL_MS : v;
     }
     JsonVariant clock = json["clock"];
     bool clockChanged = false;
@@ -989,6 +990,71 @@ static void registerSources() {
     JsonDocument doc;
     doc["ok"] = true;
     doc["queued"] = id;
+    sendJson(req, 202, doc);
+  });
+}
+
+// =====================
+// PING TARGETS
+// =====================
+// The built-in ping source: a list of hosts the device TCP-connects to on
+// pingIntervalMs, read in layouts as {ping.N.ms} and friends. Edited as a
+// whole, like the fields of a data source.
+static void fillPing(JsonDocument& doc) {
+  doc["intervalMs"] = settings.pingIntervalMs;
+  pingTargetsToJson(doc["targets"].to<JsonArray>(), true);
+  doc["free"] = MAX_PING_TARGETS - settings.targetCount;
+  doc["max"]  = MAX_PING_TARGETS;
+}
+
+static void registerPing() {
+  // GET /api/ping -> interval, every target with its live state.
+  server.on(AsyncURIMatcher::exact("/api/ping"), HTTP_GET, [](AsyncWebServerRequest* req) {
+    JsonDocument doc;
+    fillPing(doc);
+    sendJson(req, 200, doc);
+  });
+
+  // PUT /api/ping {"intervalMs","targets":[{"name","host","port","type"}]}
+  // -> replace the target list (and the interval, if given), then ping
+  // them right away. Either key may be left out to keep what is there.
+  auto* put = new AsyncCallbackJsonWebHandler(AsyncURIMatcher::exact("/api/ping"), [](AsyncWebServerRequest* req, JsonVariant& json) {
+    if (!requireAuth(req)) return;
+    if (!json["targets"].isNull()) {
+      char err[96];
+      if (!pingTargetsFromJson(json["targets"].as<JsonArrayConst>(), err, sizeof(err))) {
+        sendError(req, 400, err);
+        return;
+      }
+    }
+    if (!json["intervalMs"].isNull()) {
+      uint32_t v = json["intervalMs"];
+      settings.pingIntervalMs = v < PING_MIN_INTERVAL_MS ? PING_MIN_INTERVAL_MS : v;
+    }
+    if (!saveSettings()) {
+      sendError(req, 500, "failed to save settings");
+      return;
+    }
+    pingRequestRound();
+    JsonDocument doc;
+    fillPing(doc);
+    sendJson(req, 200, doc);
+  });
+  put->setMethod(HTTP_PUT);
+  put->setMaxContentLength(4096);
+  server.addHandler(put);
+
+  // POST /api/ping/test -> ping every target now, whatever is on screen.
+  // The result shows up in GET /api/ping a few seconds later.
+  server.on(AsyncURIMatcher::exact("/api/ping/test"), HTTP_POST, [](AsyncWebServerRequest* req) {
+    if (!requireAuth(req)) return;
+    if (wifiState != WifiState::CONNECTED) {
+      sendError(req, 409, "not connected to WiFi");
+      return;
+    }
+    pingRequestRound();
+    JsonDocument doc;
+    doc["ok"] = true;
     sendJson(req, 202, doc);
   });
 }
@@ -1791,6 +1857,7 @@ void startWebServer() {
   registerLog();
   registerConfig();
   registerSources();
+  registerPing();
   registerSeries();
   registerFonts();
   registerImages();
