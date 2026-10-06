@@ -245,7 +245,7 @@ fields:   temp = current.temperature_2m (decimals 0)
   <button id="fwUpload" type="button">Update</button>
 </div>
 <p class="msg" id="msg-firmware"></p>
-<p class="hint">Upload <code>firmware.bin</code> from a PlatformIO build (<code>.pio/build/esp32-s3-devkitc-1/firmware.bin</code>). The device writes it to its spare app slot and reboots; settings, layouts, fonts and images are kept.</p>
+<p class="hint">Upload <code>firmware.bin</code> from a PlatformIO build for this board (<code>.pio/build/&lt;board&gt;/firmware.bin</code>; the board is named under Status). The device writes it to its spare app slot and reboots; settings, layouts, fonts and images are kept.</p>
 </div>
 </details>
 
@@ -600,7 +600,7 @@ setInterval(async () => { if (!live('clock')) return; try { showClock(null, (awa
 
 // ---------- firmware ----------
 async function loadFw() {
-  try { const st = await api('/api/status'); $('fwInfo').innerHTML = 'Running firmware <b>' + esc(st.firmware) + '</b> &middot; up ' + Math.round(st.uptimeMs / 60000) + ' min'; sub('firmware', 'v' + st.firmware); }
+  try { const st = await api('/api/status'); $('fwInfo').innerHTML = 'Running firmware <b>' + esc(st.firmware) + '</b> on <b>' + esc(st.board || '?') + '</b> &middot; up ' + Math.round(st.uptimeMs / 60000) + ' min'; sub('firmware', 'v' + st.firmware); }
   catch (e) { $('fwInfo').textContent = e.message; }
 }
 function uploadFw() {

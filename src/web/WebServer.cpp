@@ -17,6 +17,7 @@
 #include "../net/WifiManager.h"
 #include "../app/Builtins.h"
 #include "../app/Log.h"
+#include "../app/Board.h"
 #include "../net/TimeService.h"
 #include "../net/DataSource.h"
 #include "../net/Series.h"
@@ -385,6 +386,7 @@ static void registerStatus() {
   server.on(AsyncURIMatcher::exact("/api/status"), HTTP_GET, [](AsyncWebServerRequest* req) {
     JsonDocument doc;
     doc["firmware"]     = FW_VERSION;
+    doc["board"]        = Board::NAME;
     doc["uptimeMs"]     = millis();
     doc["freeHeap"]     = ESP.getFreeHeap();
     doc["freePsram"]    = ESP.getFreePsram();
