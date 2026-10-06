@@ -8,7 +8,7 @@ DeskWiG (Desk Widget) started as a Christmas gift for my dad. A small 3D-printed
 
 It currently ships with two widgets (either can be deleted from the widgets page if you only want your own, and restored from the same place):
 
-- **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers*.
+- **Ping / Server Status** – TCP-connects to a list of hosts on an interval and shows latency, an up/down sparkline, a trend arrow, WiFi signal strength, and the device IP. Targets are grouped into *Services* and *Servers* and edited on the setup page.
 - **Clock** – NTP-synced clock with 12/24-hour display. Time can come from the internet, from your router, or from any NTP server you name; timezones use POSIX TZ strings so daylight saving is automatic.
 
 You can also build your own screens without a toolchain: [JSON layout widgets](#json-layout-widgets) are written in the browser, previewed live, and stored on the device. They can show live values from any web API through [data sources](#data-sources): weather, stock prices, a Home Assistant sensor, anything that answers HTTP with JSON or text. Native widgets in C++ are still a matter of implementing four methods (see [Writing a widget](#writing-a-widget)).
@@ -193,7 +193,7 @@ A tactile switch or two exposed pads on the enclosure work equally well.
 
 ## Web interface
 
-Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, data sources, history and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
+Once on your network, the device serves a small set of pages. **Setup** covers WiFi, device name, clock, fonts, images, ping targets and data sources, history and the account. **Widgets** switches the active screen and sets the order the encoder knob steps through. **Editor** builds JSON layout widgets with a live preview. **Terminal** shows the serial log with memory and storage usage.
 
 <p align="center">
   <img src="docs/images/web-setup.png" alt="Setup page: WiFi network, device name, clock, fonts, images, data sources, account and firmware" width="49%">
@@ -236,6 +236,9 @@ The routes:
 | `DELETE /api/images?name=<name>`| yes  | Remove an image                                                |
 | `POST /api/images/rename?name=<name>&to=<new>` | yes | Rename an image; layouts that use the old name are left to the caller |
 | `GET /img/<name>`               | no   | The image file, used by the editor's preview                   |
+| `GET /api/ping`                 | no   | Ping interval and targets with their latency, status and history (see [Ping targets](#ping-targets)) |
+| `PUT /api/ping`                 | yes  | JSON `{"intervalMs","targets":[...]}`. Replace the target list and/or the interval, then ping them |
+| `POST /api/ping/test`           | yes  | Ping every target now; poll `GET /api/ping` for the result        |
 | `GET /api/sources`              | no   | Data sources with fetch state and current values (header value redacted) |
 | `PUT /api/sources?id=<id>`      | yes  | Create or replace a data source (see [Data sources](#data-sources)) |
 | `DELETE /api/sources?id=<id>`   | yes  | Remove a data source                                           |
@@ -290,17 +293,25 @@ curl -X POST -H "Authorization: Bearer <key>" -F file=@deskwig-backup.json \
 
 `parts` is any of `config`, `widgets`, `wifi` and `auth`; without it everything is restored. The file is plain JSON, so a text editor can trim it, say to move only the widgets to a second device.
 
-## Configuring ping targets
+## Ping targets
 
-Defaults live in `loadDefaultTargets()` in `src/web/Settings.cpp`:
+Ping is the built-in data source: a list of hosts the device TCP-connects to every few seconds. It feeds the Ping widget and the `ping.*` layout keys. The list sits at the top of **Data sources** on `http://deskwig.local/setup`, with the current latency of every target; **Edit** changes the targets and the interval, **Ping now** probes them right away. Or push the whole list with the API:
 
-```cpp
-setTarget(0, "Cloudflare", "1.1.1.1",      443, TargetType::SERVICE);
-setTarget(1, "Google",     "8.8.8.8",      53,  TargetType::SERVICE);
-setTarget(2, "Router",     "192.168.88.1", 0,   TargetType::SERVER);
+```bash
+curl -X PUT http://<device-ip>/api/ping \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "intervalMs": 10000,
+    "targets": [
+      { "name": "Cloudflare", "host": "1.1.1.1",      "port": 443, "type": "service" },
+      { "name": "Google",     "host": "8.8.8.8",      "port": 53,  "type": "service" },
+      { "name": "Router",     "host": "192.168.88.1", "port": 0,   "type": "server" }
+    ]
+  }'
 ```
 
-Each target has a display name (15 chars max), host or IP, port, and a group. Port `0` falls back to 22 (SSH), which is a convenient liveness check for most Linux boxes. Up to 12 targets are supported. After three consecutive failures a target is marked down (blinking red) and paused for 60 seconds before retrying.
+Those three are the defaults on a new device. Each target has a display name (1–15 characters, not just digits, unique), a host or IP, a port and a group (`service` or `server`) for the Ping widget. Port `0` falls back to 22 (SSH), which is a convenient liveness check for most Linux boxes. Up to 12 targets are supported, and the list may be empty. After three consecutive failures a target is marked down (blinking red) and paused for 60 seconds before retrying; a save or **Ping now** retries paused targets too. `GET /api/ping` returns the same list with `ms`, `status`, `color`, `bars` and `trend` per target, the values the [layout keys](#keys) show.
 
 Everything except WiFi credentials, the key and the account lives in `/config.json` on the LittleFS partition and looks like this:
 
@@ -663,7 +674,7 @@ Style properties can be flat fields on the element (`color`, `size`, `align`, `f
 | `api.<id>.status`, `.color`, `.age`, `.updated`| Fetch state of that source                                  |
 | `<key>.min`, `.max`, `.avg`, `.first`, `.last`, `.delta`, `.count`, `.span` | Statistics of a key sampled under [History](#history) |
 
-`N` can also be the target name, case-insensitive: `{ping.router.ms}`. Pings only run while a widget that shows ping data is on screen, and the same goes for data sources.
+`N` can also be the target name, case-insensitive: `{ping.router.ms}`. Targets are edited under [Ping targets](#ping-targets). Pings only run while a widget that shows ping data is on screen, and the same goes for data sources.
 
 ### Math in braces
 

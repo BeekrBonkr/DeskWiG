@@ -22,6 +22,7 @@
 #include "net/TimeService.h"
 #include "net/DataSource.h"
 #include "net/Series.h"
+#include "net/PingService.h"
 #include "layout/FontService.h"
 #include "layout/ImageService.h"
 #include "app/Log.h"
@@ -293,7 +294,10 @@ void loop() {
   timeLoop();
   webLoop();
   encoderStep(now);
-  if (wifiState == WifiState::CONNECTED) seriesLoop(now);
+  if (wifiState == WifiState::CONNECTED) {
+    seriesLoop(now);
+    if (pingRoundPending()) pingLoop(now);   // targets just changed on the setup page
+  }
 
   // First-time setup: show the address and API key on connect until an
   // account exists. Afterwards the menu has them.

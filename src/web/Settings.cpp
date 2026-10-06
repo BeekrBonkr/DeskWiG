@@ -5,6 +5,7 @@
 #include <ArduinoJson.h>
 #include <esp_random.h>
 #include "../app/Log.h"
+#include "../net/PingService.h"
 
 Settings settings;
 
@@ -12,7 +13,6 @@ static const char* NVS_NS         = "config";
 static const char* CONFIG_PATH    = "/config.json";
 static const char* CONFIG_TMP     = "/config.json.tmp";
 static const uint8_t CONFIG_VERSION = 1;
-static const uint32_t MIN_PING_INTERVAL_MS = 1000;
 
 // =====================
 // DEFAULTS
@@ -36,30 +36,11 @@ static void tzFromOffset(int32_t offsetSec, char* out, size_t n) {
   else   snprintf(out, n, "UTC%s%d", posix < 0 ? "-" : "", (int)h);
 }
 
-static void setTarget(uint8_t i, const char* name, const char* host, uint16_t port, TargetType type) {
-  PingTarget& t = settings.targets[i];
-  memset(&t, 0, sizeof(PingTarget));
-  strlcpy(t.name, name, sizeof(t.name));
-  strlcpy(t.host, host, sizeof(t.host));
-  t.port = port;
-  t.type = type;
-  t.latency = -1;
-  t.lastLatency = -1;
-}
-
 void loadDefaultTargets() {
   settings.targetCount = 3;
-  setTarget(0, "Cloudflare", "1.1.1.1", 443, TargetType::SERVICE);
-  setTarget(1, "Google", "8.8.8.8", 53, TargetType::SERVICE);
-  setTarget(2, "Router", "192.168.88.1", 0, TargetType::SERVER);
-}
-
-static const char* typeName(TargetType t) {
-  return t == TargetType::SERVER ? "server" : "service";
-}
-
-static TargetType typeFromName(const char* s) {
-  return (s && strcmp(s, "server") == 0) ? TargetType::SERVER : TargetType::SERVICE;
+  pingSetTarget(0, "Cloudflare", "1.1.1.1", 443, TargetType::SERVICE);
+  pingSetTarget(1, "Google", "8.8.8.8", 53, TargetType::SERVICE);
+  pingSetTarget(2, "Router", "192.168.88.1", 0, TargetType::SERVER);
 }
 
 // =====================
@@ -145,7 +126,7 @@ static bool migrateLegacyNvs() {
         PingTarget raw{};
         String key = "t" + String(i);
         if (prefs.getBytes(key.c_str(), &raw, sizeof(PingTarget)) == sizeof(PingTarget)) {
-          setTarget(i, raw.name, raw.host, raw.port, raw.type);
+          pingSetTarget(i, raw.name, raw.host, raw.port, raw.type);
         }
       }
     }
@@ -185,7 +166,7 @@ static bool loadConfigFile() {
   if (!setHostname(doc["hostname"] | "deskwig")) strlcpy(settings.hostname, "deskwig", sizeof(settings.hostname));
 
   settings.pingIntervalMs = doc["pingIntervalMs"] | 10000u;
-  if (settings.pingIntervalMs < MIN_PING_INTERVAL_MS) settings.pingIntervalMs = MIN_PING_INTERVAL_MS;
+  if (settings.pingIntervalMs < PING_MIN_INTERVAL_MS) settings.pingIntervalMs = PING_MIN_INTERVAL_MS;
   settings.activeWidget = doc["activeWidget"] | 0;
   strlcpy(settings.activeWidgetName, doc["activeWidgetName"] | "", sizeof(settings.activeWidgetName));
 
@@ -222,18 +203,20 @@ static bool loadConfigFile() {
   setDisplayBrightness(doc["display"]["brightness"] | 100);
   settings.displayFlip = doc["display"]["flip"] | false;
 
+  // An empty list is a choice the user made on the setup page; only a
+  // config with no list at all gets the defaults.
   settings.targetCount = 0;
   for (JsonVariantConst t : doc["targets"].as<JsonArrayConst>()) {
     if (settings.targetCount >= MAX_PING_TARGETS) break;
-    setTarget(
+    pingSetTarget(
       settings.targetCount++,
       t["name"] | "",
       t["host"] | "",
       (uint16_t)(t["port"] | 0),
-      typeFromName(t["type"] | "service")
+      pingTypeFromName(t["type"] | "service")
     );
   }
-  if (settings.targetCount == 0) loadDefaultTargets();
+  if (doc["targets"].isNull()) loadDefaultTargets();
 
   settings.sourceCount = 0;
   for (JsonVariantConst v : doc["sources"].as<JsonArrayConst>()) {
@@ -292,15 +275,7 @@ bool saveSettings() {
   doc["display"]["brightness"] = settings.displayBrightness;
   doc["display"]["flip"]       = settings.displayFlip;
 
-  JsonArray targets = doc["targets"].to<JsonArray>();
-  for (uint8_t i = 0; i < settings.targetCount; i++) {
-    const PingTarget& src = settings.targets[i];
-    JsonObject t = targets.add<JsonObject>();
-    t["name"] = src.name;
-    t["host"] = src.host;
-    t["port"] = src.port;
-    t["type"] = typeName(src.type);
-  }
+  pingTargetsToJson(doc["targets"].to<JsonArray>(), false);
 
   JsonArray sources = doc["sources"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.sourceCount; i++) {
