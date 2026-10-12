@@ -360,7 +360,6 @@ static Item deviceItems[] = {
   itemInfo("Firmware", fmtFirmware),
   itemInfo("Uptime", fmtUptime),
   itemInfo("Memory", fmtMemory),
-  itemAction("Restart", restartDevice),
   itemAction("Factory reset", factoryResetDevice),
 };
 static const Page devicePage = { "Device", deviceItems, sizeof(deviceItems) / sizeof(deviceItems[0]) };
@@ -371,6 +370,7 @@ static Item mainItems[] = {
   itemSub("Status LED", &ledPage),
   itemSub("WiFi", &wifiPage),
   itemSub("Device", &devicePage),
+  itemAction("Restart", restartDevice),
   itemAction("Exit", menuClose),
 };
 static const Page mainPage = { "Settings", mainItems, sizeof(mainItems) / sizeof(mainItems[0]) };
