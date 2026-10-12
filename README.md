@@ -108,6 +108,7 @@ Holding the knob opens a text menu on the device, so the everyday settings can b
 | **WiFi** | Network, address and signal; **Join network** scans and joins (a password is typed with the knob); **Forget** returns to the setup hotspot |
 | **Device** | **Connection** shows the address and API key; the device name; ping interval; firmware, uptime and memory; **Factory reset** |
 | **Restart** | Reboots the device after a confirmation; settings are kept |
+| **Power off** | Puts the device into deep sleep with the screen and LEDs dark. Press the knob to wake it; it starts up as after a reset |
 
 Joining a network from the knob: pick it from the scan list, then type the password one character at a time. Turning selects a character, clicking adds it. Turning back past the first letter reaches **Delete**, **Cancel** and **OK**. The menu works in setup hotspot mode too, so a device that has never been on a network can be joined to one from the knob alone.
 
