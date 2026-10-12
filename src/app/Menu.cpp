@@ -304,6 +304,13 @@ static void doRestart() {
 }
 static void restartDevice() { confirm("Restart?", "Settings are kept.", "", doRestart); }
 
+static void doPowerOff() {
+  splash("Powering off", "Press the knob to wake.");
+  delay(1500);
+  powerOff();
+}
+static void powerOffDevice() { confirm("Power off?", "Press the knob", "to wake it up.", doPowerOff); }
+
 static void doReset() {
   ledSet(LedPattern::RESETTING);
   ledLoop();
@@ -371,6 +378,7 @@ static Item mainItems[] = {
   itemSub("WiFi", &wifiPage),
   itemSub("Device", &devicePage),
   itemAction("Restart", restartDevice),
+  itemAction("Power off", powerOffDevice),
   itemAction("Exit", menuClose),
 };
 static const Page mainPage = { "Settings", mainItems, sizeof(mainItems) / sizeof(mainItems[0]) };

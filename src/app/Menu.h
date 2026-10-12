@@ -6,7 +6,7 @@
 // turn to move, click to open or set, hold to go back. It covers what the
 // setup page offers that makes sense without a keyboard: brightness, the
 // status LED, clock and timezone, joining or forgetting WiFi, the device
-// name, and the connection details (address and API key).
+// name, the connection details (address and API key), restart and power off.
 //
 // While the menu is open main.cpp hands every encoder event to menuInput()
 // and draws menuRender() instead of the active widget.

@@ -2,6 +2,9 @@
 #include <WiFi.h>
 #include <LovyanGFX.hpp>
 #include <esp_heap_caps.h>
+#include <esp_sleep.h>
+#include <driver/rtc_io.h>
+#include <driver/gpio.h>
 #include <mbedtls/platform.h>
 
 #include "app/Board.h"
@@ -220,6 +223,37 @@ void backlightSet(uint8_t pct) {
   tft.setBrightness(duty);
 }
 
+// Power off: the display sleeps, the LEDs go dark and the chip enters deep
+// sleep. The knob button (an RTC pin on both boards) wakes it, and the
+// firmware starts from the beginning as after a reset. The backlight pin
+// is held low so a floating pin does not leave the screen lit, and the
+// WS2812 keeps the last zeros it was sent.
+void powerOff() {
+  Log.println("[SYS] Power off from the menu");
+  ledSet(LedPattern::OFF);
+  ledLoop();
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+
+  tft.setBrightness(0);
+  tft.sleep();
+  gpio_hold_en((gpio_num_t)Board::TFT_BL);
+  if (Board::ONBOARD_LED >= 0) gpio_hold_en((gpio_num_t)Board::ONBOARD_LED);
+  gpio_deep_sleep_hold_en();
+
+  // The click that confirmed must be released, or the chip wakes at once.
+  uint32_t t0 = millis();
+  while (digitalRead(Board::ENC_SW) == LOW && millis() - t0 < 3000) delay(10);
+  delay(50);
+
+  gpio_num_t sw = (gpio_num_t)Board::ENC_SW;
+  rtc_gpio_pulldown_dis(sw);
+  rtc_gpio_pullup_en(sw);
+  esp_sleep_enable_ext0_wakeup(sw, 0);
+  Serial.flush();
+  esp_deep_sleep_start();
+}
+
 // 0 is the normal portrait mounting, 2 the same turned 180 degrees. Both
 // are 170 x 320, so the sprite and every layout stay as they are.
 void displayApplyOrientation() {
@@ -229,6 +263,14 @@ void displayApplyOrientation() {
 void setup() {
   Log.begin(115200);
   Log.printf("[SYS] DeskWiG %s on %s\n", FW_VERSION, Board::NAME);
+
+  // Pins held through a power off stay held after the wake-up reset.
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
+    Log.println("[SYS] Woken by the knob button");
+    gpio_deep_sleep_hold_dis();
+    gpio_hold_dis((gpio_num_t)Board::TFT_BL);
+    if (Board::ONBOARD_LED >= 0) gpio_hold_dis((gpio_num_t)Board::ONBOARD_LED);
+  }
 
   // Before anything opens a TLS session or joins a network.
   mbedtls_platform_set_calloc_free(tlsCalloc, tlsFree);
