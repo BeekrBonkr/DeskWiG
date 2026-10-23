@@ -84,7 +84,7 @@ Holding the knob opens a text menu on the device, so the everyday settings can b
 
 | Item | What it does |
 | --- | --- |
-| **Display** | Backlight brightness, 1 to 100 percent, live as the knob turns; **Upside down** for a display mounted the other way round |
+| **Display** | Backlight brightness, 1 to 100 percent, live as the knob turns; **Dim after** and **Off after**, the sleep timers (turn quickly to move in 5 and 30 minute steps); **Upside down** for a display mounted the other way round |
 | **Clock** | Current time, 12 or 24-hour, timezone from the same list as the setup page, time source (internet, router or a custom NTP server) and the server name |
 | **Status LED** | On or off, and brightness |
 | **WiFi** | Network, address and signal; **Join network** scans and joins (a password is typed with the knob); **Forget** returns to the setup hotspot |
@@ -181,6 +181,19 @@ curl -X PUT http://<device-ip>/api/config \
 ```
 
 `display.brightness` is 1 to 100 percent (default 100). The level is saved and restored at boot; the screen runs at full brightness for the moment between power-on and the config loading. `POST /api/display/preview` with a form field `brightness=N` sets the level without saving it, which is what the slider uses while it is being dragged.
+
+### Sleep timer
+
+The screen can dim and then turn off when nobody has touched the knob for a while. **Dim after** and **Turn off after** under **Display** on the setup page, or the same items in the knob menu, take a number of minutes from 1 to 600 (10 hours); 0, the default, means never. Dimming halves the brightness; off turns the backlight off and stops updating the panel, while the widgets keep running underneath. The timers are independent, so either stage can be skipped, and if dim is set later than off the screen simply goes straight off.
+
+Touching the knob wakes the screen. While the screen is off that first turn or click only wakes it and does nothing else, so a widget is not changed by accident; while it is only dimmed the input counts as usual. Changing a display setting or the active widget from the browser wakes it too, and the setup hotspot, connection and first-boot screens, the knob menu and an editor preview never time out. Over the API the settings are `display.dimAfterMin` and `display.offAfterMin`:
+
+```bash
+curl -X PUT http://<device-ip>/api/config \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '{"display":{"dimAfterMin":10,"offAfterMin":60}}'
+```
 
 ### Recovery jumper
 
@@ -312,7 +325,7 @@ Everything except WiFi credentials, the key and the account lives in `/config.js
   "activeWidget": 0,
   "clock": { "tz": "EST5EDT,M3.2.0,M11.1.0", "24h": true, "ntpSource": "router", "ntpServer": "pool.ntp.org" },
   "led": { "enabled": true, "brightness": 5 },
-  "display": { "brightness": 100, "flip": false },
+  "display": { "brightness": 100, "flip": false, "dimAfterMin": 0, "offAfterMin": 0 },
   "sources": [
     { "id": "weather", "url": "https://api.open-meteo.com/v1/forecast?latitude=51.48&longitude=0.00&current=temperature_2m,relative_humidity_2m,wind_speed_10m",
       "intervalS": 600,

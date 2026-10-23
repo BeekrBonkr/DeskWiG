@@ -41,6 +41,16 @@ static uint32_t toastUntil = 0;
 static uint32_t saveAt = 0;
 static bool savePending = false;
 
+// Sleep timer: after settings.displayDimAfterMin minutes without input the
+// backlight drops to half the set level, after displayOffAfterMin it goes
+// off and the panel stops being pushed. Either is 0 to skip that stage.
+// Knob input wakes it (and is swallowed while the screen is off, so the
+// first touch only turns it back on); browser changes wake it through
+// displayWake(). The system screens keep it awake.
+enum class SleepState : uint8_t { AWAKE, DIM, OFF };
+static SleepState sleepState = SleepState::AWAKE;
+static uint32_t lastActivity = 0;
+
 // =====================
 // DISPLAY
 // =====================
@@ -183,6 +193,11 @@ static void drawToast() {
 
 static void encoderStep(uint32_t now) {
   EncoderEvent ev = encoderLoop(now);
+  if (ev.steps || ev.button != EncoderButton::NONE) {
+    bool wasOff = sleepState == SleepState::OFF;
+    displayWake();
+    if (wasOff) return;                  // that touch was only to turn the screen on
+  }
   if (menuActive()) {
     menuInput(ev, now);
   } else {
@@ -223,6 +238,41 @@ void backlightSet(uint8_t pct) {
 // are 170 x 320, so the sprite and every layout stay as they are.
 void displayApplyOrientation() {
   tft.setRotation(settings.displayFlip ? 2 : 0);
+}
+
+// =====================
+// SLEEP TIMER
+// =====================
+static void sleepApply(SleepState st) {
+  sleepState = st;
+  switch (st) {
+    case SleepState::AWAKE: backlightSet(settings.displayBrightness); break;
+    case SleepState::DIM: {
+      uint8_t half = settings.displayBrightness / 2;
+      backlightSet(half ? half : 1);
+      break;
+    }
+    case SleepState::OFF: backlightSet(0); break;
+  }
+}
+
+void displayWake() {
+  lastActivity = millis();
+  if (sleepState != SleepState::AWAKE) sleepApply(SleepState::AWAKE);
+}
+
+static void sleepLoop(uint32_t now) {
+  // Screens that are there to be read while the device is being set up
+  // never time out, nor does an editor preview someone is watching.
+  if (menuActive() || authKeyScreenActive() || wifiApActive() || layoutPreviewActive() ||
+      (int32_t)(infoScreenUntil - now) > 0) {
+    lastActivity = now;
+  }
+  uint32_t idle = now - lastActivity;
+  SleepState want = SleepState::AWAKE;
+  if (settings.displayOffAfterMin && idle >= settings.displayOffAfterMin * 60000u)      want = SleepState::OFF;
+  else if (settings.displayDimAfterMin && idle >= settings.displayDimAfterMin * 60000u) want = SleepState::DIM;
+  if (want != sleepState) sleepApply(want);
 }
 
 void setup() {
@@ -281,6 +331,7 @@ void setup() {
 
   // The async server binds fine before the network is up.
   startWebServer();
+  lastActivity = millis();
 }
 
 // =====================
@@ -335,8 +386,12 @@ void loop() {
     if ((int32_t)(toastUntil - now) > 0) drawToast();
   }
 
+  // With the backlight off nothing can be seen, so the panel is left alone;
+  // the sprite is still drawn, for the screenshot endpoint and so the first
+  // frame after waking is current.
+  sleepLoop(now);
   uint32_t pushStart = micros();
-  ui.pushSprite(0, 0);
+  if (sleepState != SleepState::OFF) ui.pushSprite(0, 0);
   uint32_t pushEnd = micros();
 
   static uint32_t lastFrameEnd = 0;

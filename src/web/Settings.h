@@ -14,6 +14,7 @@ constexpr uint8_t NTP_HOST_MAX  = 63;
 constexpr uint8_t MAX_HIDDEN_WIDGETS = 4;
 constexpr uint8_t MAX_WIDGET_ORDER = 16;    // matches ScreenManager::MAX_WIDGETS
 constexpr uint8_t WIDGET_KEY_LEN = 24;
+constexpr uint16_t SLEEP_MAX_MIN = 600;     // sleep timer limit: 10 hours
 
 struct Settings {
   // ---- Stored in NVS. Survives a filesystem wipe so the device stays reachable.
@@ -48,6 +49,8 @@ struct Settings {
 
   uint8_t displayBrightness = 100;   // backlight, 1-100 percent
   bool displayFlip = false;          // mounted upside down: rotate 180 degrees
+  uint16_t displayDimAfterMin = 0;   // minutes without input before the backlight dims, 0 = never
+  uint16_t displayOffAfterMin = 0;   // minutes without input before the backlight goes off, 0 = never
 
   uint8_t targetCount = 0;
   PingTarget targets[MAX_PING_TARGETS];
@@ -104,3 +107,8 @@ bool setNtpServer(const char* host);
 
 // Clamps the backlight level to 1-100 and stores it. Does not apply it.
 void setDisplayBrightness(int pct);
+
+// Sleep timer, in minutes without input: 0 is never, otherwise 1 to
+// SLEEP_MAX_MIN. Clamped and stored; main.cpp picks the change up by itself.
+void setDisplayDimAfter(int minutes);
+void setDisplayOffAfter(int minutes);

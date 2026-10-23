@@ -162,6 +162,8 @@ static void fillConfig(JsonDocument& doc) {
   led["brightness"] = settings.ledBrightness;
   doc["display"]["brightness"] = settings.displayBrightness;
   doc["display"]["flip"]       = settings.displayFlip;
+  doc["display"]["dimAfterMin"] = settings.displayDimAfterMin;
+  doc["display"]["offAfterMin"] = settings.displayOffAfterMin;
 }
 
 static void fillTimeStatus(JsonObject doc) {
@@ -452,6 +454,7 @@ static void registerWidgets() {
       return;
     }
     screens.setActive(idx);
+    displayWake();
     settings.activeWidget = idx;
     strlcpy(settings.activeWidgetName, screens.getName(idx), sizeof(settings.activeWidgetName));
     if (!saveSettings()) {
@@ -783,6 +786,7 @@ static void registerConfig() {
     }
     JsonVariant display = json["display"];
     if (!display.isNull()) {
+      displayWake();                      // someone is adjusting the screen, so show it
       if (!display["brightness"].isNull()) {
         setDisplayBrightness(display["brightness"] | 100);
         backlightSet(settings.displayBrightness);
@@ -791,6 +795,8 @@ static void registerConfig() {
         settings.displayFlip = display["flip"] | false;
         displayApplyOrientation();
       }
+      if (!display["dimAfterMin"].isNull()) setDisplayDimAfter(display["dimAfterMin"] | 0);
+      if (!display["offAfterMin"].isNull()) setDisplayOffAfter(display["offAfterMin"] | 0);
     }
 
     if (!saveSettings()) {
@@ -819,6 +825,7 @@ static void registerConfig() {
     int pct = req->getParam("brightness", true)->value().toInt();
     if (pct < 1) pct = 1;
     if (pct > 100) pct = 100;
+    displayWake();
     backlightSet((uint8_t)pct);
     JsonDocument doc;
     doc["brightness"] = pct;
