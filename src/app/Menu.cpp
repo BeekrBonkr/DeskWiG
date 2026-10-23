@@ -53,6 +53,8 @@ struct Item {
   void (*set)(int v, bool commit);        // called while turning (commit=false) and on click (true)
   int min, max, step;                     // NUMBER
   const char* unit;                       // NUMBER suffix
+  void (*fmtNum)(int v, char* buf, size_t n);   // NUMBER: value text instead of "<v><unit>"
+  bool accel;                             // NUMBER: a fast spin moves in bigger, rounder steps
   const char* const* choices;             // CHOICE labels
   int nChoices;
   void (*fmt)(char* buf, size_t n);       // INFO value; TEXT current value
@@ -86,6 +88,20 @@ static Item itemToggle(const char* l, int (*get)(), void (*set)(int, bool)) {
 static Item itemNumber(const char* l, int (*get)(), void (*set)(int, bool), int min, int max, int step, const char* unit) {
   Item i = mk(l, ItemType::NUMBER); i.get = get; i.set = set; i.min = min; i.max = max; i.step = step; i.unit = unit; return i;
 }
+// Minutes, 0 for never, shown as "45m" or "1h 30m". The range is wide, so
+// turning quickly steps by 5 and then 30 minutes.
+static void fmtMinutes(int v, char* b, size_t n) {
+  if (v <= 0) strlcpy(b, "Never", n);
+  else if (v < 60) snprintf(b, n, "%dm", v);
+  else if (v % 60 == 0) snprintf(b, n, "%dh", v / 60);
+  else snprintf(b, n, "%dh %dm", v / 60, v % 60);
+}
+static Item itemMinutes(const char* l, int (*get)(), void (*set)(int, bool), int max) {
+  Item i = itemNumber(l, get, set, 0, max, 1, "");
+  i.fmtNum = fmtMinutes;
+  i.accel = true;
+  return i;
+}
 static Item itemChoice(const char* l, int (*get)(), void (*set)(int, bool), const char* const* choices, int n) {
   Item i = mk(l, ItemType::CHOICE); i.get = get; i.set = set; i.choices = choices; i.nChoices = n; return i;
 }
@@ -114,6 +130,8 @@ static lgfx::LGFX_Sprite* uiRef = nullptr;   // for the restart and reset screen
 
 // EDIT
 static int editVal = 0, editOrig = 0;
+static uint32_t editLastStep = 0;       // for the spin acceleration of accel items
+static uint8_t editRun = 0;             // consecutive quick detents
 
 // TEXT
 static char textBuf[65];
@@ -165,6 +183,19 @@ static void setBacklight(int v, bool commit) {
   setDisplayBrightness(v);
   backlightSet(settings.displayBrightness);
   if (commit) saveSettings();
+}
+
+static int  getDimAfter() { return settings.displayDimAfterMin; }
+static void setDimAfter(int v, bool commit) {
+  if (!commit) return;
+  setDisplayDimAfter(v);
+  saveSettings();
+}
+static int  getOffAfter() { return settings.displayOffAfterMin; }
+static void setOffAfter(int v, bool commit) {
+  if (!commit) return;
+  setDisplayOffAfter(v);
+  saveSettings();
 }
 
 static int  getFlip() { return settings.displayFlip; }
@@ -331,6 +362,8 @@ static const Page clockPage = { "Clock", clockItems, sizeof(clockItems) / sizeof
 static Item displayItems[] = {
   itemBack(),
   itemNumber("Brightness", getBacklight, setBacklight, 1, 100, 1, "%"),
+  itemMinutes("Dim after", getDimAfter, setDimAfter, SLEEP_MAX_MIN),
+  itemMinutes("Off after", getOffAfter, setOffAfter, SLEEP_MAX_MIN),
   itemToggle("Upside down", getFlip, setFlip),
 };
 static const Page displayPage = { "Display", displayItems, sizeof(displayItems) / sizeof(displayItems[0]) };
@@ -414,6 +447,7 @@ static void activate(const Item& it) {
     case ItemType::NUMBER:
     case ItemType::CHOICE:
       editOrig = editVal = it.get();
+      editRun = 0;
       mode = Mode::EDIT;
       break;
     case ItemType::TEXT: {
@@ -440,14 +474,36 @@ static void inputList(const EncoderEvent& ev) {
   else if (ev.button == EncoderButton::LONG_PRESS) pop();
 }
 
-static void inputEdit(const EncoderEvent& ev) {
+// Detents closer together than this are a spin rather than a deliberate
+// turn; after a few of them an accel item moves 5 units a detent, after
+// more it moves 30, each landing on a multiple of that so the value stays
+// round. The first slow detent drops back to single steps.
+constexpr uint32_t ACCEL_GAP_MS = 70;
+
+static int accelStep(uint32_t now) {
+  if (now - editLastStep < ACCEL_GAP_MS) { if (editRun < 255) editRun++; }
+  else editRun = 0;
+  editLastStep = now;
+  return editRun >= 10 ? 30 : editRun >= 3 ? 5 : 1;
+}
+
+static void inputEdit(const EncoderEvent& ev, uint32_t now) {
   const Item& it = top().page->items[top().cursor];
   if (ev.steps) {
     if (it.type == ItemType::CHOICE) {
       int n = it.nChoices;
       editVal = ((editVal + ev.steps) % n + n) % n;
     } else {
-      editVal += ev.steps * it.step;
+      int step = it.step;
+      if (it.accel) {
+        int m = accelStep(now);
+        if (m > 1) {
+          step *= m;
+          int r = editVal % step;         // from 7 a fast turn up lands on 10, down on 5
+          if (r) editVal += ev.steps > 0 ? -r : step - r;
+        }
+      }
+      editVal += ev.steps * step;
       if (editVal < it.min) editVal = it.min;
       if (editVal > it.max) editVal = it.max;
     }
@@ -653,7 +709,10 @@ static void pageRow(int i, Row& r) {
       break;
     case ItemType::NUMBER: {
       int v = r.editing ? editVal : it.get();
-      snprintf(r.value, sizeof(r.value), "%s%d%s%s", r.editing ? "< " : "", v, it.unit, r.editing ? " >" : "");
+      char num[16];
+      if (it.fmtNum) it.fmtNum(v, num, sizeof(num));
+      else snprintf(num, sizeof(num), "%d%s", v, it.unit);
+      snprintf(r.value, sizeof(r.value), "%s%s%s", r.editing ? "< " : "", num, r.editing ? " >" : "");
       r.hasValue = true;
       break;
     }
@@ -858,7 +917,7 @@ void menuInput(const EncoderEvent& ev, uint32_t now) {
   }
   switch (mode) {
     case Mode::LIST:    inputList(ev); break;
-    case Mode::EDIT:    inputEdit(ev); break;
+    case Mode::EDIT:    inputEdit(ev, now); break;
     case Mode::TEXT:    inputText(ev); break;
     case Mode::SCAN:    inputScan(ev); break;
     case Mode::CONFIRM: inputConfirm(ev); break;
