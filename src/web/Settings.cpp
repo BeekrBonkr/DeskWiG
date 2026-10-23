@@ -221,6 +221,8 @@ static bool loadConfigFile() {
 
   setDisplayBrightness(doc["display"]["brightness"] | 100);
   settings.displayFlip = doc["display"]["flip"] | false;
+  setDisplayDimAfter(doc["display"]["dimAfterMin"] | 0);
+  setDisplayOffAfter(doc["display"]["offAfterMin"] | 0);
 
   settings.targetCount = 0;
   for (JsonVariantConst t : doc["targets"].as<JsonArrayConst>()) {
@@ -291,6 +293,8 @@ bool saveSettings() {
 
   doc["display"]["brightness"] = settings.displayBrightness;
   doc["display"]["flip"]       = settings.displayFlip;
+  doc["display"]["dimAfterMin"] = settings.displayDimAfterMin;
+  doc["display"]["offAfterMin"] = settings.displayOffAfterMin;
 
   JsonArray targets = doc["targets"].to<JsonArray>();
   for (uint8_t i = 0; i < settings.targetCount; i++) {
@@ -410,6 +414,14 @@ void setDisplayBrightness(int pct) {
   if (pct > 100) pct = 100;
   settings.displayBrightness = (uint8_t)pct;
 }
+
+static uint16_t clampSleep(int minutes) {
+  if (minutes < 0) minutes = 0;
+  if (minutes > SLEEP_MAX_MIN) minutes = SLEEP_MAX_MIN;
+  return (uint16_t)minutes;
+}
+void setDisplayDimAfter(int minutes) { settings.displayDimAfterMin = clampSleep(minutes); }
+void setDisplayOffAfter(int minutes) { settings.displayOffAfterMin = clampSleep(minutes); }
 
 // =====================
 // FACTORY RESET

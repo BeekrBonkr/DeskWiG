@@ -115,8 +115,10 @@ static const char SETUP_HTML[] = R"html(
 <label class="inline" for="bright">Brightness <b id="brightVal"></b></label>
 <input type="range" id="bright" min="1" max="100" value="100">
 <label class="inline"><input type="checkbox" id="flip"> Upside down</label>
+<label class="inline" for="dimAfter">Dim after <input type="number" id="dimAfter" min="0" max="600" style="width:80px"> minutes</label>
+<label class="inline" for="offAfter">Turn off after <input type="number" id="offAfter" min="0" max="600" style="width:80px"> minutes</label>
 <p class="msg" id="msg-display"></p>
-<p class="hint">Brightness changes as you drag and is saved when you let go. Upside down turns the picture 180 degrees for a display mounted the other way round.</p>
+<p class="hint">Brightness changes as you drag and is saved when you let go. Upside down turns the picture 180 degrees for a display mounted the other way round. The sleep timers count minutes without the knob being touched, 1 to 600 (10 hours); 0 means never. Dimming halves the brightness. Touching the knob or changing a display setting here wakes the screen.</p>
 </div>
 </details>
 
@@ -482,12 +484,28 @@ async function saveHost() {
 // Dragging previews the level without saving, one request in flight at a
 // time with only the latest value queued; letting go saves it.
 let brightBusy = false, brightNext = -1;
+const fmtMin = m => m >= 60 ? Math.floor(m / 60) + 'h' + (m % 60 ? ' ' + m % 60 + 'm' : '') : m + 'm';
 function showDisplay(d) {
   $('bright').value = d.brightness;
   $('brightVal').textContent = d.brightness + '%';
   $('flip').checked = !!d.flip;
-  sub('display', d.brightness + '%' + (d.flip ? ', upside down' : ''));
+  $('dimAfter').value = d.dimAfterMin || 0;
+  $('offAfter').value = d.offAfterMin || 0;
+  const sleep = d.offAfterMin ? ', off after ' + fmtMin(d.offAfterMin) : d.dimAfterMin ? ', dims after ' + fmtMin(d.dimAfterMin) : '';
+  sub('display', d.brightness + '%' + (d.flip ? ', upside down' : '') + sleep);
 }
+async function saveSleep(key, el, what) {
+  let v = Math.round(+el.value);
+  if (!(v >= 0)) v = 0;
+  if (v > 600) v = 600;
+  try {
+    const c = await api('/api/config', 'PUT', { display: { [key]: v } });
+    showDisplay(c.display);
+    msg(what + (v ? ' after ' + fmtMin(v) + '.' : ' never.'), 'display');
+  } catch (e) { msg(e.message, 'display'); }
+}
+$('dimAfter').onchange = () => saveSleep('dimAfterMin', $('dimAfter'), 'Screen dims');
+$('offAfter').onchange = () => saveSleep('offAfterMin', $('offAfter'), 'Screen turns off');
 async function previewBright(pct) {
   if (brightBusy) { brightNext = pct; return; }
   brightBusy = true;
